@@ -1,0 +1,14 @@
+{
+  "name": "نقاط البيع",
+  "short_name": "الكاشير",
+  "description": "نظام نقاط بيع للمطاعم يعمل دون اتصال",
+  "start_url": "/pos",
+  "scope": "/pos/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "dir": "rtl",
+  "lang": "ar",
+  "background_color": "#16181A",
+  "theme_color": "#16181A",
+  "icons": []
+}

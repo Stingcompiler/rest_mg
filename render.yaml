@@ -1,0 +1,35 @@
+# Render blueprint — the monolith.
+#
+# One web service. Django serves the app (the exported Next frontend), the API,
+# and the public landing page on a single origin, backed by managed PostgreSQL.
+# The frontend is built to web/out during the build; Django serves it from there
+# (config/spa.py). PostgreSQL is the deploy database — SQLite is dev-only.
+databases:
+  - name: sudanpos-db
+    databaseName: sudanpos
+    user: sudanpos
+    plan: basic-256mb
+
+services:
+  - type: web
+    name: sudanpos
+    runtime: python
+    # Build the static frontend, then install and migrate the Django app that
+    # serves it. Node is available on Render's Python image via the build.
+    buildCommand: >
+      cd web && npm ci && npm run build &&
+      cd ../api && pip install -r requirements.txt &&
+      python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: cd api && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sudanpos-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        sync: false

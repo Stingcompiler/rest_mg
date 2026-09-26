@@ -1,0 +1,3 @@
+# Generated once by scripts/run-tunnel.ps1 and reused, so login tokens survive a
+# restart. It signs sessions -- it never belongs in the repository.
+.secret-key

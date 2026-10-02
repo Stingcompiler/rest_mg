@@ -33,7 +33,10 @@ _WRITABLE = [
     "photos",
     "delivery_links",
     "landing_page_enabled",
+    "online_ordering_enabled",
 ]
+
+_FLAGS = {"landing_page_enabled", "online_ordering_enabled"}
 
 
 class RestaurantProfileViewSet(viewsets.ViewSet):
@@ -69,7 +72,7 @@ class RestaurantProfileViewSet(viewsets.ViewSet):
             branch=request.user.branch,
             created_at=now,
             updated_at=data.get("updated_at") or now,
-            **{field: data.get(field, "" if field != "landing_page_enabled" else False)
+            **{field: data.get(field, False if field in _FLAGS else "")
                for field in _WRITABLE if field not in {"hours", "photos", "delivery_links"}},
             hours=data.get("hours", []),
             photos=data.get("photos", []),
@@ -249,6 +252,9 @@ class PublicLandingView(APIView):
                 "photos": profile.photos,
                 "delivery_links": profile.delivery_links,
                 "prices_updated_at": profile.prices_updated_at,
+                # The page stays public with ordering off; it shows the menu and
+                # says ordering is closed. The order endpoint enforces it too.
+                "online_ordering_enabled": profile.online_ordering_enabled,
                 "menu": menu,
                 "featured": featured,
             }

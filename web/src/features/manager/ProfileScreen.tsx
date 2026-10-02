@@ -3,7 +3,8 @@
 /**
  * The restaurant profile editor — the source the future public landing page
  * will render from. Everything the page needs is already stored server-side;
- * this is where it's edited. The publish toggle flips `landing_page_enabled`.
+ * this is where it's edited. The publish toggle flips `landing_page_enabled`;
+ * accepting orders from the page is a separate toggle, `online_ordering_enabled`.
  */
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ImagePlus, Trash2 } from 'lucide-react';
@@ -47,6 +48,9 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
     update.mutate({
       id: profile.id,
       patch: {
+        // The server validates the whole profile body, id included; without it
+        // every save from this screen was refused.
+        id: profile.id,
         slug: form.slug,
         name_ar: form.name_ar,
         name_en: form.name_en,
@@ -55,6 +59,8 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
         phone: form.phone,
         whatsapp: form.whatsapp,
         landing_page_enabled: form.landing_page_enabled,
+        // Always sent: the server treats a missing flag as off.
+        online_ordering_enabled: form.online_ordering_enabled,
       },
     });
   };
@@ -90,11 +96,35 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
         />
       </div>
 
+      <div className="flex items-center justify-between gap-14 rounded-lg border border-line bg-surface p-16">
+        <div className="flex flex-col gap-4">
+          <span className="text-ar-base font-medium">{i18n.t('manager.profile.orderingEnabled')}</span>
+          <span className="text-ar-sm text-text-muted">
+            {i18n.t(
+              !form.landing_page_enabled
+                ? 'manager.profile.orderingNeedsPage'
+                : form.online_ordering_enabled
+                  ? 'manager.profile.orderingHintOn'
+                  : 'manager.profile.orderingHintOff',
+            )}
+          </span>
+        </div>
+        <Toggle
+          checked={form.online_ordering_enabled}
+          onChange={(next) => field('online_ordering_enabled', next)}
+          label={i18n.t('manager.profile.orderingEnabled')}
+          disabled={!form.landing_page_enabled}
+        />
+      </div>
+
       <div className="flex items-center gap-14">
         <Button variant="primary" onClick={save} disabled={update.isPending}>
           {i18n.t('manager.profile.save')}
         </Button>
         {update.isSuccess ? <span className="text-ar-sm text-success">{i18n.t('manager.profile.saved')}</span> : null}
+        {update.isError ? (
+          <span role="status" className="text-ar-sm text-danger">{i18n.t('manager.profile.saveFailed')}</span>
+        ) : null}
       </div>
     </div>
   );

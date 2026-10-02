@@ -64,6 +64,8 @@ interface Landing {
   /** The manager's own branding. Either may be null; the page copes with both. */
   logo_url: string | null;
   hero_image_url: string | null;
+  /** Whether the page takes delivery orders; the menu is public either way. */
+  online_ordering_enabled?: boolean;
   menu: LandingCategory[];
   featured: LandingItem[];
 }
@@ -129,7 +131,7 @@ function Landing({ data }: { data: Landing }) {
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <CartProvider>
+    <CartProvider ordering={data.online_ordering_enabled === true}>
       <main dir="rtl" lang="ar" className="min-h-screen bg-bg text-text">
       {/* Sticky top bar */}
       <header className="sticky top-0 z-40 border-b border-line/60 bg-surface/80 backdrop-blur">
@@ -327,6 +329,7 @@ function SectionHeading({ title, icon }: { title: string; icon?: React.ReactNode
 }
 
 function MenuSection({ menu }: { menu: LandingCategory[] }) {
+  const cart = useCart();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const allItems = useMemo(() => menu.flatMap((c) => c.items), [menu]);
@@ -336,6 +339,11 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
     <section id="menu" className="scroll-mt-header border-t border-line bg-surface">
       <div className="mx-auto max-w-6xl px-16 py-40 sm:px-24">
         <SectionHeading title={label('landing.ourMenu')} icon={<Utensils size={22} className="text-accent" />} />
+        {cart.ordering ? null : (
+          <p role="note" className="mt-16 rounded-lg border border-line bg-surface-2 px-16 py-12 text-ar-base text-text-muted">
+            {label('landing.orderingClosed')}
+          </p>
+        )}
 
         {/* Dynamic filter — the "All" chip plus one per category from the API. */}
         <div className="sticky top-header z-30 -mx-16 mt-16 flex gap-8 overflow-x-auto bg-surface/90 px-16 py-10 backdrop-blur sm:-mx-24 sm:px-24">
@@ -406,15 +414,17 @@ function ItemCard({ item }: { item: LandingItem }) {
         {item.description_ar ? (
           <p className="line-clamp-2 text-ar-sm text-text-muted">{item.description_ar}</p>
         ) : null}
-        <button
-          type="button"
-          onClick={() => cart.add(item)}
-          disabled={!item.is_available}
-          className="mt-auto inline-flex min-h-control-md items-center justify-center gap-6 rounded-lg bg-accent-tint text-ar-sm font-semibold text-accent transition hover:bg-accent hover:text-text-on-accent disabled:opacity-40"
-        >
-          <ShoppingBag size={16} />
-          {label('landing.add')}
-        </button>
+        {cart.ordering ? (
+          <button
+            type="button"
+            onClick={() => cart.add(item)}
+            disabled={!item.is_available}
+            className="mt-auto inline-flex min-h-control-md items-center justify-center gap-6 rounded-lg bg-accent-tint text-ar-sm font-semibold text-accent transition hover:bg-accent hover:text-text-on-accent disabled:opacity-40"
+          >
+            <ShoppingBag size={16} />
+            {label('landing.add')}
+          </button>
+        ) : null}
       </div>
     </article>
   );
@@ -444,16 +454,18 @@ function FeaturedCard({ item }: { item: LandingItem }) {
         ) : null}
         <div className="mt-auto flex items-center justify-between gap-8 pt-4">
           <span className="numeric text-num-lg font-bold text-accent">{money(item.price_minor)}</span>
-          <button
-            type="button"
-            onClick={() => cart.add(item)}
-            disabled={!item.is_available}
-            aria-label={label('landing.add')}
-            className="inline-flex min-h-control-md items-center justify-center gap-6 rounded-full bg-accent px-16 text-ar-sm font-semibold text-text-on-accent transition hover:opacity-90 disabled:opacity-40"
-          >
-            <ShoppingBag size={16} />
-            {label('landing.add')}
-          </button>
+          {cart.ordering ? (
+            <button
+              type="button"
+              onClick={() => cart.add(item)}
+              disabled={!item.is_available}
+              aria-label={label('landing.add')}
+              className="inline-flex min-h-control-md items-center justify-center gap-6 rounded-full bg-accent px-16 text-ar-sm font-semibold text-text-on-accent transition hover:opacity-90 disabled:opacity-40"
+            >
+              <ShoppingBag size={16} />
+              {label('landing.add')}
+            </button>
+          ) : null}
         </div>
       </div>
     </article>

@@ -93,6 +93,19 @@ class PublicOrderView(APIView):
                 {"error": {"code": "not_found", "message": "Online ordering is not available."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        # Publishing the page does not open ordering; the manager does that
+        # separately. Enforced here, not only on the page, so a stale page or a
+        # direct call cannot place an order while it is closed.
+        if not profile.online_ordering_enabled:
+            return Response(
+                {
+                    "error": {
+                        "code": "online_ordering_closed",
+                        "message": "The restaurant is not taking online orders right now.",
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
         branch_scope = [profile.branch_id, None]
 
         # Resolve every line against the live menu. Price and name come from the

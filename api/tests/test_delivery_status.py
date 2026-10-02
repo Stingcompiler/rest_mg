@@ -24,7 +24,8 @@ class DeliveryStatusTestCase(TestCase):
         now = timezone.now()
         self.profile = RestaurantProfile.objects.create(
             id=uuid.uuid4(), branch=self.branch, slug="m", name_ar="مطعم",
-            landing_page_enabled=True, created_at=now, updated_at=now,
+            landing_page_enabled=True, online_ordering_enabled=True,
+            created_at=now, updated_at=now,
         )
         self.category = Category.objects.create(
             id=uuid.uuid4(), branch=self.branch, name_ar="وجبات", created_at=now, updated_at=now,

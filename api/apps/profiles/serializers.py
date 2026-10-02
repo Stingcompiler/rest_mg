@@ -26,6 +26,7 @@ class RestaurantProfileSerializer(serializers.Serializer):
     logo_url = serializers.SerializerMethodField()
     hero_image_url = serializers.SerializerMethodField()
     landing_page_enabled = serializers.BooleanField(required=False, default=False)
+    online_ordering_enabled = serializers.BooleanField(required=False, default=False)
     prices_updated_at = serializers.DateTimeField(required=False, allow_null=True)
     updated_at = serializers.DateTimeField(required=False)
     server_updated_at = serializers.DateTimeField(read_only=True)

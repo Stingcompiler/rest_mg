@@ -499,5 +499,12 @@
   "manager.profile.noHero": "لا صورة غلاف",
   "common.imageNotAccepted": "اختر صورة بصيغة JPEG أو PNG أو WebP.",
   "common.imageTooBig": "الصورة أكبر من ٥ ميجابايت.",
-  "common.imageRefused": "لم تُقبل هذه الصورة. جرّب صورة أخرى بصيغة JPEG أو PNG أو WebP."
+  "common.imageRefused": "لم تُقبل هذه الصورة. جرّب صورة أخرى بصيغة JPEG أو PNG أو WebP.",
+  "landing.orderingClosed": "الطلب من الموقع غير متاح حاليًا. يمكنك الطلب عبر واتساب أو بالاتصال.",
+  "landing.order.closed": "توقف المطعم عن استقبال الطلبات من الموقع الآن. يمكنك الطلب عبر واتساب أو بالاتصال.",
+  "manager.profile.orderingEnabled": "قبول الطلبات من الموقع",
+  "manager.profile.orderingHintOn": "طلبات التوصيل من الموقع تصل إلى المطبخ وشاشة التوصيل.",
+  "manager.profile.orderingHintOff": "الصفحة تعرض المنيو، والطلب منها مغلق.",
+  "manager.profile.orderingNeedsPage": "انشر الصفحة أولًا.",
+  "manager.profile.saveFailed": "تعذّر الحفظ. حاول مرة أخرى."
 }

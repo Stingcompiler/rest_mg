@@ -90,6 +90,8 @@ export interface RestaurantProfile {
   photos: unknown[];
   delivery_links: unknown[];
   landing_page_enabled: boolean;
+  /** Whether the published page takes delivery orders. Off by default. */
+  online_ordering_enabled: boolean;
   prices_updated_at: string | null;
   /** Absolute, or null when the manager has not uploaded one yet. */
   logo_url: string | null;

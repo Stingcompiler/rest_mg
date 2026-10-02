@@ -1,8 +1,15 @@
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+
 from .base import *  # noqa: F401,F403
 
 DEBUG = False
+
+# base.py falls back to a development key so a laptop runs without setup. A
+# production process must never sign sessions with it.
+if not os.environ.get("DJANGO_SECRET_KEY"):
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set in production.")
 
 # WhiteNoise serves Django's own static (the admin) in production, where DEBUG is
 # off and runserver's static handler is gone. It sits right after the security

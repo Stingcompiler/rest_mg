@@ -1,5 +1,10 @@
 # Implementation plan — Sudan POS
 
+> **Historical.** This is the original build plan. Where it and the code differ, the code is right:
+> the frontend is a static export served by Django, not SSR (see `MONOLITH.md`); every role signs in
+> with a username and password, and there is no cashier PIN screen (see `ROLES-AND-KITCHEN.md`).
+> Current work follows `IMPLEMENTATION-PLAN.ar.md`; deployment follows `DEPLOY.ar.md`.
+
 Derived from the build spec, `DESIGN-SYSTEM.md` (v2 canonical), and `PROMPT-REVIEW.md`.
 
 Two changes to the spec's build order, both for the reason given in the review:

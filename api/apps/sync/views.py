@@ -6,6 +6,8 @@ available, finished work travels up and menu changes travel down.
 """
 from __future__ import annotations
 
+import logging
+
 from django.utils import timezone
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -22,6 +24,11 @@ from apps.profiles.models import RestaurantProfile
 from apps.profiles.serializers import RestaurantProfileSerializer
 from apps.sync.serializers import PushEnvelopeSerializer, PushRecordSerializer
 from apps.sync.services import ACCEPTED, REJECTED, RecordResult, apply_record
+
+# A refused record stays on the device until someone looks at the till's sync
+# screen. Logging it here means the server's logs show it too, so a till that
+# keeps sending something the server will not take is noticed from outside.
+logger = logging.getLogger("sudanpos.sync")
 
 
 class SyncViewSet(viewsets.ViewSet):
@@ -68,6 +75,16 @@ class SyncViewSet(viewsets.ViewSet):
             results.append(apply_record(record.validated_data, device, branch))
         if device:
             device.touch()
+
+        for result in results:
+            if result.status == REJECTED:
+                logger.warning(
+                    "sync record rejected: id=%s device=%s branch=%s reason=%s",
+                    result.id,
+                    getattr(device, "id", None),
+                    getattr(branch, "id", None),
+                    result.reason,
+                )
 
         accepted = sum(1 for r in results if r.status == ACCEPTED)
         rejected = sum(1 for r in results if r.status == REJECTED)

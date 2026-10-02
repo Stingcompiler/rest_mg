@@ -1,9 +1,12 @@
-# Render blueprint — the monolith.
+# Render blueprint — the monolith. The full runbook is docs/DEPLOY.ar.md.
 #
 # One web service. Django serves the app (the exported Next frontend), the API,
 # and the public landing page on a single origin, backed by managed PostgreSQL.
 # The frontend is built to web/out during the build; Django serves it from there
 # (config/spa.py). PostgreSQL is the deploy database — SQLite is dev-only.
+#
+# Python and Node versions come from .python-version and .nvmrc at the
+# repository root, which Render reads.
 databases:
   - name: sudanpos-db
     databaseName: sudanpos
@@ -18,13 +21,26 @@ services:
     # serves it. Node is available on Render's Python image via the build.
     # createcachetable: the sign-in limits count in the database cache.
     # check --tag single_branch: refuse to deploy over a second branch (F02).
+    # flushexpiredtokens: drop refresh tokens past their expiry from the
+    #   revocation tables, which otherwise grow with every sign-in.
     buildCommand: >
       cd web && npm ci && npm run build &&
       cd ../api && pip install -r requirements.txt &&
       python manage.py collectstatic --noinput && python manage.py migrate &&
-      python manage.py createcachetable && python manage.py check --tag single_branch
+      python manage.py createcachetable && python manage.py check --tag single_branch &&
+      python manage.py flushexpiredtokens
     startCommand: cd api && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /healthz
+    # Uploaded menu photos, the logo and the cover image. A service's own
+    # filesystem is wiped on every deploy and restart; only this disk is kept.
+    # A disk needs a paid instance type, cannot be scaled to several instances,
+    # and turns off zero-downtime deploys (a few seconds of downtime each
+    # deploy). The alternative, object storage on its own origin, is noted in
+    # the runbook.
+    disk:
+      name: media
+      mountPath: /opt/render/project/src/storage
+      sizeGB: 1
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.prod
@@ -34,5 +50,18 @@ services:
         fromDatabase:
           name: sudanpos-db
           property: connectionString
+      - key: MEDIA_ROOT
+        value: /opt/render/project/src/storage
+      # The public host name(s), comma-separated, e.g. mataam.onrender.com.
       - key: ALLOWED_HOSTS
         sync: false
+      # The same host(s) with their scheme, e.g. https://mataam.onrender.com.
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      # Proxies in front of the app that append to X-Forwarded-For; the sign-in
+      # and order limits count the real client address. Verify on deploy.
+      - key: NUM_PROXIES
+        value: "1"
+      # Branch isolation is unfinished (F02); keep this on until it is done.
+      - key: SINGLE_BRANCH
+        value: "true"

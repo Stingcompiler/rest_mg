@@ -106,6 +106,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MEDIA_URL = "media/"
 MEDIA_ROOT = os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media"))
 
+# Limits on an uploaded image, checked before its pixels are decoded
+# (apps.core.images). 40 megapixels is well past any phone camera.
+IMAGE_UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+IMAGE_UPLOAD_MAX_PIXELS = 40_000_000
+
 # The exported frontend (web/out) that this server also serves. In the monolith
 # Django is the single origin for the app, the API, and the public landing page.
 FRONTEND_DIR = BASE_DIR.parent / "web" / "out"

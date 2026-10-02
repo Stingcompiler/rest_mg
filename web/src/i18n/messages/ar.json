@@ -497,6 +497,7 @@
   "manager.profile.uploading": "جارٍ الرفع…",
   "manager.profile.noLogo": "لا شعار",
   "manager.profile.noHero": "لا صورة غلاف",
-  "manager.profile.imageTooBig": "الصورة أكبر من ٥ ميجابايت.",
-  "manager.profile.notAnImage": "اختر ملف صورة."
+  "common.imageNotAccepted": "اختر صورة بصيغة JPEG أو PNG أو WebP.",
+  "common.imageTooBig": "الصورة أكبر من ٥ ميجابايت.",
+  "common.imageRefused": "لم تُقبل هذه الصورة. جرّب صورة أخرى بصيغة JPEG أو PNG أو WebP."
 }

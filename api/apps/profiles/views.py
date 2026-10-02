@@ -14,6 +14,7 @@ from apps.accounts.permissions import IsManager
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.catalog.models import Category, MenuItem
+from apps.core.images import HERO_IMAGE, LOGO, InvalidImage, clean_image, invalid_image_response
 from apps.profiles.models import RestaurantProfile
 from apps.profiles.serializers import RestaurantProfileSerializer
 
@@ -104,7 +105,9 @@ class RestaurantProfileViewSet(viewsets.ViewSet):
         Sending an empty value for a slot clears it, which is how a manager
         removes a logo rather than being stuck with the first one they picked.
 
-        That the file is a real image is Django's judgement, via ImageField.
+        Each file is decoded and re-encoded by ``clean_image`` before anything is
+        saved, and one unusable file refuses the whole request — a logo is never
+        half-applied next to a rejected hero image.
         """
         profile = RestaurantProfile.objects.filter(id=pk).first()
         if profile is None:
@@ -113,11 +116,19 @@ class RestaurantProfileViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        slots = {"logo": "logo", "hero_image": "hero_image"}
+        slots = {"logo": LOGO, "hero_image": HERO_IMAGE}
+        cleaned = {}
+        for field, spec in slots.items():
+            if field in request.FILES:
+                try:
+                    cleaned[field] = clean_image(request.FILES[field], spec)
+                except InvalidImage as error:
+                    return invalid_image_response(error)
+
         touched = []
         for field in slots:
-            if field in request.FILES:
-                setattr(profile, field, request.FILES[field])
+            if field in cleaned:
+                setattr(profile, field, cleaned[field])
                 touched.append(field)
             elif request.data.get(f"clear_{field}") in ("true", "1", True):
                 setattr(profile, field, None)

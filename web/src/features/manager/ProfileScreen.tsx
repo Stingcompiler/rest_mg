@@ -10,6 +10,7 @@ import { AlertTriangle, ImagePlus, Trash2 } from 'lucide-react';
 
 import { Button, EmptyState, ImageSlot, LoadingList, TextField, Toggle } from '@/components';
 import { useI18n } from '@/i18n';
+import { IMAGE_ACCEPT, checkImageFile, imageProblemKey, isRefusedImage } from '@/lib/images';
 import { ManagerShell } from './ManagerShell';
 import { useBranding, useProfile, useUpdateProfile } from './hooks';
 import type { RestaurantProfile } from './api';
@@ -129,13 +130,10 @@ function BrandingSection({ profile }: { profile: RestaurantProfile }) {
   const pick = (file: File | undefined, slot: 'logo' | 'heroImage') => {
     if (!file) return;
     // Checked here so the manager is told immediately, rather than waiting for
-    // a round trip to be refused.
-    if (!file.type.startsWith('image/')) {
-      setError(i18n.t('manager.profile.notAnImage'));
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError(i18n.t('manager.profile.imageTooBig'));
+    // a round trip to be refused. The server still decides.
+    const problem = checkImageFile(file);
+    if (problem) {
+      setError(i18n.t(imageProblemKey(problem)));
       return;
     }
     send(slot === 'logo' ? { logo: file } : { heroImage: file });
@@ -174,7 +172,9 @@ function BrandingSection({ profile }: { profile: RestaurantProfile }) {
         </span>
       ) : null}
       {branding.isError && !error ? (
-        <span role="status" className="text-ar-sm text-danger">{i18n.t('common.retry')}</span>
+        <span role="status" className="text-ar-sm text-danger">
+          {i18n.t(isRefusedImage(branding.error) ? 'common.imageRefused' : 'common.retry')}
+        </span>
       ) : null}
     </section>
   );
@@ -213,7 +213,7 @@ function ImageField({
         <input
           ref={input}
           type="file"
-          accept="image/*"
+          accept={IMAGE_ACCEPT}
           className="hidden"
           onChange={(event) => {
             onPick(event.target.files?.[0]);

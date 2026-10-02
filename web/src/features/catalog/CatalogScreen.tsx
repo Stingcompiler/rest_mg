@@ -22,6 +22,7 @@ import { toMinor, fromMinor } from '@/db';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { homeForRole } from '@/lib/http';
+import { IMAGE_ACCEPT, checkImageFile, imageProblemKey, isRefusedImage } from '@/lib/images';
 import {
   useCategories,
   useCreateCategory,
@@ -287,6 +288,13 @@ function ItemEditor({
   const busy = create.isPending || update.isPending || upload.isPending;
 
   const pickFile = (f: File | null) => {
+    // Told now rather than after the item is saved and the upload refused.
+    const problem = f ? checkImageFile(f) : null;
+    if (problem) {
+      setError(i18n.t(imageProblemKey(problem)));
+      return;
+    }
+    setError(null);
     setFile(f);
     setPreview(f ? URL.createObjectURL(f) : item?.image_url ?? null);
   };
@@ -312,7 +320,8 @@ function ItemEditor({
       if (file) await upload.mutateAsync({ id: saved.id, file });
       onClose();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      if (isRefusedImage(caught)) setError(i18n.t('common.imageRefused'));
+      else setError(caught instanceof Error ? caught.message : String(caught));
     }
   };
 
@@ -327,7 +336,7 @@ function ItemEditor({
             {item?.image_url || file ? i18n.t('catalog.changeImage') : i18n.t('catalog.uploadImage')}
             <input
               type="file"
-              accept="image/*"
+              accept={IMAGE_ACCEPT}
               className="hidden"
               onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
             />

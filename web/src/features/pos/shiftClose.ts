@@ -13,8 +13,20 @@ import { shiftToRecord } from '@/db/mappers';
 import type { OrderRecord, OrderRepository, ShiftRepository } from '@/db';
 import { Shift } from '@/domain';
 
-export function openOrdersOnDevice(orders: Pick<OrderRepository, 'listOpen'>): Promise<OrderRecord[]> {
-  return orders.listOpen();
+/**
+ * Bills that hold something: an item or a payment. An empty bill — opened and
+ * never used, or whose last line was taken off — holds no money and does not
+ * keep the drawer open.
+ */
+export function holdsSomething(order: {
+  lines: readonly { isVoid: boolean }[];
+  payments: readonly unknown[];
+}): boolean {
+  return order.lines.some((line) => !line.isVoid) || order.payments.length > 0;
+}
+
+export async function openOrdersOnDevice(orders: Pick<OrderRepository, 'listOpen'>): Promise<OrderRecord[]> {
+  return (await orders.listOpen()).filter(holdsSomething);
 }
 
 /**

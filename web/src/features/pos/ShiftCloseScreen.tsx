@@ -28,6 +28,7 @@ import { useI18n } from '@/i18n';
 import { DomainError } from '@/domain';
 import { buildPrintContext, printShiftReportToPaper } from '@/print';
 import { usePos } from './PosProvider';
+import { holdsSomething } from './shiftClose';
 import { DENOMINATIONS } from './seed-data';
 
 export function ShiftCloseScreen() {
@@ -40,7 +41,7 @@ export function ShiftCloseScreen() {
   const lumpAmount = (label: string) => countRows.find((row) => row.label === label)?.lineTotalMinor ?? 0n;
   // Every bill still open on this till — the shift itself only holds the ones
   // it closed, so it cannot see these on its own.
-  const openOrders = pos.cart.list();
+  const openOrders = pos.cart.list().filter((order) => holdsSomething(order.toSnapshot()));
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   // One press, one close. The handler is async, so without this the button

@@ -60,6 +60,7 @@ export function KitchenScreen() {
   const i18n = useI18n();
   const auth = useAuth();
   const [tickets, setTickets] = useState<KitchenTicket[] | null>(null);
+  const [total, setTotal] = useState(0);
   const [online, setOnline] = useState(true);
   const [now, setNow] = useState(() => Date.now());
 
@@ -67,6 +68,7 @@ export function KitchenScreen() {
     try {
       const data = await kitchenApi.tickets();
       setTickets(data.tickets);
+      setTotal(data.total ?? data.tickets.length);
       setOnline(true);
     } catch {
       // Keep showing the last board rather than blanking the screen; the cooks
@@ -126,6 +128,12 @@ export function KitchenScreen() {
           <Numeric className="text-num-base text-text-muted">
             {i18n.int(tickets?.length ?? 0)}
           </Numeric>
+          {/* The board shows the oldest tickets; more are waiting behind them. */}
+          {tickets && total > tickets.length ? (
+            <span role="status" className="text-ar-sm font-medium text-warning">
+              {i18n.t('kitchen.moreWaiting', { count: i18n.int(total - tickets.length) })}
+            </span>
+          ) : null}
         </div>
         <div className="flex items-center gap-10">
           {!online ? <StatusChip label={i18n.t('kitchen.offline')} tone="warning" dot /> : null}

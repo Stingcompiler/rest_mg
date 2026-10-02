@@ -9,6 +9,7 @@
 export { runSync, startSyncPump, type SyncResult, type SyncDeps } from './engine';
 export { pushOutbox, type PushOutcome } from './push';
 export { pullMenu, type PullOutcome } from './pull';
+export { RESTAURANT_IDENTITY_KEY, type RestaurantIdentity } from './identity';
 export {
   HttpSyncTransport,
   type SyncTransport,

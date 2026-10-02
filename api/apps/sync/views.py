@@ -132,8 +132,10 @@ class SyncViewSet(viewsets.ViewSet):
         if since is not None:
             categories = categories.filter(server_updated_at__gt=since)
             items = items.filter(server_updated_at__gt=since)
-            profiles = profiles.filter(server_updated_at__gt=since)
             customers = customers.filter(server_updated_at__gt=since)
+        # The profile is one small row and every receipt prints its name, so it
+        # comes down on every pull rather than only when it changed: a till that
+        # synced before it kept the profile still gets it on its next run.
 
         pending_deliveries = Order.objects.filter(
             channel=Order.Channel.ONLINE,

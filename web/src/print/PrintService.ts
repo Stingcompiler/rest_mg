@@ -13,6 +13,12 @@
 import type { PrintDestination } from '@/db';
 
 export interface PrintService {
+  /**
+   * True when nothing reaches paper: the stand-in used in a plain browser. The
+   * till says so, because otherwise a queue that "printed" every kitchen
+   * ticket looks exactly like one connected to a printer.
+   */
+  readonly simulated: boolean;
   /** Write bytes to the named printer. Rejects if the printer cannot be reached. */
   send(destination: PrintDestination, bytes: Uint8Array): Promise<void>;
 }
@@ -46,6 +52,8 @@ function bytesToBase64(bytes: Uint8Array): string {
  * reports failure so jobs stay queued rather than silently vanishing.
  */
 export class TcpPrintService implements PrintService {
+  readonly simulated = false;
+
   constructor(
     private readonly config: PrinterConfig,
     private readonly plugin: TcpSocketPlugin | null,
@@ -71,6 +79,7 @@ export class TcpPrintService implements PrintService {
  * exercised.
  */
 export class FakePrintService implements PrintService {
+  readonly simulated = true;
   readonly sent: { destination: PrintDestination; bytes: Uint8Array }[] = [];
   failing = false;
 

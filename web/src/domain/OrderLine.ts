@@ -92,6 +92,10 @@ export class OrderLine {
     this.state.voidReason = reason;
   }
 
+  setModifiers(text: string): void {
+    this.state.modifiersText = text;
+  }
+
   toSnapshot(): OrderLineSnapshot {
     return { ...this.state };
   }

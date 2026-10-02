@@ -78,3 +78,24 @@ class KitchenOverflowTests(TestCase):
         self.assertEqual(len(board["tickets"]), 100)
         self.assertEqual(board["total"], 103)
         self.assertEqual(board["tickets"][0]["number"], "K-0")
+
+
+class PullProfileTests(TestCase):
+    def test_every_pull_carries_the_restaurant_profile(self):
+        from apps.profiles.models import RestaurantProfile
+        from tests.factories import make_device
+
+        branch = make_branch()
+        now = timezone.now()
+        RestaurantProfile.objects.create(
+            id=uuid.uuid4(), branch=branch, slug="nilein", name_ar="مطعم النيلين",
+            created_at=now, updated_at=now,
+        )
+        _, token = make_device(branch)
+        tablet = APIClient()
+        tablet.credentials(HTTP_AUTHORIZATION=f"Device {token}")
+
+        first = tablet.get("/api/v1/sync/pull/").data
+        later = tablet.get("/api/v1/sync/pull/", {"since": first["cursor"]}).data
+        self.assertEqual(first["profile"]["name_ar"], "مطعم النيلين")
+        self.assertEqual(later["profile"]["name_ar"], "مطعم النيلين")

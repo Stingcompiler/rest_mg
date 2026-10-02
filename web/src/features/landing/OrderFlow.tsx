@@ -13,11 +13,12 @@
  * Arabic-first, RTL, Mobile-first: a floating bar summarises the cart and opens
  * a full sheet, which walks cart → form → confirmation in place.
  */
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useRef, useState } from 'react';
 import { Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2, Loader2 } from 'lucide-react';
 
 import { formatInteger, formatMoney, t } from '@/i18n';
 import { uuid4 } from '@/lib/uuid';
+import { useModalDialog } from '@/lib/useModalDialog';
 
 const LOCALE = 'ar' as const;
 const NUMERALS = 'arabic-indic' as const;
@@ -139,13 +140,21 @@ function OrderSheet({ onClose }: { onClose: () => void }) {
   const cart = useCart();
   const [step, setStep] = useState<Step>('cart');
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const dialog = useRef<HTMLDivElement>(null);
+  useModalDialog(dialog, onClose);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir="rtl" lang="ar">
-      <button type="button" aria-label={label('landing.confirm.close')} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-line bg-surface text-text sm:rounded-2xl">
+      <button type="button" tabIndex={-1} aria-label={label('landing.confirm.close')} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-sheet-title"
+        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-line bg-surface text-text sm:rounded-2xl"
+      >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
-          <span className="text-ar-lg font-bold">
+          <span id="order-sheet-title" className="text-ar-lg font-bold">
             {step === 'done' ? label('landing.confirm.title') : step === 'form' ? label('landing.form.title') : label('landing.cart.title')}
           </span>
           <button type="button" onClick={onClose} aria-label={label('landing.confirm.close')}><X size={22} className="text-text-muted" /></button>

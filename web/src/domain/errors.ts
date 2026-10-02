@@ -22,7 +22,9 @@ export type DomainErrorCode =
   | 'shift_variance_needs_reason'
   | 'shift_already_closed'
   | 'cart_not_found'
-  | 'nothing_to_split';
+  | 'nothing_to_split'
+  | 'line_note_after_send'
+  | 'line_note_too_long';
 
 export class DomainError extends Error {
   constructor(

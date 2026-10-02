@@ -55,6 +55,14 @@ describe('closing a shift', () => {
     await expect(closeShiftOnDevice(shift, nextCashier, { orders, shifts })).rejects.toThrow();
   });
 
+  it('is not blocked by an empty bill, which holds no money', async () => {
+    const { orders, shifts, shift } = setUp();
+    const empty = Order.create({ number: 'UC-1049', shiftRef: shift.id });
+    await orders.save(orderToRecord(empty));
+    expect(await openOrdersOnDevice(orders)).toEqual([]);
+    await expect(closeShiftOnDevice(shift, nextCashier, { orders, shifts })).resolves.toBeDefined();
+  });
+
   it('counts every open bill on the device, whichever shift opened it', async () => {
     const { orders, shift } = setUp();
     await ringUp(orders, Shift.open());

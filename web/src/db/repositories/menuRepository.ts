@@ -33,6 +33,32 @@ export class MenuRepository {
   }
 
   /**
+   * Apply a full snapshot: everything the server has, so anything the device
+   * holds that is not in it is retired (deactivated, never deleted — a bill may
+   * still name it). This is how a demo menu, or one left from before, stops
+   * appearing next to the real menu. Only for a snapshot; a delta must go
+   * through `applyPull`, which retires nothing.
+   */
+  async replaceWithSnapshot(categories: CategoryRecord[], items: MenuItemRecord[]): Promise<void> {
+    const db = await this.db();
+    const tx = db.transaction([STORES.categories, STORES.menuItems], 'readwrite');
+    const categoryStore = tx.objectStore(STORES.categories);
+    const itemStore = tx.objectStore(STORES.menuItems);
+
+    const keepCategories = new Set(categories.map((category) => category.id));
+    const keepItems = new Set(items.map((item) => item.id));
+    for (const local of await getAll<CategoryRecord>(categoryStore)) {
+      if (local.isActive && !keepCategories.has(local.id)) categoryStore.put({ ...local, isActive: false });
+    }
+    for (const local of await getAll<MenuItemRecord>(itemStore)) {
+      if (local.isActive && !keepItems.has(local.id)) itemStore.put({ ...local, isActive: false });
+    }
+    for (const category of categories) categoryStore.put(category);
+    for (const item of items) itemStore.put(item);
+    await txDone(tx);
+  }
+
+  /**
    * Retire bootstrap rows whose ids are not UUIDs.
    *
    * An early build seeded the menu with readable ids (`it-shawarma-beef`). The

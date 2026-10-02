@@ -5,11 +5,11 @@
  * bill on the end side. Split payments accumulate toward the total; the close is
  * disabled until the balance is covered, exactly as the design draws it.
  *
- * Cash and credit are wired one-tap; credit is booked to the walk-in customer
- * until a real customer module exists. Bank and wallet attach a reference —
- * captured properly by a small dialog in a later pass; for now the entered value
- * stands in, which is enough to exercise the split-payment maths and the close
- * gate.
+ * Cash is one tap. Credit asks who owes it. Bank and wallet ask for the
+ * transaction reference on the customer's confirmation — the till used to make
+ * one up from the clock, so a recorded transfer could never be matched to a real
+ * one (review finding F08). Recording stays manual: nothing here checks with a
+ * bank, and the dialog says so.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -35,6 +35,7 @@ import { formatTime, useI18n } from '@/i18n';
 import { buildPrintContext, printReceiptToPaper } from '@/print';
 import { DomainError, WALK_IN_CUSTOMER_ID, type PaymentMethod } from '@/domain';
 import { usePos } from './PosProvider';
+import { MAX_REFERENCE_LENGTH, cleanReference, isUsableReference } from './paymentReference';
 
 const QUICK_CASH = [5_000n, 10_000n, 20_000n];
 
@@ -58,6 +59,8 @@ export function PaymentScreen() {
   // the same pull that brings the menu, so this works with the line down.
   const [pickingCustomer, setPickingCustomer] = useState(false);
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
+  // A transfer or wallet payment waiting for its reference.
+  const [referenceFor, setReferenceFor] = useState<'bank' | 'wallet' | null>(null);
 
   useEffect(() => {
     void customerRepository.list().then(setCustomers).catch(() => setCustomers([]));
@@ -117,10 +120,14 @@ export function PaymentScreen() {
       setPickingCustomer(true);
       return;
     }
+    if ((method === 'bank' || method === 'wallet') && due > 0n) {
+      setReferenceFor(method);
+      return;
+    }
     payWith(method);
   };
 
-  const payWith = (method: PaymentMethod, customerId: string = WALK_IN_CUSTOMER_ID) => {
+  const payWith = (method: PaymentMethod, customerId: string = WALK_IN_CUSTOMER_ID, reference = '') => {
     if (due <= 0n) {
       // Nothing left to take. Saying "invalid amount" here was technically true
       // and completely unhelpful — the bill is simply already paid.
@@ -140,7 +147,7 @@ export function PaymentScreen() {
         // Handled by the picker; see `payCredit`.
         pos.addPayment({ method, amountMinor: amount, customerId });
       } else {
-        pos.addPayment({ method, amountMinor: amount, reference: String(Date.now()).slice(-4) });
+        pos.addPayment({ method, amountMinor: amount, reference: cleanReference(reference) });
       }
       setEntered('');
       // Read the balance *after* the payment landed, so the message tells the
@@ -311,6 +318,19 @@ export function PaymentScreen() {
         </aside>
       </div>
 
+      {referenceFor ? (
+        <ReferenceDialog
+          method={referenceFor}
+          amount={i18n.money(chargeAmount)}
+          onConfirm={(reference) => {
+            const method = referenceFor;
+            setReferenceFor(null);
+            payWith(method, WALK_IN_CUSTOMER_ID, reference);
+          }}
+          onCancel={() => setReferenceFor(null)}
+        />
+      ) : null}
+
       {pickingCustomer ? (
         <CustomerPicker
           customers={customers}
@@ -393,6 +413,68 @@ function CustomerPicker({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The reference of a transfer or wallet payment, typed from the customer's
+ * confirmation. Recording is manual — the dialog says so — and something too
+ * short to identify a transaction is not accepted.
+ */
+function ReferenceDialog({
+  method,
+  amount,
+  onConfirm,
+  onCancel,
+}: {
+  method: 'bank' | 'wallet';
+  amount: string;
+  onConfirm(reference: string): void;
+  onCancel(): void;
+}) {
+  const i18n = useI18n();
+  const [reference, setReference] = useState('');
+  const usable = isUsableReference(reference);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
+      <button type="button" aria-label={i18n.t('pos.payment.cancel')} onClick={onCancel} className="absolute inset-0 bg-black/50" />
+      <form
+        role="dialog"
+        aria-modal="true"
+        aria-label={i18n.t('pos.payment.referenceTitle')}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (usable) onConfirm(reference);
+        }}
+        className="relative flex w-full max-w-md flex-col gap-12 rounded-t-2xl border border-line bg-surface p-16 sm:rounded-2xl"
+      >
+        <div className="flex items-baseline justify-between gap-12">
+          <span className="text-ar-lg font-bold">
+            {i18n.t('pos.payment.referenceTitle')} · {i18n.t(METHOD_LABEL_KEY[method])}
+          </span>
+          <Numeric className="text-num-lg font-bold">{amount}</Numeric>
+        </div>
+        <TextField
+          autoFocus
+          dir="ltr"
+          maxLength={MAX_REFERENCE_LENGTH}
+          value={reference}
+          onChange={(event) => setReference(event.target.value)}
+          placeholder={i18n.t('pos.payment.referencePlaceholder')}
+          aria-label={i18n.t('pos.payment.referenceTitle')}
+        />
+        <span className="text-ar-sm text-text-muted">{i18n.t('pos.payment.referenceHint')}</span>
+        <div className="grid grid-cols-[1.4fr_1fr] gap-10">
+          <Button type="submit" variant="primary" disabled={!usable}>
+            {i18n.t('pos.payment.referenceConfirm')}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            {i18n.t('pos.payment.cancel')}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

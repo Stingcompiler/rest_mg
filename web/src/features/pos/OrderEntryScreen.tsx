@@ -111,8 +111,8 @@ export function OrderEntryScreen() {
                 stepper={
                   <QtyStepper
                     qty={i18n.int(line.qty)}
-                    decrementLabel={i18n.t('pos.actions.discount')}
-                    incrementLabel={i18n.t('pos.cart.pay')}
+                    decrementLabel={i18n.t('pos.cart.qtyLess', { name: line.nameAr })}
+                    incrementLabel={i18n.t('pos.cart.qtyMore', { name: line.nameAr })}
                     onDecrement={() => pos.changeQty(line.id, -1)}
                     onIncrement={() => pos.changeQty(line.id, +1)}
                   />
@@ -212,9 +212,34 @@ export function OrderEntryScreen() {
           }
         />
 
+        {pos.saveFailed ? (
+          <div
+            role="alert"
+            className="mx-16 mt-14 flex items-center justify-between gap-12 rounded-lg border border-danger bg-danger-tint px-14 py-10 text-ar-base text-danger sm:mx-18"
+          >
+            <span>{i18n.t('pos.saveFailed')}</span>
+            <button type="button" onClick={pos.dismissSaveFailure} className="flex-none text-ar-sm font-medium underline">
+              {i18n.t('pos.saveFailedDismiss')}
+            </button>
+          </div>
+        ) : null}
+
         {!pos.ready ? (
           <div className="p-18">
             <LoadingList rows={6} rowClassName="h-item-card" />
+          </div>
+        ) : pos.categories.length === 0 ? (
+          /* A fresh till has no menu until the first sync brings the server's.
+             It used to fill the gap with a demo menu nobody could sell from. */
+          <div className="flex flex-1 flex-col items-center justify-center gap-12 p-24 text-center">
+            <span className="text-ar-lg text-text-muted">{i18n.t('pos.menu.waiting')}</span>
+            <button
+              type="button"
+              onClick={pos.syncNow}
+              className="min-h-control-md rounded-md border border-line bg-surface-2 px-16 text-ar-base"
+            >
+              {i18n.t('pos.menu.syncNow')}
+            </button>
           </div>
         ) : (
           <>

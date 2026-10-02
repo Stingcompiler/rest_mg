@@ -37,7 +37,13 @@ export interface RevenueReport {
   order_count: number;
   gross_minor: string;
   collected_minor: string;
+  /** Still owed at the end of the period: credit given minus repayments, both up to then. */
   credit_outstanding_minor: string;
+  /** Credit given on bills closed in the period. */
+  credit_sales_minor: string;
+  /** Repaid by customers during the period — received, but not a new sale. */
+  settlements_minor: string;
+  settlements_by_method: Record<string, string>;
   average_ticket_minor: string;
   by_method: Record<string, string>;
   by_type: Record<string, number>;

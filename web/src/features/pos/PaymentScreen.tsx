@@ -68,6 +68,17 @@ export function PaymentScreen() {
 
   const order = pos.activeOrder;
 
+  // Arriving from the deliveries screen to collect a website order: open that
+  // bill. Read once the till has loaded its open bills from storage.
+  const { ready, cart, resumeOrder } = pos;
+  useEffect(() => {
+    if (!ready || typeof window === 'undefined') return;
+    const wanted = new URLSearchParams(window.location.search).get('order');
+    if (wanted && cart.active()?.id !== wanted && cart.list().some((bill) => bill.id === wanted)) {
+      resumeOrder(wanted);
+    }
+  }, [ready, cart, resumeOrder]);
+
   // The face of each key follows the numerals setting; the value behind it is
   // always the western digit the maths uses. The keypad used to hardcode
   // Arabic-Indic glyphs, so switching to western numerals left it unchanged.

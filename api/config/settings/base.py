@@ -146,6 +146,13 @@ LOGIN_THROTTLE_RATES = {
     "account_hour": "30/hour",
 }
 
+# Website order limits (apps.orders.throttles): per phone number, and a looser
+# one per address because many phones on a mobile network can share one.
+PUBLIC_ORDER_THROTTLE_RATES = {
+    "address": "30/hour",
+    "phone": "5/hour",
+}
+
 # The throttle counts. One process's memory is enough for development; production
 # shares them across processes (config/settings/prod.py).
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}

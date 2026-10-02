@@ -93,6 +93,10 @@ class Order(BaseModel):
     customer_address = models.CharField(max_length=300, blank=True)
     customer_area = models.CharField(max_length=120, blank=True)
     customer_notes = models.CharField(max_length=400, blank=True)
+    # The visitor's checkout attempt (the Idempotency-Key header). A retried
+    # submission of the same attempt finds this order instead of creating a
+    # second one; a new attempt with the same items is a new order.
+    client_request_id = models.UUIDField(null=True, blank=True, unique=True)
 
     subtotal_minor = models.BigIntegerField(default=0)
     discount_minor = models.BigIntegerField(default=0)
@@ -151,6 +155,17 @@ class Order(BaseModel):
         return sum(
             p.amount_minor for p in self.payments.all() if p.counts_toward_expected_cash
         )
+
+
+class OrderNumberCounter(models.Model):
+    """The last number handed to a website order, locked while the next is taken.
+
+    Reading the highest number and adding one is a race when two orders arrive
+    together; taking this row with SELECT … FOR UPDATE serialises them.
+    """
+
+    name = models.CharField(max_length=32, primary_key=True)
+    value = models.BigIntegerField(default=1000)
 
 
 class OrderLine(BaseModel):

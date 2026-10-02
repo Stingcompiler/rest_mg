@@ -188,8 +188,11 @@ class PublicLandingView(APIView):
         categories = Category.objects.filter(
             is_active=True, branch_id__in=branch_scope
         ).order_by("sort", "name_ar")
+        # The same rule the order endpoint applies: an item under a retired
+        # category is not orderable, so it is not offered either — including on
+        # the featured shelf, which is built from this list.
         items = MenuItem.objects.filter(
-            is_active=True, is_available=True, branch_id__in=branch_scope
+            is_active=True, is_available=True, category__is_active=True, branch_id__in=branch_scope
         ).order_by("sort", "name_ar")
 
         def item_json(item):

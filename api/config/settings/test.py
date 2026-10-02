@@ -43,6 +43,13 @@ _database_url = os.environ.get(
 
 if _postgres_reachable(_database_url):
     USING_POSTGRES_FOR_TESTS = True
+elif os.environ.get("REQUIRE_POSTGRES_FOR_TESTS") == "1":
+    # CI sets this: a run that silently fell back to SQLite would report green
+    # without having exercised PostgreSQL at all.
+    raise RuntimeError(
+        f"REQUIRE_POSTGRES_FOR_TESTS is set but no PostgreSQL answers at "
+        f"{urlparse(_database_url).hostname}:{urlparse(_database_url).port or 5432}."
+    )
 else:
     USING_POSTGRES_FOR_TESTS = False
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}

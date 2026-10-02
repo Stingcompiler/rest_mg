@@ -45,17 +45,7 @@ export class ShiftRepository {
     return open.sort((a, b) => b.openedAt.localeCompare(a.openedAt))[0];
   }
 
-  async markSynced(id: string, syncedAt: string): Promise<void> {
-    const db = await this.db();
-    const tx = db.transaction(STORES.shifts, 'readwrite');
-    const store = tx.objectStore(STORES.shifts);
-    const record = (await request(store.get(id))) as ShiftRecord | undefined;
-    if (record) {
-      record.syncedAt = syncedAt;
-      store.put(record);
-    }
-    await txDone(tx);
-  }
+  // `syncedAt` is written by the outbox's `acknowledge` (see orderRepository).
 }
 
 export const shiftRepository = new ShiftRepository();

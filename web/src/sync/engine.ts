@@ -10,7 +10,7 @@
  * run on an interval, on reconnect, and after a shift closes, and reads the
  * result only to update the connection indicator and the unsynced count.
  */
-import { SettingsRepository, SETTINGS_KEYS, openDatabase, pendingCount } from '@/db';
+import { DB_NAME, SettingsRepository, SETTINGS_KEYS, openDatabase, pendingCount } from '@/db';
 import { pushOutbox } from './push';
 import { pullMenu } from './pull';
 import { HttpSyncTransport, type SyncTransport } from './transport';
@@ -38,7 +38,64 @@ export interface SyncDeps {
   dbName?: string;
 }
 
-export async function runSync(deps: SyncDeps = {}): Promise<SyncResult> {
+/**
+ * One run at a time per database.
+ *
+ * The interval, a reconnect and a closed shift can all ask for a run at once.
+ * Overlapping runs would push the same rows twice and race on their answers. A
+ * request made while a run is in flight is folded into a single follow-up run
+ * that starts when the current one ends — not dropped, so a bill closed during
+ * a run does not wait for the next interval.
+ */
+interface RunSlot {
+  running: Promise<SyncResult> | null;
+  queued: Promise<SyncResult> | null;
+}
+
+const slots = new Map<string, RunSlot>();
+
+export function runSync(deps: SyncDeps = {}): Promise<SyncResult> {
+  const key = deps.dbName ?? DB_NAME;
+  let slot = slots.get(key);
+  if (!slot) {
+    slot = { running: null, queued: null };
+    slots.set(key, slot);
+  }
+  const { running, queued } = slot;
+  if (!running) return startRun(slot, key, deps);
+  if (queued) return queued;
+
+  const waiting = slot;
+  const next = () => {
+    waiting.queued = null;
+    return startRun(waiting, key, deps);
+  };
+  const followUp = running.then(next, next);
+  waiting.queued = followUp;
+  return followUp;
+}
+
+function startRun(slot: RunSlot, key: string, deps: SyncDeps): Promise<SyncResult> {
+  const run = withDeviceLock(key, () => syncOnce(deps)).finally(() => {
+    if (slot.running === run) slot.running = null;
+  });
+  slot.running = run;
+  return run;
+}
+
+/**
+ * Hold the device-wide sync lock while `work` runs, where the browser offers
+ * one. Two tabs of the till share one IndexedDB and would otherwise push the
+ * same queue at once. Correctness does not rest on this — an answer settles only
+ * the snapshot it was for — it only saves sending everything twice.
+ */
+function withDeviceLock<T>(key: string, work: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  if (!locks) return work();
+  return locks.request(`sudanpos-sync:${key}`, work);
+}
+
+async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
   const { transport = new HttpSyncTransport(), dbName } = deps;
   const db = await openDatabase(dbName);
   const settings = new SettingsRepository(dbName);

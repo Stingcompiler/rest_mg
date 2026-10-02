@@ -10,7 +10,14 @@
  * The outbox id is `${type}:${recordId}` — deterministic. Saving the same order
  * twice overwrites its one queue row instead of adding a second, so the queue is
  * idempotent by construction, the same way the server is idempotent by uuid.
+ *
+ * Because the row is overwritten, a row can change while a push of it is still
+ * out: a `sent` order is closed and paid before the server answers. Each enqueue
+ * therefore stamps a fresh `version`, and everything that acts on an answer —
+ * acknowledge, discard, backoff — touches the row only if it is still the
+ * snapshot that was sent. A newer one stays queued, due now.
  */
+import { newId } from '@/domain';
 import { STORES } from './schema';
 import type {
   OrderRecord,
@@ -19,7 +26,7 @@ import type {
   ShiftRecord,
   SyncableType,
 } from './records';
-import { getAll, request } from './idb';
+import { getAll, request, txDone } from './idb';
 
 type SyncablePayload = OrderRecord | ShiftRecord | PriceChangeRecord;
 
@@ -38,6 +45,7 @@ export function enqueue(tx: IDBTransaction, type: SyncableType, payload: Syncabl
     type,
     recordId: payload.id,
     payload,
+    version: newId(),
     attempts: 0,
     nextAttemptAt: Date.now(),
     createdAt: Date.now(),
@@ -54,19 +62,68 @@ export async function dueEntries(db: IDBDatabase, now: number = Date.now(), limi
   return all.slice(0, limit);
 }
 
-/** Remove an entry once the server has accepted it (or reported a duplicate). */
-export async function remove(db: IDBDatabase, id: string): Promise<void> {
-  const tx = db.transaction(STORES.outbox, 'readwrite');
-  tx.objectStore(STORES.outbox).delete(id);
-  await request(tx.objectStore(STORES.outbox).count());
+/** Is the queued row still the snapshot that was sent? */
+function isSentSnapshot(current: OutboxRecord | undefined, sent: OutboxRecord): current is OutboxRecord {
+  return current !== undefined && current.version === sent.version;
 }
 
-/** Record a failed attempt and push the next try out with exponential backoff. */
-export async function backoff(db: IDBDatabase, id: string, error: string): Promise<void> {
+/** The store holding the record an entry was queued for, when it tracks `syncedAt`. */
+const SOURCE_STORES: Partial<Record<SyncableType, string>> = {
+  order: STORES.orders,
+  shift: STORES.shifts,
+};
+
+/**
+ * Settle an entry the server has accepted (or reported a duplicate): remove it
+ * and mark its record synced, in one transaction — but only if the row is still
+ * the snapshot that was sent.
+ *
+ * Returns false when a newer snapshot replaced it while the push was out. That
+ * one stays queued, due now, and its record stays unsynced until its own answer.
+ */
+export async function acknowledge(db: IDBDatabase, sent: OutboxRecord, syncedAt: string): Promise<boolean> {
+  const source = SOURCE_STORES[sent.type];
+  const tx = db.transaction(source ? [STORES.outbox, source] : [STORES.outbox], 'readwrite');
+  const outbox = tx.objectStore(STORES.outbox);
+  const current = (await request(outbox.get(sent.id))) as OutboxRecord | undefined;
+  const settled = isSentSnapshot(current, sent);
+  if (settled) {
+    outbox.delete(sent.id);
+    if (source) {
+      const store = tx.objectStore(source);
+      const record = (await request(store.get(sent.recordId))) as { syncedAt: string | null } | undefined;
+      if (record) {
+        record.syncedAt = syncedAt;
+        store.put(record);
+      }
+    }
+  }
+  await txDone(tx);
+  return settled;
+}
+
+/** Drop an entry the server can never accept — unless a newer snapshot replaced it. */
+export async function discard(db: IDBDatabase, sent: OutboxRecord): Promise<boolean> {
   const tx = db.transaction(STORES.outbox, 'readwrite');
   const store = tx.objectStore(STORES.outbox);
-  const entry = (await request(store.get(id))) as OutboxRecord | undefined;
-  if (!entry) return;
+  const current = (await request(store.get(sent.id))) as OutboxRecord | undefined;
+  const dropped = isSentSnapshot(current, sent);
+  if (dropped) store.delete(sent.id);
+  await txDone(tx);
+  return dropped;
+}
+
+/**
+ * Record a failed attempt and push the next try out with exponential backoff.
+ *
+ * A refusal of a snapshot that has since been replaced says nothing about the
+ * replacement, so that row is left as it is: due now, with no error against it.
+ */
+export async function backoff(db: IDBDatabase, sent: OutboxRecord, error: string): Promise<void> {
+  const tx = db.transaction(STORES.outbox, 'readwrite');
+  const store = tx.objectStore(STORES.outbox);
+  const entry = (await request(store.get(sent.id))) as OutboxRecord | undefined;
+  if (!isSentSnapshot(entry, sent)) return;
   entry.attempts += 1;
   entry.lastError = error;
   // 2^n seconds, capped at five minutes — long enough to ride out an outage,

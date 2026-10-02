@@ -201,6 +201,10 @@ export interface OutboxRecord {
   type: SyncableType;
   recordId: string;
   payload: OrderRecord | ShiftRecord | PriceChangeRecord;
+  /** Fresh on every enqueue, so an answer from the server can be matched to
+   *  the snapshot it was for. Rows queued before it existed have none, and
+   *  still match themselves. */
+  version?: string;
   attempts: number;
   /** Epoch ms. The engine drains rows whose time has come, oldest first. */
   nextAttemptAt: number;

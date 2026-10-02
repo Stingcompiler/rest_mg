@@ -21,6 +21,8 @@ export class FakeServer implements SyncTransport {
   customers: unknown[] = [];
   /** Customer delivery orders the server says are still waiting. */
   pendingDeliveries: unknown[] = [];
+  /** The restaurant profile the pull carries, or null when unchanged. */
+  profile: unknown = null;
 
   seedCatalog(categories: unknown[], items: unknown[]): void {
     this.catalog = { categories, items };
@@ -55,7 +57,7 @@ export class FakeServer implements SyncTransport {
       items: this.catalog.items,
       customers: this.customers,
       pending_deliveries: this.pendingDeliveries,
-      profile: null,
+      profile: this.profile,
     };
   }
 }

@@ -65,9 +65,14 @@ def clean_image(upload, spec: ImageSpec) -> ContentFile:
             image = ImageOps.exif_transpose(source)
             icc_profile = source.info.get("icc_profile")
 
-        has_alpha = image.mode in ("RGBA", "LA", "PA") or (
+        # An alpha channel is not transparency: screenshots and canvas exports
+        # carry one that is fully opaque, and those should become JPEG too.
+        has_alpha = False
+        if image.mode in ("RGBA", "LA", "PA") or (
             image.mode == "P" and "transparency" in image.info
-        )
+        ):
+            image = image.convert("RGBA")
+            has_alpha = image.getchannel("A").getextrema()[0] < 255
         as_png = has_alpha or spec.always_png
         image = image.convert("RGBA" if has_alpha else "RGB")
         image.thumbnail((spec.max_side, spec.max_side), Image.Resampling.LANCZOS)

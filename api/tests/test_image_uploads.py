@@ -136,6 +136,12 @@ class ItemPhotoStorageTests(UploadTestCase):
         self.assertTrue(self.item.image.name.endswith(".jpg"))
         self.assertEqual(stored(self.item.image).format, "JPEG")
 
+    def test_an_alpha_channel_that_is_fully_opaque_still_becomes_jpeg(self):
+        # Canvas exports and screenshots carry alpha without any transparency.
+        self.upload_photo(a_file("dish.png", image_bytes(mode="RGBA", colour=(255, 0, 0, 255))))
+        self.item.refresh_from_db()
+        self.assertEqual(stored(self.item.image).format, "JPEG")
+
     def test_a_transparent_photo_stays_png(self):
         self.upload_photo(a_file("dish.png", image_bytes(mode="RGBA", colour=(255, 0, 0, 0))))
         self.item.refresh_from_db()

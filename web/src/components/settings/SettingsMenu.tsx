@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Settings as SettingsIcon } from 'lucide-react';
 
+import { useAuth } from '@/features/auth/AuthProvider';
 import { useI18n, type Locale, type Numerals } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { ThemePreference } from '@/i18n/preferences';
@@ -52,6 +53,7 @@ function Choice({
 export function SettingsMenu() {
   const i18n = useI18n();
   const theme = useTheme();
+  const auth = useAuth();
   const [open, setOpen] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
 
@@ -139,8 +141,68 @@ export function SettingsMenu() {
               </Choice>
             ))}
           </Row>
+
+          {auth.user ? <SignOutEverywhere onDone={() => setOpen(false)} /> : null}
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Ending every session of the signed-in person — for someone who thinks a
+ * device or their password was taken. Two steps, because it signs them out
+ * everywhere, this device included.
+ */
+function SignOutEverywhere({ onDone }: { onDone: () => void }) {
+  const i18n = useI18n();
+  const auth = useAuth();
+  const [confirming, setConfirming] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const confirm = async () => {
+    setPending(true);
+    setFailed(false);
+    try {
+      await auth.signOutEverywhere();
+      onDone();
+    } catch {
+      setFailed(true);
+      setPending(false);
+    }
+  };
+
+  return (
+    <Row label={i18n.t('settings.session')}>
+      <div className="flex flex-1 flex-col gap-8">
+        {confirming ? (
+          <>
+            <span className="text-ar-sm text-text-muted">{i18n.t('auth.signOutEverywhereConfirm')}</span>
+            <button
+              type="button"
+              onClick={() => void confirm()}
+              disabled={pending}
+              className="min-h-control-sm rounded-md border border-danger bg-danger-tint px-12 text-ar-sm font-medium text-danger disabled:opacity-60"
+            >
+              {i18n.t('auth.signOutEverywhere')}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="min-h-control-sm rounded-md border border-line bg-surface-2 px-12 text-ar-sm text-danger"
+          >
+            {i18n.t('auth.signOutEverywhere')}
+          </button>
+        )}
+        {failed ? (
+          <span role="alert" className="text-ar-sm text-danger">
+            {i18n.t('auth.signOutEverywhereFailed')}
+          </span>
+        ) : null}
+      </div>
+    </Row>
   );
 }

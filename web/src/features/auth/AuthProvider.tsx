@@ -53,6 +53,9 @@ interface AuthContextValue {
   unauthenticated: boolean;
   signIn(username: string, password: string): Promise<StaffUser>;
   signOut(): Promise<void>;
+  /** End this person's sessions on every device. Rejects if the server could
+   *  not be reached — the sessions are then still live, and the caller says so. */
+  signOutEverywhere(): Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -103,21 +106,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return signedIn;
   }, []);
 
-  const signOut = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      // Even if the server cannot be reached, drop the local identity.
-    }
+  const forgetLocally = useCallback(() => {
     setUser(null);
     writeCache(null);
     setUnauthenticated(true);
     if (typeof window !== 'undefined') window.location.assign('/login/');
   }, []);
 
+  const signOut = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Even if the server cannot be reached, drop the local identity.
+    }
+    forgetLocally();
+  }, [forgetLocally]);
+
+  const signOutEverywhere = useCallback(async () => {
+    // Unlike a plain sign-out, this one is only done if the server did it.
+    await authApi.logoutAll();
+    forgetLocally();
+  }, [forgetLocally]);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, unauthenticated, signIn, signOut }),
-    [user, loading, unauthenticated, signIn, signOut],
+    () => ({ user, loading, unauthenticated, signIn, signOut, signOutEverywhere }),
+    [user, loading, unauthenticated, signIn, signOut, signOutEverywhere],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

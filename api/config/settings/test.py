@@ -64,6 +64,13 @@ else:
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
+# Throttles never trigger against a dummy cache, so the suite can sign in as
+# often as it likes; tests/test_login_throttle.py switches to a real cache.
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}
+
+# Several tests need two branches. tests/test_single_branch.py turns the guard on.
+SINGLE_BRANCH = False
+
 # Uploads go to a throwaway directory, never the real one.
 #
 # ImageField writes a file the moment a test saves a model, and the test

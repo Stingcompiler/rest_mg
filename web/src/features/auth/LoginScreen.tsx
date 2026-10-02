@@ -22,7 +22,7 @@ export function LoginScreen() {
   const search = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<'credentials' | 'throttled' | null>(null);
   const [pending, setPending] = useState(false);
 
   // Already signed in? Then this page has nothing to ask. Someone arrives here
@@ -38,7 +38,7 @@ export function LoginScreen() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(false);
+    setError(null);
     setPending(true);
     try {
       const user = await auth.signIn(username, password);
@@ -47,7 +47,7 @@ export function LoginScreen() {
       // should not inherit the cook's destination.
       window.location.assign(destinationAfterLogin(search.get('next'), user.role));
     } catch (caught) {
-      if (caught instanceof ApiError) setError(true);
+      if (caught instanceof ApiError) setError(caught.status === 429 ? 'throttled' : 'credentials');
       else throw caught;
       setPending(false);
     }
@@ -84,7 +84,11 @@ export function LoginScreen() {
             autoComplete="current-password"
           />
         </label>
-        {error ? <span className="text-ar-sm text-danger">{i18n.t('manager.login.error')}</span> : null}
+        {error ? (
+          <span role="alert" className="text-ar-sm text-danger">
+            {i18n.t(error === 'throttled' ? 'manager.login.throttled' : 'manager.login.error')}
+          </span>
+        ) : null}
         <Button type="submit" variant="primary" size="lg" disabled={pending}>
           {i18n.t('manager.login.submit')}
         </Button>

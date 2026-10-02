@@ -35,7 +35,9 @@ def normalised_exception_handler(exc, context):
     if response is None:
         return None
 
-    code = _CODES.get(response.status_code, "error")
+    # An exception may name its own code, more precise than its status alone
+    # (a CSRF refusal is a 403, but not the same 403 as a missing permission).
+    code = getattr(exc, "error_code", None) or _CODES.get(response.status_code, "error")
     detail = response.data
     message = detail.get("detail") if isinstance(detail, dict) else None
     if message is None:

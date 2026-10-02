@@ -45,11 +45,47 @@ class ManagerUser(AbstractUser):
     branch = models.ForeignKey(
         Branch, null=True, blank=True, on_delete=models.PROTECT, related_name="managers"
     )
+    # Written into every token this person is issued (apps.accounts.tokens).
+    # Raising it ends every session at once: a new password, deactivation, or
+    # "sign out everywhere". Reactivating an account does not lower it, so the
+    # sessions it ended stay ended.
+    session_version = models.PositiveIntegerField(default=0)
 
     objects = ManagerUserManager()
 
     def delete(self, *args, **kwargs):
         raise HardDeleteBlocked("Users are never deleted. Set is_active=False.")
+
+    def set_password(self, raw_password):
+        super().set_password(raw_password)
+        self.session_version += 1
+        self._session_version_changed = True
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding and not self.is_active:
+            if type(self).objects.filter(pk=self.pk, is_active=True).exists():
+                self.session_version += 1
+                self._session_version_changed = True
+        # Django's own partial saves name the fields they write — a sign-in that
+        # upgrades the password hash saves only "password". The version raised
+        # alongside it must reach the database too, or the token issued for that
+        # very sign-in would not match.
+        update_fields = kwargs.get("update_fields")
+        if (
+            update_fields is not None
+            and getattr(self, "_session_version_changed", False)
+            and "session_version" not in update_fields
+        ):
+            kwargs["update_fields"] = [*update_fields, "session_version"]
+        super().save(*args, **kwargs)
+        self._session_version_changed = False
+
+    def end_all_sessions(self) -> None:
+        """Invalidate every token issued to this person so far."""
+        type(self).objects.filter(pk=self.pk).update(
+            session_version=models.F("session_version") + 1
+        )
+        self.refresh_from_db(fields=["session_version"])
 
 
 def hash_device_token(raw_token: str) -> str:

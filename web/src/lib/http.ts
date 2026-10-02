@@ -29,14 +29,25 @@ export class ApiError extends Error {
  */
 let refreshInFlight: Promise<boolean> | null = null;
 
+/**
+ * How long to wait before the one retry of a refused refresh.
+ *
+ * A refresh token is spent once used. Two tabs renewing at the same moment both
+ * send the same token; the second is refused, but by then the browser holds the
+ * replacement the first one received, so trying once more succeeds.
+ */
+const REFRESH_RETRY_DELAY_MS = 250;
+
 export function refreshSession(): Promise<boolean> {
   if (!refreshInFlight) {
-    refreshInFlight = fetch('/api/v1/auth/refresh/', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then((response) => response.ok)
+    const attempt = () =>
+      fetch('/api/v1/auth/refresh/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      }).then((response) => response.ok);
+    refreshInFlight = attempt()
+      .then((ok) => ok || delay(REFRESH_RETRY_DELAY_MS).then(attempt))
       .catch(() => false)
       .finally(() => {
         refreshInFlight = null;
@@ -45,9 +56,35 @@ export function refreshSession(): Promise<boolean> {
   return refreshInFlight;
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
+
+/** Django's CSRF token, from the cookie the server sets with every session. */
+function csrfToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = /(?:^|;\s*)csrftoken=([^;]+)/.exec(document.cookie);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/**
+ * The request as sent: with credentials, and on a write with the CSRF token
+ * the server requires of anything authenticated by the session cookie.
+ */
+function withSession(init?: RequestInit): RequestInit {
+  const headers = new Headers(init?.headers);
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const token = csrfToken();
+  if (!SAFE_METHODS.has(method) && token) headers.set('X-CSRFToken', token);
+  return { ...init, headers, credentials: 'include' };
+}
+
 /** A same-origin fetch that renews an expired session once and retries. */
 export async function fetchWithSession(url: string, init?: RequestInit): Promise<Response> {
-  const send = () => fetch(url, { ...init, credentials: 'include' });
+  // The token is read on every send: a renewal can hand out a new one.
+  const send = () => fetch(url, withSession(init));
 
   const first = await send();
   if (first.status !== 401) return first;
@@ -122,6 +159,8 @@ export const authApi = {
   login: (username: string, password: string) =>
     request<StaffUser>('auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   logout: () => request<void>('auth/logout', { method: 'POST' }),
+  /** End every session of the signed-in person, on every device. */
+  logoutAll: () => request<void>('auth/logout-all', { method: 'POST' }),
   me: () => request<StaffUser>('auth/me'),
 };
 

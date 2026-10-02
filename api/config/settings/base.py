@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    # Spent and signed-out refresh tokens (apps.accounts.views, tokens).
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "apps.core",
     "apps.accounts",
@@ -127,12 +129,31 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # Rotation and the blacklist are done by apps.accounts.views.refresh itself,
+    # which does not go through Simple JWT's refresh serializer that these flags
+    # configure.
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": False,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
+
+# Sign-in attempt limits (apps.accounts.throttles), in DRF's rate format.
+LOGIN_THROTTLE_RATES = {
+    "address": "20/min",
+    "account_minute": "5/min",
+    "account_hour": "30/hour",
+}
+
+# The throttle counts. One process's memory is enough for development; production
+# shares them across processes (config/settings/prod.py).
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+# Records are not yet scoped to their branch on every read and write (review
+# finding F02), so a second branch is refused until that work is done
+# (apps.core.models.Branch, apps.core.checks). Turn off only together with it.
+SINGLE_BRANCH = os.environ.get("SINGLE_BRANCH", "true").lower() not in {"0", "false", "no"}
 
 # Manager auth travels in httpOnly cookies, never in localStorage.
 AUTH_COOKIE_ACCESS = "sp_access"

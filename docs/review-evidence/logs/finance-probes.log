@@ -1,0 +1,73 @@
+Creating test database for alias 'default' ('test_rest_mg_review')...
+Found 2 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders, messages, rest_framework, staticfiles
+  Apply all migrations: accounts, admin, audit, auth, catalog, contenttypes, core, customers, orders, profiles, sessions, shifts
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying core.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying accounts.0002_alter_manageruser_managers_manageruser_display_name_and_more... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying audit.0001_initial... OK
+  Applying audit.0002_alter_auditlog_action... OK
+  Applying audit.0003_alter_auditlog_action... OK
+  Applying audit.0004_alter_auditlog_action... OK
+  Applying catalog.0001_initial... OK
+  Applying catalog.0002_menuitem_image_menuitem_is_featured... OK
+  Applying customers.0001_initial... OK
+  Applying shifts.0001_initial... OK
+  Applying orders.0001_initial... OK
+  Applying orders.0002_order_kitchen_status_order_kitchen_updated_at... OK
+  Applying orders.0003_order_channel_order_customer_address_and_more... OK
+  Applying profiles.0001_initial... OK
+  Applying profiles.0002_restaurantprofile_hero_image_restaurantprofile_logo... OK
+  Applying sessions.0001_initial... OK
+System check identified no issues (0 silenced).
+test_html_upload_is_not_served_as_html (rest_mg_review_finance.AdditionalReviewProbes.test_html_upload_is_not_served_as_html) ... FAIL
+test_settled_credit_is_not_outstanding (rest_mg_review_finance.AdditionalReviewProbes.test_settled_credit_is_not_outstanding) ... FAIL
+
+======================================================================
+FAIL: test_html_upload_is_not_served_as_html (rest_mg_review_finance.AdditionalReviewProbes.test_html_upload_is_not_served_as_html)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_finance.py", line 41, in test_html_upload_is_not_served_as_html
+    self.assertNotEqual(public_response['Content-Type'].split(';')[0], 'text/html')
+AssertionError: 'text/html' == 'text/html'
+
+======================================================================
+FAIL: test_settled_credit_is_not_outstanding (rest_mg_review_finance.AdditionalReviewProbes.test_settled_credit_is_not_outstanding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_finance.py", line 29, in test_settled_credit_is_not_outstanding
+    self.assertEqual(report['credit_outstanding_minor'], '0')
+AssertionError: '25000' != '0'
+- 25000
++ 0
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.035s
+
+FAILED (failures=2)
+Destroying test database for alias 'default' ('test_rest_mg_review')...
+AUDIT_MEDIA_TYPE 200 text/html
+AUDIT_SETTLEMENT {'customer_balance': '0', 'report_outstanding': '25000', 'report_collected': '0'}

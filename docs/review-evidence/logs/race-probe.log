@@ -1,0 +1,46 @@
+
+> sudan-pos-web@0.1.0 test
+> vitest run src/sync/__tests__/review-race.test.ts
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 /Users/macbookairm1/Desktop/rest_mg/web
+
+stdout | src/sync/__tests__/review-race.test.ts > audit: acknowledgement of sent snapshot must retain a newer closed snapshot
+AUDIT_RACE {
+  sentStatus: 'sent',
+  localStatus: 'closed',
+  pending: 0,
+  syncedAt: '2026-10-02T12:00:01Z'
+}
+
+ ❯ src/sync/__tests__/review-race.test.ts (1 test | 1 failed) 17ms
+   × audit: acknowledgement of sent snapshot must retain a newer closed snapshot 17ms
+     → expected +0 to be 1 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sync/__tests__/review-race.test.ts > audit: acknowledgement of sent snapshot must retain a newer closed snapshot
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/sync/__tests__/review-race.test.ts:34:56
+     32|     localStatus: stored?.status, pending: await pendingCount(await ope…
+     33|     syncedAt: stored?.syncedAt });
+     34|   expect(await pendingCount(await openDatabase(name))).toBe(1);
+       |                                                        ^
+     35| });
+     36| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  15:38:43
+   Duration  785ms (transform 136ms, setup 36ms, collect 160ms, tests 17ms, environment 0ms, prepare 79ms)
+

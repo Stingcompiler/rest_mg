@@ -1,0 +1,136 @@
+Creating test database for alias 'default' ('test_rest_mg_review')...
+Found 10 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders, messages, rest_framework, staticfiles
+  Apply all migrations: accounts, admin, audit, auth, catalog, contenttypes, core, customers, orders, profiles, sessions, shifts
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying core.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying accounts.0002_alter_manageruser_managers_manageruser_display_name_and_more... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying audit.0001_initial... OK
+  Applying audit.0002_alter_auditlog_action... OK
+  Applying audit.0003_alter_auditlog_action... OK
+  Applying audit.0004_alter_auditlog_action... OK
+  Applying catalog.0001_initial... OK
+  Applying catalog.0002_menuitem_image_menuitem_is_featured... OK
+  Applying customers.0001_initial... OK
+  Applying shifts.0001_initial... OK
+  Applying orders.0001_initial... OK
+  Applying orders.0002_order_kitchen_status_order_kitchen_updated_at... OK
+  Applying orders.0003_order_channel_order_customer_address_and_more... OK
+  Applying profiles.0001_initial... OK
+  Applying profiles.0002_restaurantprofile_hero_image_restaurantprofile_logo... OK
+  Applying sessions.0001_initial... OK
+System check identified no issues (0 silenced).
+test_01_catalog_list_is_branch_scoped (rest_mg_review_probes.ReviewProbes.test_01_catalog_list_is_branch_scoped) ... FAIL
+test_02_order_detail_is_branch_scoped (rest_mg_review_probes.ReviewProbes.test_02_order_detail_is_branch_scoped) ... FAIL
+test_03_sync_cannot_reassign_another_branch_order (rest_mg_review_probes.ReviewProbes.test_03_sync_cannot_reassign_another_branch_order) ... FAIL
+test_04_cookie_writes_require_csrf (rest_mg_review_probes.ReviewProbes.test_04_cookie_writes_require_csrf) ... FAIL
+test_05_uploaded_image_is_validated_server_side (rest_mg_review_probes.ReviewProbes.test_05_uploaded_image_is_validated_server_side) ... FAIL
+test_06_cancelled_delivery_leaves_kitchen_queue (rest_mg_review_probes.ReviewProbes.test_06_cancelled_delivery_leaves_kitchen_queue) ... FAIL
+test_07_retried_public_order_is_not_duplicated (rest_mg_review_probes.ReviewProbes.test_07_retried_public_order_is_not_duplicated) ... FAIL
+test_08_featured_items_have_active_categories (rest_mg_review_probes.ReviewProbes.test_08_featured_items_have_active_categories) ... FAIL
+test_09_kitchen_does_not_prepare_unconfirmed_delivery (rest_mg_review_probes.ReviewProbes.test_09_kitchen_does_not_prepare_unconfirmed_delivery) ... FAIL
+test_10_delivered_order_has_a_payment_path_observation (rest_mg_review_probes.ReviewProbes.test_10_delivered_order_has_a_payment_path_observation) ... ok
+
+======================================================================
+FAIL: test_01_catalog_list_is_branch_scoped (rest_mg_review_probes.ReviewProbes.test_01_catalog_list_is_branch_scoped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 42, in test_01_catalog_list_is_branch_scoped
+    self.assertNotIn(str(self.item_b.id), [i['id'] for i in result])
+AssertionError: '4eff546a-dc48-4c5d-a6df-f92cf1308b63' unexpectedly found in ['4eff546a-dc48-4c5d-a6df-f92cf1308b63']
+
+======================================================================
+FAIL: test_02_order_detail_is_branch_scoped (rest_mg_review_probes.ReviewProbes.test_02_order_detail_is_branch_scoped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 48, in test_02_order_detail_is_branch_scoped
+    self.assertEqual(response.status_code, 404)
+AssertionError: 200 != 404
+
+======================================================================
+FAIL: test_03_sync_cannot_reassign_another_branch_order (rest_mg_review_probes.ReviewProbes.test_03_sync_cannot_reassign_another_branch_order)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 63, in test_03_sync_cannot_reassign_another_branch_order
+    self.assertEqual(order.branch_id, self.branch_b.id)
+AssertionError: UUID('8420925f-200c-462b-a782-0ab159d6b9a8') != UUID('dccdbc59-3f78-4dac-95f9-0062f7570f41')
+
+======================================================================
+FAIL: test_04_cookie_writes_require_csrf (rest_mg_review_probes.ReviewProbes.test_04_cookie_writes_require_csrf)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 71, in test_04_cookie_writes_require_csrf
+    self.assertEqual(response.status_code, 403)
+AssertionError: 201 != 403
+
+======================================================================
+FAIL: test_05_uploaded_image_is_validated_server_side (rest_mg_review_probes.ReviewProbes.test_05_uploaded_image_is_validated_server_side)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 77, in test_05_uploaded_image_is_validated_server_side
+    self.assertEqual(response.status_code, 400)
+AssertionError: 200 != 400
+
+======================================================================
+FAIL: test_06_cancelled_delivery_leaves_kitchen_queue (rest_mg_review_probes.ReviewProbes.test_06_cancelled_delivery_leaves_kitchen_queue)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 85, in test_06_cancelled_delivery_leaves_kitchen_queue
+    self.assertNotIn(str(order.id), ids)
+AssertionError: '0ef7a613-d685-4db6-ad5e-af3b1126fa61' unexpectedly found in ['0ef7a613-d685-4db6-ad5e-af3b1126fa61']
+
+======================================================================
+FAIL: test_07_retried_public_order_is_not_duplicated (rest_mg_review_probes.ReviewProbes.test_07_retried_public_order_is_not_duplicated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 91, in test_07_retried_public_order_is_not_duplicated
+    self.assertEqual(Order.objects.filter(channel='online').count(), 1)
+AssertionError: 2 != 1
+
+======================================================================
+FAIL: test_08_featured_items_have_active_categories (rest_mg_review_probes.ReviewProbes.test_08_featured_items_have_active_categories)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 99, in test_08_featured_items_have_active_categories
+    self.assertNotIn(str(item.id), [i['id'] for i in result['featured']])
+AssertionError: 'c0a7e40e-4f3c-4da6-bbaa-8fb82943f101' unexpectedly found in ['c0a7e40e-4f3c-4da6-bbaa-8fb82943f101']
+
+======================================================================
+FAIL: test_09_kitchen_does_not_prepare_unconfirmed_delivery (rest_mg_review_probes.ReviewProbes.test_09_kitchen_does_not_prepare_unconfirmed_delivery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/rest_mg_review_probes.py", line 106, in test_09_kitchen_does_not_prepare_unconfirmed_delivery
+    self.assertEqual(order.delivery_status, 'pending')
+AssertionError: 'preparing' != 'pending'
+- preparing
++ pending
+
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.167s
+
+FAILED (failures=9)
+Destroying test database for alias 'default' ('test_rest_mg_review')...
+AUDIT_DELIVERED_PAYMENT sent 0 12500

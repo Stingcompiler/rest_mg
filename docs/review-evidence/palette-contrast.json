@@ -1,0 +1,24 @@
+[
+  {
+    "palette": "Current",
+    "body_text_on_bg": 15.56,
+    "white_on_primary": 7.92
+  },
+  {
+    "palette": "Modern \u2014 proposal",
+    "body_text_on_bg": 14.69,
+    "white_on_primary": 9.76,
+    "body_text_on_secondary": 6.98
+  },
+  {
+    "palette": "Classic \u2014 proposal",
+    "body_text_on_bg": 13.58,
+    "white_on_primary": 8.22,
+    "body_text_on_secondary": 6.15
+  },
+  {
+    "palette": "Current dark",
+    "body_text_on_surface": 14.03,
+    "button_text_on_primary": 7.53
+  }
+]

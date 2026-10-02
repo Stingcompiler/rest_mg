@@ -1,0 +1,43 @@
+
+> sudan-pos-web@0.1.0 test
+> vitest run
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 /Users/macbookairm1/Desktop/rest_mg/web
+
+ ✓ src/domain/__tests__/order.test.ts (12 tests) 20ms
+ ✓ src/db/__tests__/migrations.test.ts (7 tests) 58ms
+ ✓ src/domain/__tests__/shift-cart-user.test.ts (19 tests) 19ms
+ ✓ src/print/__tests__/escpos.test.ts (9 tests) 19ms
+ ✓ src/db/__tests__/shift-reload.test.ts (4 tests) 28ms
+ ✓ src/db/__tests__/repositories.test.ts (14 tests) 371ms
+ ✓ src/lib/__tests__/paging.test.ts (16 tests) 31ms
+ ✓ src/lib/__tests__/arrivals.test.ts (16 tests) 9ms
+ ✓ src/styles/__tests__/contrast.test.ts (14 tests) 6ms
+ ✓ src/print/__tests__/queue.test.ts (4 tests) 30ms
+ ✓ src/db/__tests__/soak.test.ts (5 tests) 302ms
+ ✓ src/db/__tests__/outbox-retry.test.ts (6 tests) 80ms
+ ✓ src/domain/__tests__/payment-menu.test.ts (7 tests) 8ms
+ ✓ src/db/__tests__/mappers.test.ts (4 tests) 12ms
+ ✓ src/sync/__tests__/pending-deliveries.test.ts (6 tests) 71ms
+ ✓ src/sync/__tests__/customers-pull.test.ts (4 tests) 24ms
+ ✓ src/lib/__tests__/destination.test.ts (5 tests) 13ms
+ ✓ src/db/__tests__/atomicity.test.ts (2 tests) 31ms
+ ✓ src/sync/__tests__/transport-url.test.ts (4 tests) 5ms
+ ✓ src/i18n/__tests__/format.test.ts (9 tests) 7ms
+ ✓ src/sync/__tests__/customer-id.test.ts (4 tests) 4ms
+ ✓ src/sync/__tests__/legacy-item-id.test.ts (5 tests) 4ms
+ ✓ src/features/manager/__tests__/period.test.ts (6 tests) 7ms
+ ✓ src/i18n/__tests__/catalog.test.ts (6 tests) 5ms
+stdout | src/sync/__tests__/sync.test.ts > records the server can never accept > discards a price change for an item the server has never heard of
+[sync] discarded 1 record(s) the server can never accept
+
+ ✓ src/sync/__tests__/sync.test.ts (10 tests) 2759ms
+   ✓ a connection dropped mid-batch produces zero duplicates > re-sends the whole batch and the server holds each uuid exactly once 2691ms
+
+ Test Files  25 passed (25)
+      Tests  198 passed (198)
+   Start at  15:37:06
+   Duration  4.56s (transform 1.16s, setup 1.51s, collect 3.28s, tests 3.92s, environment 14ms, prepare 3.61s)
+

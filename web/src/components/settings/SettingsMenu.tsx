@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Settings as SettingsIcon } from 'lucide-react';
 
+import { IconButton } from '../primitives/controls';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useI18n, type Locale, type Numerals } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -91,19 +92,13 @@ export function SettingsMenu() {
 
   return (
     <div className="relative" ref={panel}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-label={i18n.t('settings.title')}
-        aria-expanded={open}
-        className="flex size-control-md items-center justify-center rounded-md border border-line bg-surface-2 text-text outline-none"
-      >
+      <IconButton label={i18n.t('settings.title')} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         <SettingsIcon size={20} />
-      </button>
+      </IconButton>
 
       {open ? (
         <div
-          className="absolute top-full z-50 mt-8 flex w-80 flex-col gap-14 rounded-lg border border-line bg-surface p-16 shadow-card"
+          className="absolute top-full z-50 mt-8 flex w-popover max-w-[calc(100vw-2rem)] flex-col gap-14 rounded-lg border border-line bg-surface p-16 shadow-overlay"
           style={{ insetInlineEnd: 0 }}
         >
           <Row label={i18n.t('settings.title')}>

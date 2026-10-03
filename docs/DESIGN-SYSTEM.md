@@ -233,6 +233,12 @@ Observations:
 
 See [Q3](#q3--spacing-radius-and-size-scales-are-continuous-not-stepped).
 
+**In the build** the scale is in pixels: `p-16` is 16px, and only the numbers in
+`tailwind.config.ts` exist (28 and 40 were added in batch 9). Any other number falls back to
+Tailwind's rem scale, four times larger, so a test (`styles/__tests__/token-usage.test.ts`)
+refuses it. Boxes from 16px up are sized by a named dimension (`size-thumb-sm`,
+`h-card-image`), never by a scale number: here `h-16` is 16px, where Tailwind's own reads 64px.
+
 ---
 
 ## 4. Radius, borders, shadows
@@ -280,6 +286,16 @@ for any control other than the primary button.
 Depth is expressed purely as a neutral ramp plus 1px borders:
 `bg` → `surface` → `surface-2` → `surface-3`, each step with `border` between. Reproduce it with
 background steps, not shadows.
+
+**In the build (batch 9)** the ramp alone proved too faint in the light theme: a card and the
+page differ by 1.1:1 and the border by 1.5:1, and on a tablet in daylight the cards melted into
+the page. Three shadow tokens now exist, and no other shadow name is allowed:
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `shadow-card` | a 1–2px soft lift | the inset highlight above | cards |
+| `shadow-raised` | a 4–12px lift | highlight + dark lift | hover, primary call to action |
+| `shadow-overlay` | a 16–40px lift | a deeper one | sheets, drawers, popovers |
 
 ---
 

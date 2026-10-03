@@ -231,7 +231,7 @@ function Board() {
               <KpiCard label="متوسط الفاتورة" value="١٤٬١٧٦" />
               <KpiCard label="ذمم مفتوحة" value="١٤٠٬٠٠٠" tone="credit" />
             </div>
-            <div className="h-32">
+            <div className="h-item-card">
               <BarChart
                 bars={[18, 26, 52, 78, 96, 70, 44, 58].map((h, i) => ({
                   height: h,

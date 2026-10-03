@@ -59,6 +59,20 @@ export function OpenOrdersScreen() {
     delivery: 'pos.orderType.delivery',
   } as const;
 
+  const filterControl = (
+    <SegmentedControl<Filter>
+      ariaLabel={i18n.t('pos.orders.title')}
+      value={filter}
+      onChange={setFilter}
+      options={[
+        { value: 'all', label: i18n.t('pos.orders.all') },
+        { value: 'dine_in', label: i18n.t('pos.orderType.dineIn') },
+        { value: 'takeaway', label: i18n.t('pos.orderType.takeaway') },
+        { value: 'delivery', label: i18n.t('pos.orderType.delivery') },
+      ]}
+    />
+  );
+
   return (
     <div className="flex h-screen bg-bg text-text" dir={i18n.dir}>
       <PosRail active="orders" />
@@ -82,25 +96,19 @@ export function OpenOrdersScreen() {
             </span>
           }
           trailing={
-            <>
-              <SegmentedControl<Filter>
-                ariaLabel={i18n.t('pos.orders.title')}
-                value={filter}
-                onChange={setFilter}
-                options={[
-                  { value: 'all', label: i18n.t('pos.orders.all') },
-                  { value: 'dine_in', label: i18n.t('pos.orderType.dineIn') },
-                  { value: 'takeaway', label: i18n.t('pos.orderType.takeaway') },
-                  { value: 'delivery', label: i18n.t('pos.orderType.delivery') },
-                ]}
-              />
+            // A phone has no room beside the title: the filter and the button
+            // together were 478px on a 375px screen and widened the whole page.
+            // There the filter gets its own row, and deliveries is in the bar.
+            <div className="hidden items-center gap-10 md:flex">
+              {filterControl}
               {/* Online delivery orders live in their own online screen. */}
               <Button variant="secondary" onClick={() => window.location.assign('/deliveries')}>
                 {i18n.t('deliveries.manage')}
               </Button>
-            </>
+            </div>
           }
         />
+        <div className="flex-none overflow-x-auto px-16 pt-12 md:hidden">{filterControl}</div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-16">
           {orders.length === 0 ? (
@@ -117,7 +125,7 @@ export function OpenOrdersScreen() {
               icon={<ListOrdered size={30} />}
             />
           ) : (
-            <div className="grid grid-cols-1 content-start gap-14 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-tickets content-start gap-14">
               {orders.map((order) => {
                 const snapshot = order.toSnapshot();
                 const age = ageInfo(snapshot.openedAt, now);

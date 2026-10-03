@@ -216,7 +216,7 @@ export function SyncQueueScreen() {
 
                       {isRefused ? (
                         <div className="flex items-start gap-8 rounded-md bg-danger-tint px-12 py-8 text-ar-sm text-danger">
-                          <AlertTriangle size={15} className="mt-1 flex-none" />
+                          <AlertTriangle size={15} className="mt-2 flex-none" />
                           <span className="min-w-0 break-words">
                             {i18n.t('pos.sync.reason')}:{' '}
                             {(() => {

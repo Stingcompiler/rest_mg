@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BellRing, Banknote, Clock, MapPin, Phone, StickyNote, Truck, X } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
+import { Button, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
 import { formatTime, useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { ApiError, homeForRole } from '@/lib/http';
@@ -141,9 +141,9 @@ export function DeliveriesScreen() {
     <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
       <header className="flex h-header flex-none items-center justify-between gap-12 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex min-w-0 items-center gap-12">
-          <button type="button" onClick={goHome} aria-label={i18n.t('catalog.back')} className="text-text-muted">
+          <IconButton variant="quiet" label={i18n.t('catalog.back')} onClick={goHome}>
             <ArrowRight size={22} className="rtl:rotate-180" />
-          </button>
+          </IconButton>
           <h1 className="flex items-center gap-10 truncate text-ar-lg font-semibold sm:text-ar-xl">
             <Truck size={22} className="text-accent" />
             {i18n.t('deliveries.title')}
@@ -157,7 +157,7 @@ export function DeliveriesScreen() {
 
       <main className="min-h-0 flex-1 overflow-y-auto p-16">
         {deliveries.isLoading ? (
-          <LoadingList rows={4} rowClassName="h-32" />
+          <LoadingList rows={4} rowClassName="h-item-card" />
         ) : deliveries.isError ? (
           <ErrorState title={i18n.t('common.retry')} onRetry={() => void deliveries.refetch()} retryLabel={i18n.t('common.retry')} />
         ) : orders.length === 0 ? (
@@ -290,7 +290,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
           <span className="numeric" dir="ltr">{order.customer_phone}</span>
         </a>
         <span className="flex items-start gap-6 text-text-muted">
-          <MapPin size={14} className="mt-0.5 flex-none" />
+          <MapPin size={14} className="mt-2 flex-none" />
           <span>
             {order.customer_address}
             {order.customer_area ? ` · ${order.customer_area}` : ''}
@@ -298,7 +298,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
         </span>
         {order.customer_notes ? (
           <span className="flex items-start gap-6 text-warning">
-            <StickyNote size={14} className="mt-0.5 flex-none" />
+            <StickyNote size={14} className="mt-2 flex-none" />
             {order.customer_notes}
           </span>
         ) : null}

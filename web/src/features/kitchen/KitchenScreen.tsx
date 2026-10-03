@@ -170,7 +170,7 @@ export function KitchenScreen() {
         {tickets === null ? null : tickets.length === 0 ? (
           <EmptyState title={i18n.t('kitchen.empty')} />
         ) : (
-          <div className="grid grid-cols-1 content-start gap-14 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-tickets content-start gap-14">
             {tickets.map((ticket) => {
               const { minutes, tone } = age(ticket.sent_at, now);
               const action = ACTION_KEY[ticket.kitchen_status as keyof typeof ACTION_KEY];

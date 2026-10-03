@@ -37,25 +37,31 @@ export interface NavRailItemProps {
   onClick?(): void;
   /** A count riding on the icon — already formatted for the reader's numerals. */
   badge?: string;
+  /** Where the cell shows — e.g. `md:hidden` for the phone's "more". */
+  className?: string;
+  /** For a cell that opens a menu rather than a screen. */
+  expanded?: boolean;
 }
 
-export function NavRailItem({ icon, label, active, onClick, badge }: NavRailItemProps) {
+export function NavRailItem({ icon, label, active, onClick, badge, className, expanded }: NavRailItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
+      aria-expanded={expanded}
       className={cn(
         // Mobile: share the bottom bar's width evenly. Desktop: the fixed rail cell.
         'flex min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-lg outline-none',
         'md:h-rail-item-h md:w-rail-item-w md:flex-none md:gap-6',
         active ? 'bg-accent-tint text-accent' : 'text-text-muted hover:bg-surface-2',
+        className,
       )}
     >
       <span className="relative flex items-center justify-center">
         {icon}
         {badge ? (
-          <span className="absolute -top-8 -end-10 min-w-18 rounded-full border border-danger bg-danger-tint px-4 text-center text-ar-xs font-bold text-danger">
+          <span className="absolute -top-8 -end-10 min-w-icon-sm rounded-full border border-danger bg-danger-tint px-4 text-center text-ar-xs font-bold text-danger">
             {badge}
           </span>
         ) : null}

@@ -17,7 +17,7 @@
 import { useState } from 'react';
 import { ArrowRight, ImageOff, Plus, Star, Pencil, Trash2, X } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, LoadingList, SettingsMenu, TextField, Toggle } from '@/components';
+import { Button, EmptyState, ErrorState, IconButton, LoadingList, SettingsMenu, TextField, Toggle } from '@/components';
 import { toMinor, fromMinor } from '@/db';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -54,9 +54,9 @@ export function CatalogScreen() {
     <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
       <header className="flex h-header flex-none items-center justify-between gap-12 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex min-w-0 items-center gap-12">
-          <button type="button" onClick={goHome} aria-label={i18n.t('catalog.back')} className="text-text-muted">
+          <IconButton variant="quiet" label={i18n.t('catalog.back')} onClick={goHome}>
             <ArrowRight size={22} className="rtl:rotate-180" />
-          </button>
+          </IconButton>
           <h1 className="truncate text-ar-lg font-semibold sm:text-ar-xl">{i18n.t('catalog.title')}</h1>
         </div>
         <SettingsMenu />
@@ -82,14 +82,9 @@ export function CatalogScreen() {
                   >
                     {category.name_ar}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingCategory(category)}
-                    aria-label={i18n.t('catalog.editCategory')}
-                    className="flex-none rounded-md p-6 text-text-muted"
-                  >
-                    <Pencil size={16} />
-                  </button>
+                  <IconButton variant="quiet" label={i18n.t('catalog.editCategory')} onClick={() => setEditingCategory(category)}>
+                    <Pencil size={18} />
+                  </IconButton>
                 </div>
               ))}
               <button
@@ -180,7 +175,7 @@ function ItemCard({ item, onEdit }: { item: MenuItem; onEdit: () => void }) {
   return (
     <div className="flex flex-col gap-10 rounded-lg border border-line bg-surface p-12">
       <div className="flex gap-12">
-        <div className="flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-md bg-surface-2">
+        <div className="flex size-thumb-sm flex-none items-center justify-center overflow-hidden rounded-md bg-surface-2">
           {item.image_url ? (
             <img src={item.image_url} alt={item.name_ar} className="h-full w-full object-cover" />
           ) : (
@@ -209,12 +204,12 @@ function ItemCard({ item, onEdit }: { item: MenuItem; onEdit: () => void }) {
           {i18n.t('catalog.featured')}
         </label>
         <div className="ms-auto flex gap-4">
-          <button type="button" onClick={onEdit} aria-label={i18n.t('catalog.editItem')} className="rounded-md p-6 text-text-muted">
-            <Pencil size={16} />
-          </button>
-          <button type="button" onClick={() => setConfirming(true)} aria-label={i18n.t('catalog.retire')} className="rounded-md p-6 text-danger">
-            <Trash2 size={16} />
-          </button>
+          <IconButton variant="quiet" label={i18n.t('catalog.editItem')} onClick={onEdit}>
+            <Pencil size={18} />
+          </IconButton>
+          <IconButton variant="quiet" label={i18n.t('catalog.retire')} onClick={() => setConfirming(true)} className="text-danger">
+            <Trash2 size={18} />
+          </IconButton>
         </div>
       </div>
 
@@ -242,7 +237,9 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl">
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
           <span className="text-ar-lg font-semibold">{title}</span>
-          <button type="button" onClick={onClose} aria-label={i18n.t('catalog.cancel')}><X size={22} className="text-text-muted" /></button>
+          <IconButton variant="quiet" label={i18n.t('catalog.cancel')} onClick={onClose}>
+            <X size={22} />
+          </IconButton>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-16">{children}</div>
       </div>
@@ -329,7 +326,7 @@ function ItemEditor({
     <Modal title={item ? i18n.t('catalog.editItem') : i18n.t('catalog.addItem')} onClose={onClose}>
       <div className="flex flex-col gap-12">
         <div className="flex items-center gap-14">
-          <div className="flex h-20 w-20 flex-none items-center justify-center overflow-hidden rounded-md bg-surface-2">
+          <div className="flex size-thumb-md flex-none items-center justify-center overflow-hidden rounded-md bg-surface-2">
             {preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : <ImageOff size={26} className="text-text-disabled" />}
           </div>
           <label className="cursor-pointer text-ar-sm text-accent">

@@ -382,7 +382,7 @@ function CustomerPicker({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
       <button type="button" aria-label={i18n.t('pos.payment.cancel')} onClick={onCancel} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl border border-line bg-surface sm:rounded-2xl">
+      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl">
         <div className="flex flex-none flex-col gap-10 border-b border-line p-16">
           <div className="flex items-baseline justify-between gap-12">
             <span className="text-ar-lg font-bold">{i18n.t('pos.payment.pickCustomer')}</span>
@@ -459,7 +459,7 @@ function ReferenceDialog({
           event.preventDefault();
           if (usable) onConfirm(reference);
         }}
-        className="relative flex w-full max-w-md flex-col gap-12 rounded-t-2xl border border-line bg-surface p-16 sm:rounded-2xl"
+        className="relative flex w-full max-w-md flex-col gap-12 rounded-t-xl border border-line bg-surface p-16 sm:rounded-xl"
       >
         <div className="flex items-baseline justify-between gap-12">
           <span className="text-ar-lg font-bold">

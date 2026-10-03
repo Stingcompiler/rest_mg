@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { BarChart3, History, LayoutDashboard, Menu, MonitorSmartphone, Store, Users, Utensils, Wallet, LogOut } from 'lucide-react';
 
-import { SettingsMenu } from '@/components';
+import { IconButton, SettingsMenu } from '@/components';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
 
@@ -114,7 +114,7 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 bg-black/50"
           />
-          <aside className="absolute inset-y-0 start-0 w-manager-sidebar max-w-[80vw] border-e border-line bg-surface p-14 shadow-xl">
+          <aside className="absolute inset-y-0 start-0 w-manager-sidebar max-w-[80vw] border-e border-line bg-surface p-14 shadow-overlay">
             {nav}
           </aside>
         </div>
@@ -123,19 +123,23 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-header flex-none items-center justify-between gap-12 border-b border-line bg-surface px-16 sm:px-24">
           <div className="flex min-w-0 items-center gap-12">
-            <button
-              type="button"
-              aria-label={i18n.t('manager.nav.open')}
+            <IconButton
+              variant="quiet"
+              label={i18n.t('manager.nav.open')}
               onClick={() => setDrawerOpen(true)}
-              className="flex min-h-control-md items-center rounded-md text-text-muted lg:hidden"
+              className="lg:hidden"
             >
               <Menu size={24} />
-            </button>
+            </IconButton>
             <h1 className="truncate text-ar-xl font-semibold sm:text-ar-2xl">{title}</h1>
           </div>
           <SettingsMenu />
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto p-16 sm:p-24">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto p-16 sm:p-24">
+          {/* A measure for wide screens: at 1920 the pages ran 1684px across,
+              and a row of four figures or a chart that wide is hard to read. */}
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
+        </main>
       </div>
     </div>
   );

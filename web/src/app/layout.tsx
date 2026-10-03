@@ -28,6 +28,9 @@ const tajawal = Tajawal({
   weight: ['400', '500', '700'],
   variable: '--font-tajawal',
   display: 'swap',
+  // Only drawn for a glyph Cairo lacks. A preload would fetch it on every page
+  // for nothing — six files, on a customer's mobile data.
+  preload: false,
 });
 
 const plexSans = IBM_Plex_Sans({
@@ -35,6 +38,8 @@ const plexSans = IBM_Plex_Sans({
   weight: ['400', '500', '600', '700'],
   variable: '--font-plex-sans',
   display: 'swap',
+  // The English interface only. It loads when English is chosen.
+  preload: false,
 });
 
 const plexMono = IBM_Plex_Mono({

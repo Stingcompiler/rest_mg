@@ -55,13 +55,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   );
 });
 
+type IconButtonVariant = 'framed' | 'quiet';
+
+const ICON_BUTTON_VARIANTS: Record<IconButtonVariant, string> = {
+  framed: 'size-control-lg border border-line bg-surface-2 text-text hover:bg-surface-3', // 48
+  // No frame, the same floor: a back arrow or a row's edit pencil is still a
+  // thumb's target, however quiet it looks.
+  quiet: 'size-control-stepper text-text-muted hover:bg-surface-2', // 44
+};
+
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Required: an icon button has no text, so it must name itself for a11y. */
   label: string;
+  variant?: IconButtonVariant;
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, className, type = 'button', children, ...rest },
+  { label, variant = 'framed', className, type = 'button', children, ...rest },
   ref,
 ) {
   return (
@@ -71,7 +81,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       title={label}
       className={cn(
-        'inline-flex size-control-lg items-center justify-center rounded-md border border-line bg-surface-2 text-text outline-none hover:bg-surface-3',
+        'inline-flex flex-none items-center justify-center rounded-md outline-none',
+        ICON_BUTTON_VARIANTS[variant],
         className,
       )}
       {...rest}

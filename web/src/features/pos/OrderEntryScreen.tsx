@@ -28,6 +28,7 @@ import {
   CartTabs,
   CategoryTab,
   EmptyState,
+  IconButton,
   LoadingList,
   MenuItemCard,
   Numeric,
@@ -289,8 +290,8 @@ export function OrderEntryScreen() {
             </div>
 
             {/* Extra bottom room on mobile so the last items clear the summary bar. */}
-            <div className={`min-h-0 flex-1 overflow-y-auto p-16 sm:p-18 ${hasLines ? 'pb-28 md:pb-18' : ''}`}>
-              <div className="grid grid-cols-2 gap-12 sm:grid-cols-3 lg:grid-cols-4">
+            <div className={`min-h-0 flex-1 overflow-y-auto p-16 sm:p-18 ${hasLines ? 'pb-mobile-cart-clear md:pb-18' : ''}`}>
+              <div className="grid grid-cols-menu gap-12">
                 {visibleItems.map((item) => {
                   const snapshot = item.toSnapshot();
                   const inCart = liveLines
@@ -316,7 +317,7 @@ export function OrderEntryScreen() {
       </div>
 
       {/* Desktop cart — the fixed end panel, tablet and up. */}
-      <aside className="hidden w-cart flex-none flex-col border-s border-line bg-surface md:flex">
+      <aside className="hidden w-cart-compact flex-none flex-col border-s border-line bg-surface md:flex lg:w-cart">
         {cartContents}
       </aside>
 
@@ -326,12 +327,12 @@ export function OrderEntryScreen() {
         <button
           type="button"
           onClick={() => setCartOpen(true)}
-          className="fixed inset-x-0 bottom-mobile-nav z-30 flex h-16 items-center justify-between gap-12 border-t border-line bg-surface px-16 text-start md:hidden"
+          className="fixed inset-x-0 bottom-mobile-nav z-30 flex h-control-2xl items-center justify-between gap-12 border-t border-line bg-surface px-16 text-start md:hidden"
         >
           <span className="flex items-center gap-8 text-ar-base font-medium">
             <span className="relative">
               <ShoppingCart size={22} />
-              <span className="absolute -end-2 -top-2 flex min-w-badge items-center justify-center rounded-full bg-accent px-1 text-num-xs text-text-on-accent">
+              <span className="absolute -end-2 -top-2 flex min-w-badge items-center justify-center rounded-full bg-accent px-4 text-num-xs text-text-on-accent">
                 {i18n.int(liveLines.reduce((sum, line) => sum + line.qty, 0))}
               </span>
             </span>
@@ -353,9 +354,9 @@ export function OrderEntryScreen() {
           <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-xl border-t border-line bg-surface">
             <div className="flex flex-none items-center justify-between px-14 pt-12">
               <span className="text-ar-lg font-semibold">{i18n.t('pos.cart.review')}</span>
-              <button type="button" onClick={() => setCartOpen(false)} aria-label={i18n.t('pos.cart.close')}>
-                <X size={24} className="text-text-muted" />
-              </button>
+              <IconButton variant="quiet" label={i18n.t('pos.cart.close')} onClick={() => setCartOpen(false)}>
+                <X size={24} />
+              </IconButton>
             </div>
             {cartContents}
           </div>
@@ -419,7 +420,7 @@ function DiscountSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
       <button type="button" aria-label={i18n.t('common.back')} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex w-full max-w-md flex-col gap-14 rounded-t-2xl border border-line bg-surface p-18 sm:rounded-2xl">
+      <div className="relative flex w-full max-w-md flex-col gap-14 rounded-t-xl border border-line bg-surface p-18 sm:rounded-xl">
         <span className="text-ar-lg font-semibold">{i18n.t('pos.discount.title')}</span>
 
         <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
@@ -499,7 +500,7 @@ function NoteSheet({
         role="dialog"
         aria-modal="true"
         aria-label={i18n.t('pos.note.title')}
-        className="relative flex max-h-[85vh] w-full max-w-md flex-col gap-14 rounded-t-2xl border border-line bg-surface p-18 sm:rounded-2xl"
+        className="relative flex max-h-[85vh] w-full max-w-md flex-col gap-14 rounded-t-xl border border-line bg-surface p-18 sm:rounded-xl"
       >
         <span className="text-ar-lg font-semibold">{i18n.t('pos.note.title')}</span>
         <div role="radiogroup" aria-label={i18n.t('pos.note.line')} className="flex min-h-0 flex-col gap-6 overflow-y-auto">

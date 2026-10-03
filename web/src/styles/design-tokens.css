@@ -76,7 +76,11 @@
   --color-chart-4: #6B3FA0;
 
   /* Effects */
-  --shadow-card: none;
+  /* A card and the page differ by 1.1:1 and the border by 1.5:1, so a card
+     needs a little lift as well to stand off the page on a bright tablet. */
+  --shadow-card: 0 1px 2px rgba(27, 26, 23, 0.07), 0 1px 1px rgba(27, 26, 23, 0.04);
+  --shadow-raised: 0 4px 12px rgba(27, 26, 23, 0.10), 0 1px 2px rgba(27, 26, 23, 0.06);
+  --shadow-overlay: 0 16px 40px rgba(27, 26, 23, 0.20);
   --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 6px var(--color-accent);
   --toggle-knob: #FFFFFF;
 }
@@ -133,6 +137,8 @@
     --color-chart-4: #B08CE8;
 
     --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    --shadow-raised: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
     --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 6px var(--color-accent-soft);
     --toggle-knob: #EDEFF1;
   }
@@ -185,6 +191,8 @@
   --color-chart-4: #B08CE8;
 
   --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-raised: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
   --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 6px var(--color-accent-soft);
   --toggle-knob: #EDEFF1;
 }
@@ -270,7 +278,9 @@
   --space-18: 18px;
   --space-20: 20px;
   --space-24: 24px;
+  --space-28: 28px;
   --space-32: 32px;
+  --space-40: 40px;
   --space-56: 56px;
 }
 
@@ -305,10 +315,16 @@
   --rail-width: 116px;
   --mobile-nav-height: 64px;
   --cart-width: 404px;
+  /* A portrait tablet: 404px beside the rail left the menu one card wide. */
+  --cart-width-compact: 336px;
   --manager-sidebar-width: 236px;
   --payment-panel-width: 470px;
   --denomination-panel-width: 430px;
   --item-card-height: 112px;
+  /* The narrowest a till menu card gets before the grid drops a column. */
+  --item-card-min-width: 132px;
+  /* The narrowest an order or kitchen ticket gets. */
+  --ticket-min-width: 300px;
 
   /* Icons */
   --icon-sm: 20px;
@@ -333,4 +349,16 @@
   --dim-thumb-w: 180px;
   --dim-thumb-h: 120px;
   --dim-hero-h: 260px;
+
+  /* Boxes named rather than numbered: in this scale `h-16` is 16px, where
+     Tailwind's own reads 64px, and that gap has shipped quarter-size boxes. */
+  --dim-thumb-sm: 64px;      /* catalog row thumbnail */
+  --dim-thumb-md: 80px;      /* catalog editor preview */
+  --dim-preview: 160px;      /* profile logo and cover preview */
+  --dim-logo: 40px;          /* the restaurant's logo in the page header */
+  --dim-card-image: 176px;   /* a dish photo on the public page */
+  --dim-card-skeleton: 288px;
+  --dim-popover: 320px;      /* settings menu */
+  --dim-bar: 20px;           /* stacked share bar in reports */
+  --dim-field-min: 160px;    /* a filter field before the row wraps */
 }

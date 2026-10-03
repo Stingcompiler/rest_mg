@@ -17,6 +17,7 @@ import { createContext, useContext, useMemo, useRef, useState } from 'react';
 import { Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2, Loader2 } from 'lucide-react';
 
 import { formatInteger, formatMoney, t } from '@/i18n';
+import { IconButton } from '@/components/primitives/controls';
 import { uuid4 } from '@/lib/uuid';
 import { useModalDialog } from '@/lib/useModalDialog';
 
@@ -129,12 +130,12 @@ function CartBar({ onOpen }: { onOpen: () => void }) {
       type="button"
       onClick={onOpen}
       dir="rtl"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-6xl items-center justify-between gap-12 border-t border-line bg-accent px-16 py-12 text-text-on-accent shadow-2xl sm:bottom-4 sm:rounded-full sm:border-0"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-6xl items-center justify-between gap-12 border-t border-line bg-accent px-16 py-12 text-text-on-accent shadow-overlay sm:bottom-4 sm:rounded-full sm:border-0"
     >
       <span className="flex items-center gap-8 text-ar-md font-semibold">
         <span className="relative">
           <ShoppingBag size={22} />
-          <span className="absolute -end-2 -top-2 flex min-w-badge items-center justify-center rounded-full bg-bg px-1 text-num-xs text-text">
+          <span className="absolute -end-2 -top-2 flex min-w-badge items-center justify-center rounded-full bg-bg px-4 text-num-xs text-text">
             {int(cart.count)}
           </span>
         </span>
@@ -162,13 +163,15 @@ function OrderSheet({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-sheet-title"
-        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-line bg-surface text-text sm:rounded-2xl"
+        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border border-line bg-surface text-text sm:rounded-xl"
       >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
           <span id="order-sheet-title" className="text-ar-lg font-bold">
             {step === 'done' ? label('landing.confirm.title') : step === 'form' ? label('landing.form.title') : label('landing.cart.title')}
           </span>
-          <button type="button" onClick={onClose} aria-label={label('landing.confirm.close')}><X size={22} className="text-text-muted" /></button>
+          <IconButton variant="quiet" label={label('landing.confirm.close')} onClick={onClose}>
+            <X size={22} />
+          </IconButton>
         </div>
 
         {step === 'cart' ? (
@@ -205,20 +208,35 @@ function CartStep({ onCheckout }: { onCheckout: () => void }) {
                 {item.image_url ? <img src={item.image_url} alt={item.name_ar} className="h-full w-full object-cover" /> : null}
               </div>
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-ar-base font-medium">{item.name_ar}</span>
+                {/* Two lines, not an ellipsis: the steppers are thumb-sized now and
+                    leave a phone little width for the name. */}
+                <span className="line-clamp-2 text-ar-base font-medium leading-snug">{item.name_ar}</span>
                 <span className="numeric text-num-sm text-text-muted">{money(BigInt(item.price_minor))}</span>
               </div>
-              <div className="flex flex-none items-center gap-8">
-                <button type="button" onClick={() => cart.setQty(item.id, qty - 1)} aria-label="-" className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-text">
+              <div className="flex flex-none items-center gap-4">
+                <IconButton
+                  label={label('pos.cart.qtyLess', { name: item.name_ar })}
+                  onClick={() => cart.setQty(item.id, qty - 1)}
+                  className="rounded-full"
+                >
                   <Minus size={16} />
-                </button>
-                <span className="numeric w-6 text-center text-num-base font-semibold">{int(qty)}</span>
-                <button type="button" onClick={() => cart.setQty(item.id, qty + 1)} aria-label="+" className="flex h-9 w-9 items-center justify-center rounded-full border border-line text-text">
+                </IconButton>
+                <span className="numeric min-w-icon-lg text-center text-num-base font-semibold">{int(qty)}</span>
+                <IconButton
+                  label={label('pos.cart.qtyMore', { name: item.name_ar })}
+                  onClick={() => cart.setQty(item.id, qty + 1)}
+                  className="rounded-full"
+                >
                   <Plus size={16} />
-                </button>
-                <button type="button" onClick={() => cart.remove(item.id)} aria-label={label('landing.cart.remove')} className="ms-2 text-danger">
-                  <Trash2 size={16} />
-                </button>
+                </IconButton>
+                <IconButton
+                  variant="quiet"
+                  label={label('landing.cart.remove')}
+                  onClick={() => cart.remove(item.id)}
+                  className="text-danger"
+                >
+                  <Trash2 size={18} />
+                </IconButton>
               </div>
             </div>
           ))}
@@ -328,7 +346,7 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
           <input className={inputClass} value={area} onChange={(e) => setArea(e.target.value)} />
         </Field>
         <Field label={label('landing.form.notes')}>
-          <textarea className={`${inputClass} min-h-20 py-10`} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+          <textarea className={`${inputClass} py-10`} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
         </Field>
 
         <div className="flex items-center justify-between rounded-lg bg-surface-2 p-12 text-ar-base font-semibold">

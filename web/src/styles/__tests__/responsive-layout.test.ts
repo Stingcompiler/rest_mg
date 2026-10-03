@@ -46,7 +46,10 @@ describe('card grids', () => {
 
 describe('wide screens', () => {
   it("keep the manager's pages to a readable measure", () => {
-    expect(read('features/manager/ManagerShell.tsx')).toMatch(/<main[^>]*>\s*<div className="[^"]*\bmax-w-/);
+    // The pages render inside a wrapper that carries a max width.
+    expect(read('features/manager/ManagerShell.tsx')).toMatch(
+      /<main[^>]*>[\s\S]{0,400}?<div className="[^"]*\bmax-w-[^"]*">\{children\}<\/div>/,
+    );
   });
 });
 

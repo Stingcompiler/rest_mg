@@ -144,7 +144,9 @@ const config: Config = {
         18: 'var(--space-18)',
         20: 'var(--space-20)',
         24: 'var(--space-24)',
+        28: 'var(--space-28)',
         32: 'var(--space-32)',
+        40: 'var(--space-40)',
         56: 'var(--space-56)',
 
         'control-sm': 'var(--control-sm)',
@@ -158,6 +160,7 @@ const config: Config = {
         rail: 'var(--rail-width)',
         'mobile-nav': 'var(--mobile-nav-height)',
         cart: 'var(--cart-width)',
+        'cart-compact': 'var(--cart-width-compact)',
         'manager-sidebar': 'var(--manager-sidebar-width)',
         'payment-panel': 'var(--payment-panel-width)',
         'denomination-panel': 'var(--denomination-panel-width)',
@@ -183,6 +186,26 @@ const config: Config = {
         'thumb-w': 'var(--dim-thumb-w)',
         'thumb-h': 'var(--dim-thumb-h)',
         'hero-h': 'var(--dim-hero-h)',
+        'thumb-sm': 'var(--dim-thumb-sm)',
+        'thumb-md': 'var(--dim-thumb-md)',
+        preview: 'var(--dim-preview)',
+        logo: 'var(--dim-logo)',
+        'card-image': 'var(--dim-card-image)',
+        'card-skeleton': 'var(--dim-card-skeleton)',
+        popover: 'var(--dim-popover)',
+        bar: 'var(--dim-bar)',
+        'field-min': 'var(--dim-field-min)',
+        // Room under the till menu on a phone, so the last row clears the
+        // fixed cart bar above the bottom navigation.
+        'mobile-cart-clear': 'calc(var(--control-2xl) + var(--space-16))',
+      },
+
+      // Columns from the container's own width, not the viewport's. Each track
+      // is at least the card's floor, and never narrower than the container
+      // split N ways, which caps the count at N on a wide screen.
+      gridTemplateColumns: {
+        menu: 'repeat(auto-fill, minmax(max(var(--item-card-min-width), calc((100% - 5 * var(--space-12)) / 6)), 1fr))',
+        tickets: 'repeat(auto-fill, minmax(min(100%, max(var(--ticket-min-width), calc((100% - 3 * var(--space-14)) / 4))), 1fr))',
       },
 
       borderRadius: {
@@ -201,6 +224,8 @@ const config: Config = {
 
       boxShadow: {
         card: 'var(--shadow-card)',
+        raised: 'var(--shadow-raised)',
+        overlay: 'var(--shadow-overlay)',
         focus: 'var(--focus-ring)',
       },
     },

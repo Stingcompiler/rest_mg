@@ -69,7 +69,7 @@ export interface ShareSegment {
 export function StackedShareBar({ segments }: { segments: ShareSegment[] }) {
   return (
     <div className="flex flex-col gap-12">
-      <div className="flex h-20 overflow-hidden rounded-pill" dir="ltr">
+      <div className="flex h-bar overflow-hidden rounded-pill" dir="ltr">
         {segments.map((segment) => (
           <div
             key={segment.label}

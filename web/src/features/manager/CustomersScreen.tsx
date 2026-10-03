@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Receipt, UserPlus, Wallet, X } from 'lucide-react';
 
-import { Button, EmptyState, LoadingList, Pager, TextField } from '@/components';
+import { Button, EmptyState, IconButton, LoadingList, Pager, TextField } from '@/components';
 import { formatDate, formatTime, useI18n } from '@/i18n';
 import { pageWindow } from '@/lib/paging';
 import { ManagerShell } from './ManagerShell';
@@ -161,7 +161,7 @@ function CustomerRow({ person, onStatement }: { person: Customer; onStatement: (
 
   return (
     <div className="flex flex-wrap items-center gap-x-16 gap-y-8 rounded-lg border border-line bg-surface p-14">
-      <div className="flex min-w-0 flex-1 basis-40 flex-col">
+      <div className="flex min-w-0 flex-1 basis-field-min flex-col">
         <span className="truncate text-ar-base font-medium">{person.name}</span>
         {person.phone ? (
           <span className="numeric text-ar-sm text-text-muted" dir="ltr">{person.phone}</span>
@@ -229,15 +229,15 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
       <button type="button" aria-label={i18n.t('customers.close')} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-line bg-surface sm:rounded-2xl">
+      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl">
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
           <div className="flex flex-col">
             <span className="text-ar-lg font-bold">{current.name}</span>
             <span className="text-ar-sm text-text-muted">{i18n.t('customers.statement')}</span>
           </div>
-          <button type="button" onClick={onClose} aria-label={i18n.t('customers.close')}>
-            <X size={22} className="text-text-muted" />
-          </button>
+          <IconButton variant="quiet" label={i18n.t('customers.close')} onClick={onClose}>
+            <X size={22} />
+          </IconButton>
         </div>
 
         <div className="flex flex-none justify-between gap-12 border-b border-line bg-surface-2 px-16 py-12">

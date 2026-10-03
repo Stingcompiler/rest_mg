@@ -149,7 +149,7 @@ function Landing({ data }: { data: Landing }) {
               <img
                 src={data.logo_url}
                 alt={data.name_ar}
-                className="h-32 w-32 rounded-md object-contain"
+                className="size-logo rounded-md object-contain"
               />
             ) : (
               <Utensils size={22} className="text-accent" />
@@ -187,7 +187,7 @@ function Landing({ data }: { data: Landing }) {
               <button
                 type="button"
                 onClick={() => scrollTo(ordering ? 'menu' : 'order')}
-                className="inline-flex min-h-control-xl items-center gap-8 rounded-full bg-accent px-24 text-ar-md font-semibold text-text-on-accent shadow-lg transition hover:opacity-90"
+                className="inline-flex min-h-control-xl items-center gap-8 rounded-full bg-accent px-24 text-ar-md font-semibold text-text-on-accent shadow-raised transition hover:opacity-90"
               >
                 <ShoppingBag size={20} />
                 {label('landing.orderNow')}
@@ -242,14 +242,14 @@ function Landing({ data }: { data: Landing }) {
       {/* Order CTA + contact */}
       <section id="order" className="scroll-mt-header border-t border-line">
         <div className="mx-auto max-w-6xl px-16 py-40 sm:px-24">
-          <div className="flex flex-col items-center gap-16 rounded-2xl bg-gradient-to-br from-accent/15 to-surface-2 p-24 text-center sm:p-40">
+          <div className="flex flex-col items-center gap-16 rounded-xl bg-gradient-to-br from-accent/15 to-surface-2 p-24 text-center sm:p-40">
             <h2 className="max-w-2xl text-ar-2xl font-bold sm:text-ar-3xl">{label('landing.orderCtaTitle')}</h2>
             <p className="max-w-xl text-ar-base text-text-muted">{label('landing.orderCtaSubtitle')}</p>
             <div className="flex flex-wrap justify-center gap-12">
               {data.whatsapp ? (
                 <a
                   href={`https://wa.me/${data.whatsapp.replace(/[^\d]/g, '')}`}
-                  className="inline-flex min-h-control-xl items-center gap-8 rounded-full bg-accent px-24 text-ar-md font-semibold text-text-on-accent shadow-md transition hover:opacity-90"
+                  className="inline-flex min-h-control-xl items-center gap-8 rounded-full bg-accent px-24 text-ar-md font-semibold text-text-on-accent shadow-raised transition hover:opacity-90"
                 >
                   <ShoppingBag size={20} />
                   {label('landing.whatsapp')}
@@ -402,8 +402,8 @@ function ItemImage({ item, className }: { item: LandingItem; className?: string 
 function ItemCard({ item }: { item: LandingItem }) {
   const cart = useCart();
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="relative h-44 overflow-hidden">
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg shadow-card transition hover:-translate-y-0.5 hover:shadow-raised">
+      <div className="relative h-card-image overflow-hidden">
         <ItemImage item={item} className="transition duration-300 group-hover:scale-105" />
         {!item.is_available ? (
           <span className="absolute end-8 top-8 rounded-full bg-black/70 px-10 py-2 text-ar-xs font-medium text-white">
@@ -438,11 +438,11 @@ function ItemCard({ item }: { item: LandingItem }) {
 function FeaturedCard({ item }: { item: LandingItem }) {
   const cart = useCart();
   return (
-    <article className="group flex w-[15rem] flex-none flex-col overflow-hidden rounded-xl border border-line bg-bg shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:w-[16.5rem]">
+    <article className="group flex w-[15rem] flex-none flex-col overflow-hidden rounded-xl border border-line bg-bg shadow-card transition hover:-translate-y-0.5 hover:shadow-raised sm:w-[16.5rem]">
       <div className="relative h-[10rem] overflow-hidden">
         <ItemImage item={item} className="transition duration-300 group-hover:scale-105" />
         {/* A "most-ordered" ribbon marks the shelf's cards at a glance. */}
-        <span className="absolute end-10 top-10 inline-flex items-center gap-4 rounded-full bg-accent px-10 py-3 text-ar-xs font-semibold text-text-on-accent shadow">
+        <span className="absolute end-10 top-10 inline-flex items-center gap-4 rounded-full bg-accent px-10 py-2 text-ar-xs font-semibold text-text-on-accent shadow-card">
           <Sparkles size={13} />
           {label('landing.featured')}
         </span>
@@ -528,10 +528,10 @@ function LandingSkeleton() {
     <main dir="rtl" lang="ar" className="min-h-screen bg-bg">
       <div className="h-[68vh] animate-pulse bg-surface-2" />
       <div className="mx-auto max-w-6xl px-16 py-32 sm:px-24">
-        <div className="h-8 w-40 animate-pulse rounded bg-surface-2" />
+        <div className="h-8 w-thumb-w animate-pulse rounded-xs bg-surface-2" />
         <div className="mt-18 grid grid-cols-1 gap-14 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-72 animate-pulse rounded-xl bg-surface-2" />
+            <div key={i} className="h-card-skeleton animate-pulse rounded-xl bg-surface-2" />
           ))}
         </div>
       </div>

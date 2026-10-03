@@ -179,7 +179,7 @@ function BrandingSection({ profile }: { profile: RestaurantProfile }) {
           hint={i18n.t('manager.profile.logoHint')}
           src={profile.logo_url}
           placeholder={i18n.t('manager.profile.noLogo')}
-          frameClass="h-40 w-40"
+          frameClass="size-preview"
           busy={branding.isPending}
           onPick={(file) => pick(file, 'logo')}
           onClear={profile.logo_url ? () => send({ clearLogo: true }) : undefined}
@@ -189,7 +189,7 @@ function BrandingSection({ profile }: { profile: RestaurantProfile }) {
           hint={i18n.t('manager.profile.heroHint')}
           src={profile.hero_image_url}
           placeholder={i18n.t('manager.profile.noHero')}
-          frameClass="h-40 w-full"
+          frameClass="h-preview w-full"
           busy={branding.isPending}
           onPick={(file) => pick(file, 'heroImage')}
           onClear={profile.hero_image_url ? () => send({ clearHeroImage: true }) : undefined}

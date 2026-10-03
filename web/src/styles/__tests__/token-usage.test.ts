@@ -126,6 +126,20 @@ describe('radius and shadow classes', () => {
   });
 });
 
+describe('type classes', () => {
+  it('use no arbitrary font size', () => {
+    const pattern = /(?<![\w-])text-\[[\d.]+(?:px|rem|em)\]/g;
+    expect(findAll(pattern, ([whole]) => whole)).toEqual([]);
+  });
+
+  it('use line heights the theme defines', () => {
+    // `leading-tight` is Tailwind's 1.25, too close for a two-line Arabic title.
+    const leading = new Set(Object.keys((extend.lineHeight ?? {}) as Record<string, string>));
+    const pattern = /(?<![\w-])leading-([a-z0-9]+)(?![\w-])/g;
+    expect(findAll(pattern, ([whole, name]) => (leading.has(name!) ? null : whole))).toEqual([]);
+  });
+});
+
 describe('icon-only buttons', () => {
   it('go through IconButton, which keeps the 44px touch floor', () => {
     // A bare <button> around one icon is as small as the icon: 22px for a back

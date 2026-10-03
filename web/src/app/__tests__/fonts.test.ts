@@ -25,7 +25,18 @@ describe('font preloading', () => {
     expect(options(family)).not.toMatch(/preload:\s*false/);
   });
 
-  it.each(['Tajawal', 'IBM_Plex_Sans'])('does not preload %s, which only a fallback or English needs', (family) => {
-    expect(options(family)).toMatch(/preload:\s*false/);
+  it('does not preload IBM Plex Sans, which only English needs', () => {
+    expect(options('IBM_Plex_Sans')).toMatch(/preload:\s*false/);
+  });
+
+  it('does not load Tajawal at all', () => {
+    // Cairo covers every Arabic character the app prints, so the fallback was
+    // never drawn: configuration with no effect (batch 10).
+    expect(layout).not.toMatch(/Tajawal/);
+  });
+
+  it('loads every numeral weight the screens ask for', () => {
+    // Totals are set bold. Without a 700 face the browser smears the 600 one.
+    expect(options('IBM_Plex_Mono')).toMatch(/'700'/);
   });
 });

@@ -1,0 +1,78 @@
+# Every push to main and every pull request runs the same checks a merge needs:
+# the web typecheck, lint guardrails, unit tests and static build, then the
+# Django suite on PostgreSQL 16 against that build (the SPA-serving tests read
+# web/out). Versions come from web/.nvmrc and api/.python-version, the same
+# files a developer machine uses.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run guardrails
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-out
+          path: web/out
+          retention-days: 1
+
+  api:
+    needs: web
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sudanpos
+          POSTGRES_PASSWORD: sudanpos
+          POSTGRES_DB: sudanpos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sudanpos"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://sudanpos:sudanpos@localhost:5432/sudanpos
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      # Fail instead of quietly falling back to SQLite (see config/settings/test.py).
+      REQUIRE_POSTGRES_FOR_TESTS: "1"
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: api/.python-version
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-out
+          path: web/out
+      - run: python manage.py test --noinput

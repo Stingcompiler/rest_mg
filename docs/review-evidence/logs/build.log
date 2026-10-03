@@ -1,0 +1,55 @@
+
+> sudan-pos-web@0.1.0 build
+> next build
+
+   ▲ Next.js 15.1.6
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+ ⚠ The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+   Collecting page data ...
+   Generating static pages (0/24) ...
+   Generating static pages (6/24) 
+   Generating static pages (12/24) 
+   Generating static pages (18/24) 
+ ✓ Generating static pages (24/24)
+   Finalizing page optimization ...
+   Collecting build traces ...
+   Exporting (0/3) ...
+ ✓ Exporting (3/3)
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    261 B           127 kB
+├ ○ /_not-found                          982 B           106 kB
+├ ○ /catalog                             4.67 kB         150 kB
+├ ○ /deliveries                          5.62 kB         143 kB
+├ ○ /kitchen                             4.58 kB         131 kB
+├ ○ /login                               1.85 kB         128 kB
+├ ○ /manager                             2.52 kB         145 kB
+├ ○ /manager/activity                    4.38 kB         144 kB
+├ ○ /manager/customers                   4.3 kB          144 kB
+├ ○ /manager/devices                     2.18 kB         142 kB
+├ ○ /manager/login                       339 B           106 kB
+├ ○ /manager/profile                     3.05 kB         143 kB
+├ ○ /manager/reports                     2.29 kB         142 kB
+├ ○ /manager/staff                       2.63 kB         145 kB
+├ ○ /pos                                 3.39 kB         158 kB
+├ ○ /pos/menu                            1.67 kB         156 kB
+├ ○ /pos/orders                          1.53 kB         156 kB
+├ ○ /pos/payment                         4.39 kB         155 kB
+├ ○ /pos/report                          2.85 kB         157 kB
+├ ○ /pos/shift-close                     3.02 kB         154 kB
+├ ○ /pos/sync                            2.55 kB         157 kB
+└ ● /r/[slug]                            173 B           127 kB
+    └ /r/_
++ First Load JS shared by all            105 kB
+  ├ chunks/4bd1b696-bb38d6859770e970.js  53 kB
+  ├ chunks/517-545bbc021e17481b.js       50.5 kB
+  └ other shared chunks (total)          1.91 kB
+
+
+○  (Static)  prerendered as static content
+●  (SSG)     prerendered as static HTML (uses generateStaticParams)
+

@@ -1,0 +1,35 @@
+import { expect, it } from 'vitest';
+import { OrderRepository, openDatabase, pendingCount } from '@/db';
+import { anOrder, freshDbName } from '@/db/__tests__/fixtures';
+import { pushOutbox } from '../push';
+import type { PushEnvelope, PushResponse, SyncTransport } from '../transport';
+
+it('audit: acknowledgement of sent snapshot must retain a newer closed snapshot', async () => {
+  const name = freshDbName();
+  const repository = new OrderRepository(name);
+  const initial = anOrder({ id: 'audit-order', status: 'sent', payments: [] });
+  await repository.save(initial);
+  let release!: (response: PushResponse) => void;
+  let started!: () => void;
+  let batch!: PushEnvelope;
+  const inFlight = new Promise<void>((resolve) => { started = resolve; });
+  const transport: SyncTransport = {
+    push: async (_token, envelope) => {
+      batch = envelope;
+      started();
+      return new Promise<PushResponse>((resolve) => { release = resolve; });
+    },
+    pull: async () => { throw new Error('unused'); },
+  };
+  const pushing = pushOutbox(transport, '', name);
+  await inFlight;
+  await repository.save({ ...initial, status: 'closed', updatedAt: '2026-10-02T12:00:00Z' });
+  release({ batch_id: batch.batch_id, server_time: '2026-10-02T12:00:01Z',
+    results: [{ id: initial.id, status: 'accepted' }] });
+  await pushing;
+  const stored = await repository.get(initial.id);
+  console.log('AUDIT_RACE', { sentStatus: batch.records[0].payload.status,
+    localStatus: stored?.status, pending: await pendingCount(await openDatabase(name)),
+    syncedAt: stored?.syncedAt });
+  expect(await pendingCount(await openDatabase(name))).toBe(1);
+});

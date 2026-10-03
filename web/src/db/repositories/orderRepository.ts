@@ -50,6 +50,21 @@ export class OrderRepository {
     await txDone(tx);
   }
 
+  /**
+   * Take a copy of an order the server already has — a website order brought to
+   * the till to be paid. Not queued for sync: the server hears back only when the
+   * bill closes, through `save`. A copy the till already holds is left alone, so
+   * taking it twice never discards a payment in progress.
+   */
+  async adopt(order: OrderRecord): Promise<void> {
+    const db = await this.db();
+    const tx = db.transaction(STORES.orders, 'readwrite');
+    const store = tx.objectStore(STORES.orders);
+    const held = (await request(store.get(order.id))) as OrderRecord | undefined;
+    if (!held) store.put(withItemCount(order));
+    await txDone(tx);
+  }
+
   async get(id: string): Promise<OrderRecord | undefined> {
     const db = await this.db();
     const tx = db.transaction(STORES.orders, 'readonly');

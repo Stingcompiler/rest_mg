@@ -14,6 +14,10 @@ Every guarantee the brief asks for lives here:
   active, available item on the published branch, or the whole order is refused.
 - **The total is computed here** and returned, so the confirmation shows a number
   the server stands behind.
+- **A retried submission is the same order.** The page sends an Idempotency-Key
+  per checkout attempt; sending it again returns the order it already created.
+- **Limited.** Per phone number and per address (apps.orders.throttles), and no
+  more than MAX_LINES lines.
 
 The resulting order is an ordinary `Order` — `type=delivery`, `status=sent`,
 `kitchen_status=queued` — so it lands on the kitchen board and in the dashboard's
@@ -24,7 +28,7 @@ from __future__ import annotations
 
 import uuid
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
@@ -33,7 +37,11 @@ from rest_framework.views import APIView
 
 from apps.catalog.models import MenuItem
 from apps.orders.models import Order, OrderLine
+from apps.orders.numbers import next_online_number
+from apps.orders.throttles import PUBLIC_ORDER_THROTTLES
 from apps.profiles.models import RestaurantProfile
+
+MAX_LINES = 50
 
 
 class _LineInput(serializers.Serializer):
@@ -50,7 +58,7 @@ class PublicOrderSerializer(serializers.Serializer):
     customer_address = serializers.CharField(max_length=300)
     customer_area = serializers.CharField(max_length=120, required=False, allow_blank=True)
     customer_notes = serializers.CharField(max_length=400, required=False, allow_blank=True)
-    items = _LineInput(many=True)
+    items = _LineInput(many=True, max_length=MAX_LINES)
 
     def validate_items(self, value):
         if not value:
@@ -58,21 +66,25 @@ class PublicOrderSerializer(serializers.Serializer):
         return value
 
 
-def _next_order_number() -> str:
-    """A human order number, unique enough for a single restaurant.
+def _confirmation(order: Order) -> dict:
+    return {
+        "id": str(order.id),
+        "number": order.number,
+        "total_minor": str(order.total_minor),
+        "delivery_status": order.delivery_status,
+        "item_count": sum(line.qty for line in order.lines.all()),
+    }
 
-    The largest existing numeric order number plus one, starting at 1001. Called
-    inside the order's transaction so two web orders in the same instant do not
-    read the same maximum.
-    """
-    numbers = Order.objects.values_list("number", flat=True)
-    highest = 1000
-    for raw in numbers:
-        try:
-            highest = max(highest, int(raw))
-        except (TypeError, ValueError):
-            continue  # non-numeric POS numbers do not participate
-    return str(highest + 1)
+
+def _idempotency_key(request):
+    """The checkout attempt's key: a UUID, absent, or invalid (raises)."""
+    raw = request.headers.get("Idempotency-Key")
+    if raw is None:
+        return None
+    try:
+        return uuid.UUID(raw)
+    except ValueError:
+        raise serializers.ValidationError({"idempotency_key": "Must be a UUID."})
 
 
 class PublicOrderView(APIView):
@@ -80,8 +92,15 @@ class PublicOrderView(APIView):
 
     authentication_classes: list = []
     permission_classes = [AllowAny]
+    throttle_classes = PUBLIC_ORDER_THROTTLES
 
     def post(self, request):
+        key = _idempotency_key(request)
+        if key is not None:
+            placed = Order.objects.filter(client_request_id=key).prefetch_related("lines").first()
+            if placed is not None:
+                return Response(_confirmation(placed), status=status.HTTP_200_OK)
+
         payload = PublicOrderSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
@@ -159,51 +178,57 @@ class PublicOrderView(APIView):
                 }
             )
 
-        with transaction.atomic():
-            order = Order.objects.create(
+        try:
+            with transaction.atomic():
+                order = self._create(profile, data, lines, subtotal, now, key)
+        except IntegrityError:
+            # The same attempt arrived twice at once and the other one won.
+            placed = Order.objects.filter(client_request_id=key).first() if key else None
+            if placed is None:
+                raise
+            return Response(_confirmation(placed), status=status.HTTP_200_OK)
+
+        return Response(_confirmation(order), status=status.HTTP_201_CREATED)
+
+    @staticmethod
+    def _create(profile, data, lines, subtotal, now, key) -> Order:
+        """Write the order and its lines. Called inside the caller's transaction,
+        which the order number's lock (next_online_number) relies on."""
+        order = Order.objects.create(
+            id=uuid.uuid4(),
+            branch=profile.branch,
+            number=next_online_number(),
+            client_request_id=key,
+            type=Order.Type.DELIVERY,
+            status=Order.Status.SENT,
+            kitchen_status=Order.KitchenStatus.QUEUED,
+            channel=Order.Channel.ONLINE,
+            delivery_status=Order.DeliveryStatus.PENDING,
+            customer_name=data["customer_name"],
+            customer_phone=data["customer_phone"],
+            customer_address=data["customer_address"],
+            customer_area=data.get("customer_area", ""),
+            customer_notes=data.get("customer_notes", ""),
+            subtotal_minor=subtotal,
+            discount_minor=0,
+            total_minor=subtotal,
+            opened_at=now,
+            sent_at=now,
+            created_at=now,
+            updated_at=now,
+        )
+        for line in lines:
+            OrderLine.objects.create(
                 id=uuid.uuid4(),
                 branch=profile.branch,
-                number=_next_order_number(),
-                type=Order.Type.DELIVERY,
-                status=Order.Status.SENT,
-                kitchen_status=Order.KitchenStatus.QUEUED,
-                channel=Order.Channel.ONLINE,
-                delivery_status=Order.DeliveryStatus.PENDING,
-                customer_name=data["customer_name"],
-                customer_phone=data["customer_phone"],
-                customer_address=data["customer_address"],
-                customer_area=data.get("customer_area", ""),
-                customer_notes=data.get("customer_notes", ""),
-                subtotal_minor=subtotal,
-                discount_minor=0,
-                total_minor=subtotal,
-                opened_at=now,
-                sent_at=now,
+                order=order,
+                item_id=line["item"].id,
+                name_ar=line["name_ar"],
+                name_en=line["name_en"],
+                unit_price_minor=line["unit_price_minor"],
+                qty=line["qty"],
+                line_total_minor=line["line_total_minor"],
                 created_at=now,
                 updated_at=now,
             )
-            for line in lines:
-                OrderLine.objects.create(
-                    id=uuid.uuid4(),
-                    branch=profile.branch,
-                    order=order,
-                    item_id=line["item"].id,
-                    name_ar=line["name_ar"],
-                    name_en=line["name_en"],
-                    unit_price_minor=line["unit_price_minor"],
-                    qty=line["qty"],
-                    line_total_minor=line["line_total_minor"],
-                    created_at=now,
-                    updated_at=now,
-                )
-
-        return Response(
-            {
-                "id": str(order.id),
-                "number": order.number,
-                "total_minor": str(order.total_minor),
-                "delivery_status": order.delivery_status,
-                "item_count": sum(line["qty"] for line in lines),
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        return order

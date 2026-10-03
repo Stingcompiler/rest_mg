@@ -19,7 +19,10 @@ export type DeliveryStatus =
 
 export interface DeliveryLine {
   id: string;
+  item_id?: string | null;
   name_ar: string;
+  name_en?: string;
+  unit_price_minor: string;
   qty: number;
   line_total_minor: string;
 }
@@ -34,7 +37,11 @@ export interface DeliveryOrder {
   /** The kitchen's own progress, shown read-only on the delivery board. */
   kitchen_status: string;
   total_minor: string;
+  /** What is still to be collected; zero once a till has settled it. */
+  amount_due_minor?: string;
   created_at: string;
+  opened_at?: string;
+  sent_at?: string | null;
   customer_name: string;
   customer_phone: string;
   customer_address: string;

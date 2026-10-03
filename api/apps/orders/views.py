@@ -159,11 +159,35 @@ class OrderViewSet(viewsets.ViewSet):
                 status=status.HTTP_409_CONFLICT,
             )
 
+        # Cancelling is a decision about the money as much as the delivery
+        # (review finding F06). An unpaid order is voided, which takes it off the
+        # kitchen board and out of the unpaid total. Money already taken has to
+        # go back first, and there is no refund flow yet — so that is refused
+        # rather than leaving a paid bill marked cancelled.
+        cancelling = target == Order.DeliveryStatus.CANCELLED and target != order.delivery_status
+        if cancelling and order.payments.exists():
+            return Response(
+                {
+                    "error": {
+                        "code": "paid_order_cancel",
+                        "message": "This order has been paid; refund it before cancelling.",
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         if target != order.delivery_status:
             previous = order.delivery_status
+            now = timezone.now()
             order.delivery_status = target
-            order.updated_at = timezone.now()
-            order.save(update_fields=["delivery_status", "updated_at", "server_updated_at"])
+            order.updated_at = now
+            written = ["delivery_status", "updated_at", "server_updated_at"]
+            if cancelling:
+                order.status = Order.Status.VOID
+                order.closed_at = now
+                order.void_reason = "Delivery cancelled"
+                written += ["status", "closed_at", "void_reason"]
+            order.save(update_fields=written)
             audit.record(
                 action=AuditLog.Action.DELIVERY_STATUS,
                 actor=request.user,

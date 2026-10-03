@@ -526,5 +526,13 @@
   "pos.payment.referenceConfirm": "Record payment",
   "manager.money.creditMovement": "Credit in period {sales} · repaid {repaid}",
   "pos.cart.qtyLess": "One fewer {name}",
-  "pos.cart.qtyMore": "One more {name}"
+  "pos.cart.qtyMore": "One more {name}",
+  "deliveries.collect": "Collect at the till",
+  "deliveries.paid": "Paid",
+  "error.paid_order_cancel": "This order has been paid; refund it before cancelling.",
+  "landing.order.tooMany": "Too many orders from this number or connection. Try again shortly, or order by WhatsApp or phone.",
+  "pos.sync.refusal.alreadySettled": "This website order was already collected or cancelled on another device. What you took here was not recorded on the server; ask a manager about a refund.",
+  "pos.sync.refusal.orderChanged": "The total of this website order was changed on this device. A website order's items are changed on the server only.",
+  "pos.sync.refusal.notConfirmed": "This website order is not confirmed yet. Confirm it on the deliveries screen, then retry.",
+  "pos.sync.refusal.cancelFromDeliveries": "A website order is cancelled from the deliveries screen, not the till."
 }

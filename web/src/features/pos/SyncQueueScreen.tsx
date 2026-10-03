@@ -30,6 +30,7 @@ import { formatTime, useI18n } from '@/i18n';
 import { clampOffset, pageLocal } from '@/lib/paging';
 import { usePos } from './PosProvider';
 import { PosRail } from './PosRail';
+import { refusalKey } from './syncRefusal';
 
 /**
  * The queue is rendered a page at a time.
@@ -217,7 +218,11 @@ export function SyncQueueScreen() {
                         <div className="flex items-start gap-8 rounded-md bg-danger-tint px-12 py-8 text-ar-sm text-danger">
                           <AlertTriangle size={15} className="mt-1 flex-none" />
                           <span className="min-w-0 break-words">
-                            {i18n.t('pos.sync.reason')}: {entry.lastError}
+                            {i18n.t('pos.sync.reason')}:{' '}
+                            {(() => {
+                              const known = refusalKey(entry.lastError ?? '');
+                              return known ? i18n.t(known) : entry.lastError;
+                            })()}
                           </span>
                         </div>
                       ) : null}

@@ -17,6 +17,7 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import { Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2, Loader2 } from 'lucide-react';
 
 import { formatInteger, formatMoney, t } from '@/i18n';
+import { uuid4 } from '@/lib/uuid';
 
 const LOCALE = 'ar' as const;
 const NUMERALS = 'arabic-indic' as const;
@@ -242,6 +243,10 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  // One key per checkout attempt, kept across retries of the same attempt: a
+  // submit that timed out after the order was placed, sent again, finds that
+  // order instead of placing a second. A new visit to the form is a new attempt.
+  const [attempt] = useState(uuid4);
 
   const submit = async () => {
     setError(null);
@@ -253,7 +258,7 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
     try {
       const response = await fetch('/api/v1/public/order/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attempt },
         body: JSON.stringify({
           customer_name: name.trim(),
           customer_phone: phone.trim(),
@@ -270,9 +275,11 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
         setError(
           closed
             ? label('landing.order.closed')
-            : response.status === 409
-              ? label('landing.order.unavailable')
-              : label('landing.order.error'),
+            : response.status === 429
+              ? label('landing.order.tooMany')
+              : response.status === 409
+                ? label('landing.order.unavailable')
+                : label('landing.order.error'),
         );
         setSending(false);
         return;

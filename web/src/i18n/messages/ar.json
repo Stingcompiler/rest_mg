@@ -526,5 +526,13 @@
   "pos.payment.referenceConfirm": "تسجيل الدفعة",
   "manager.money.creditMovement": "آجل في الفترة {sales} · سُدِّد {repaid}",
   "pos.cart.qtyLess": "إنقاص كمية {name}",
-  "pos.cart.qtyMore": "زيادة كمية {name}"
+  "pos.cart.qtyMore": "زيادة كمية {name}",
+  "deliveries.collect": "تحصيل في الكاشير",
+  "deliveries.paid": "مدفوع",
+  "error.paid_order_cancel": "دُفع هذا الطلب؛ يلزم ردّ المبلغ قبل إلغائه.",
+  "landing.order.tooMany": "طلبات كثيرة من هذا الرقم أو الاتصال. حاول بعد قليل، أو اطلب عبر واتساب أو بالاتصال.",
+  "pos.sync.refusal.alreadySettled": "حُصّل طلب الموقع هذا أو أُلغي من جهاز آخر. لم يُسجَّل ما أخذته هنا على الخادم؛ راجع المدير لردّ المبلغ.",
+  "pos.sync.refusal.orderChanged": "تغيّر إجمالي طلب الموقع على هذا الجهاز. أصناف طلب الموقع تُعدَّل من الخادم فقط.",
+  "pos.sync.refusal.notConfirmed": "لم يُؤكَّد طلب الموقع بعد. أكّده من شاشة التوصيل ثم أعد المحاولة.",
+  "pos.sync.refusal.cancelFromDeliveries": "طلب الموقع يُلغى من شاشة التوصيل، لا من الكاشير."
 }

@@ -10,12 +10,18 @@
  * pending → confirmed → out for delivery → delivered, plus cancel while the
  * order is live. **Preparation is not among them**: "preparing" is the kitchen
  * reporting that it started cooking, so it arrives on its own and is shown here
- * as a read-only badge. The financial record is never touched.
+ * as a read-only badge.
+ *
+ * Taking the money happens at the till (decision D2): once the floor has
+ * confirmed an order, "collect at the till" hands the till a copy and opens its
+ * payment screen, so the cash or transfer lands in the shift like any bill. An
+ * order delivered but not yet paid stays among the live ones until it is.
  *
  * Arabic-first, RTL, Mobile-first.
  */
 import { useState } from 'react';
-import { ArrowRight, BellRing, Clock, MapPin, Phone, StickyNote, Truck, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight, BellRing, Banknote, Clock, MapPin, Phone, StickyNote, Truck, X } from 'lucide-react';
 
 import { Button, EmptyState, ErrorState, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
 import { formatTime, useI18n } from '@/i18n';
@@ -25,7 +31,9 @@ import { pageWindow } from '@/lib/paging';
 import { AlertBell } from '@/features/alerts/AlertBell';
 import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
+import { orderRepository, shiftRepository } from '@/db';
 import { useDeliveries, useSetDeliveryStatus } from './hooks';
+import { canCollect, collectableRecord } from './collect';
 import type { DeliveryOrder, DeliveryStatus } from './api';
 
 // The next step front-of-house may take. Note there is no button that sets
@@ -61,6 +69,7 @@ const REFUSAL_KEY = {
   kitchen_not_ready: 'error.kitchen_not_ready',
   kitchen_owned_status: 'error.kitchen_owned_status',
   invalid_transition: 'error.invalid_transition',
+  paid_order_cancel: 'error.paid_order_cancel',
 } as const;
 
 const STATUS_KEY = {
@@ -103,9 +112,12 @@ export function DeliveriesScreen() {
   const goHome = () => window.location.assign(homeForRole(auth.user?.role ?? 'cashier'));
   const orders = deliveries.data?.results ?? [];
   const win = pageWindow(deliveries.data?.total ?? 0, PAGE_SIZE, offset);
-  // Active orders first (not delivered/cancelled), each group newest first.
-  const active = orders.filter((o) => o.delivery_status !== 'delivered' && o.delivery_status !== 'cancelled');
-  const done = orders.filter((o) => o.delivery_status === 'delivered' || o.delivery_status === 'cancelled');
+  // Active orders first, each group newest first. Delivered is not done while
+  // the money is still to be collected — it stays in front of the reader.
+  const isDone = (o: DeliveryOrder) =>
+    o.delivery_status === 'cancelled' || (o.delivery_status === 'delivered' && !canCollect(o));
+  const active = orders.filter((o) => !isDone(o));
+  const done = orders.filter(isDone);
 
   // Split the live orders by whose turn it is. Both halves stay visible — front
   // of house still answers the phone about an order that is cooking — but the
@@ -215,7 +227,29 @@ export function DeliveriesScreen() {
 
 function OrderCard({ order }: { order: DeliveryOrder }) {
   const i18n = useI18n();
+  const auth = useAuth();
+  const router = useRouter();
   const setStatus = useSetDeliveryStatus();
+  const [collecting, setCollecting] = useState(false);
+
+  // Hand the till a copy of the order and open its payment screen there.
+  const collect = async () => {
+    setCollecting(true);
+    try {
+      const shift = await shiftRepository.activeShift();
+      await orderRepository.adopt(
+        collectableRecord(order, {
+          shiftRef: shift?.id ?? null,
+          cashierId: auth.user?.id ?? null,
+          cashierName: auth.user?.display_name ?? '',
+        }),
+      );
+      router.push(`/pos/payment/?order=${order.id}`);
+    } catch (error) {
+      console.error('[deliveries] collect', error);
+      setCollecting(false);
+    }
+  };
   // Money and counts follow the viewer's numeral setting like everywhere else;
   // this screen used to force Arabic-Indic and ignore the toggle.
   const money = (minor: string) => i18n.money(BigInt(minor));
@@ -243,6 +277,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
               {i18n.t('deliveries.kitchen')}: {i18n.t(KITCHEN_KEY[order.kitchen_status] ?? 'deliveries.kitchen')}
             </span>
           ) : null}
+          {order.status === 'closed' ? <StatusChip label={i18n.t('deliveries.paid')} tone="success" /> : null}
           <StatusChip label={i18n.t(STATUS_KEY[ds])} tone={TONE[ds]} dot />
         </div>
       </div>
@@ -287,6 +322,15 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
         </span>
         <span className="numeric text-num-base font-bold text-accent">{money(order.total_minor)}</span>
       </div>
+
+      {canCollect(order) ? (
+        <Button variant={terminal ? 'primary' : 'secondary'} onClick={() => void collect()} disabled={collecting}>
+          <span className="flex items-center gap-6">
+            <Banknote size={16} />
+            {i18n.t('deliveries.collect')}
+          </span>
+        </Button>
+      ) : null}
 
       {!terminal ? (
         <div className="flex flex-wrap items-center gap-8">

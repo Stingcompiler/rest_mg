@@ -506,5 +506,10 @@
   "manager.profile.orderingHintOn": "طلبات التوصيل من الموقع تصل إلى المطبخ وشاشة التوصيل.",
   "manager.profile.orderingHintOff": "الصفحة تعرض المنيو، والطلب منها مغلق.",
   "manager.profile.orderingNeedsPage": "انشر الصفحة أولًا.",
-  "manager.profile.saveFailed": "تعذّر الحفظ. حاول مرة أخرى."
+  "manager.profile.saveFailed": "تعذّر الحفظ. حاول مرة أخرى.",
+  "settings.session": "الجلسة",
+  "auth.signOutEverywhere": "تسجيل الخروج من كل الأجهزة",
+  "auth.signOutEverywhereConfirm": "سيُطلب تسجيل الدخول من جديد على كل جهاز، ومنها هذا الجهاز.",
+  "auth.signOutEverywhereFailed": "تعذّر الوصول إلى الخادم، فلم يُسجَّل الخروج. حاول مرة أخرى.",
+  "manager.login.throttled": "محاولات كثيرة. انتظر دقيقة ثم حاول مرة أخرى."
 }

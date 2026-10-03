@@ -16,10 +16,13 @@ services:
     runtime: python
     # Build the static frontend, then install and migrate the Django app that
     # serves it. Node is available on Render's Python image via the build.
+    # createcachetable: the sign-in limits count in the database cache.
+    # check --tag single_branch: refuse to deploy over a second branch (F02).
     buildCommand: >
       cd web && npm ci && npm run build &&
       cd ../api && pip install -r requirements.txt &&
-      python manage.py collectstatic --noinput && python manage.py migrate
+      python manage.py collectstatic --noinput && python manage.py migrate &&
+      python manage.py createcachetable && python manage.py check --tag single_branch
     startCommand: cd api && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /healthz
     envVars:

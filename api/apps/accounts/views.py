@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.middleware.csrf import get_token
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,6 +18,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.models import Device, ManagerUser
 from apps.accounts.permissions import IsManager, IsStaff
+from apps.accounts.throttles import LOGIN_THROTTLES
+from apps.accounts.tokens import issue_tokens, session_is_current
 from apps.core.models import Branch
 
 
@@ -44,6 +47,12 @@ class DeviceSerializer(serializers.Serializer):
     last_seen_at = serializers.DateTimeField(read_only=True, allow_null=True)
 
 
+def _clear_auth_cookies(response: Response) -> Response:
+    response.delete_cookie(settings.AUTH_COOKIE_ACCESS, path=settings.AUTH_COOKIE_PATH)
+    response.delete_cookie(settings.AUTH_COOKIE_REFRESH, path=settings.AUTH_COOKIE_PATH)
+    return response
+
+
 def _set_auth_cookies(response: Response, refresh: RefreshToken) -> Response:
     common = {
         "httponly": True,
@@ -67,16 +76,21 @@ def _set_auth_cookies(response: Response, refresh: RefreshToken) -> Response:
 
 
 class AuthViewSet(viewsets.ViewSet):
-    """POST login/refresh/logout, GET me — for every staff role.
+    """POST login/refresh/logout/logout-all, GET me — for every staff role.
 
     One sign-in serves the manager dashboard, the cashier tablet and the kitchen
     screen; `role` on the response is what sends each person to their own app.
+
+    Signing in, refreshing and signing out read no access cookie: they must work
+    when the one in the browser has expired or its session has ended, and they
+    act only on the credentials they are given. Each response that leaves a
+    session in place also sets the CSRF cookie the client sends back on writes.
     """
 
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = []
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], authentication_classes=[], throttle_classes=LOGIN_THROTTLES)
     def login(self, request):
         payload = LoginSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -92,41 +106,62 @@ class AuthViewSet(viewsets.ViewSet):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        refresh = RefreshToken.for_user(user)
         response = Response(ManagerUserSerializer(user).data)
-        return _set_auth_cookies(response, refresh)
+        get_token(request)
+        return _set_auth_cookies(response, issue_tokens(user))
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], authentication_classes=[])
     def refresh(self, request):
         raw = request.COOKIES.get(settings.AUTH_COOKIE_REFRESH) or request.data.get("refresh")
+        refused = Response(
+            {"error": {"code": "unauthenticated", "message": "Invalid refresh token."}},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
         if not raw:
-            return Response(
-                {"error": {"code": "unauthenticated", "message": "No refresh token."}},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return refused
         try:
-            refresh = RefreshToken(raw)
-            # Rotation: the presented token is replaced, not reused.
-            user = ManagerUser.objects.get(id=refresh["user_id"])
-            new_refresh = RefreshToken.for_user(user)
+            # Verifies the signature and expiry, and refuses a blacklisted token.
+            presented = RefreshToken(raw)
+            user = ManagerUser.objects.get(id=presented["user_id"])
         except (TokenError, KeyError, ManagerUser.DoesNotExist):
-            return Response(
-                {"error": {"code": "unauthenticated", "message": "Invalid refresh token."}},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return refused
+        if not user.is_active or not session_is_current(presented, user):
+            return refused
 
+        # Rotation: the presented token is spent, then replaced.
+        presented.blacklist()
         response = Response(ManagerUserSerializer(user).data)
-        return _set_auth_cookies(response, new_refresh)
+        get_token(request)
+        return _set_auth_cookies(response, issue_tokens(user))
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], authentication_classes=[])
     def logout(self, request):
-        response = Response(status=status.HTTP_204_NO_CONTENT)
-        response.delete_cookie(settings.AUTH_COOKIE_ACCESS, path=settings.AUTH_COOKIE_PATH)
-        response.delete_cookie(settings.AUTH_COOKIE_REFRESH, path=settings.AUTH_COOKIE_PATH)
-        return response
+        """End this device's session: its refresh token stops working at once.
+
+        The access token it already holds lapses on its own within its short
+        lifetime; to end every session immediately there is logout-all.
+        """
+        raw = request.COOKIES.get(settings.AUTH_COOKIE_REFRESH) or request.data.get("refresh")
+        if raw:
+            try:
+                RefreshToken(raw).blacklist()
+            except TokenError:
+                pass  # Already expired or revoked: nothing left to end.
+        return _clear_auth_cookies(Response(status=status.HTTP_204_NO_CONTENT))
+
+    @action(detail=False, methods=["post"], url_path="logout-all", permission_classes=[IsStaff])
+    def logout_all(self, request):
+        """End every session of the signed-in person, on every device.
+
+        The way out for someone who thinks a device or a password was taken —
+        including a sole owner, who cannot deactivate their own account.
+        """
+        request.user.end_all_sessions()
+        return _clear_auth_cookies(Response(status=status.HTTP_204_NO_CONTENT))
 
     @action(detail=False, methods=["get"], permission_classes=[IsStaff])
     def me(self, request):
+        get_token(request)
         return Response(ManagerUserSerializer(request.user).data)
 
 

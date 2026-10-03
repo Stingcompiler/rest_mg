@@ -506,5 +506,10 @@
   "manager.profile.orderingHintOn": "Delivery orders from the page reach the kitchen and the deliveries screen.",
   "manager.profile.orderingHintOff": "The page shows the menu; ordering from it is closed.",
   "manager.profile.orderingNeedsPage": "Publish the page first.",
-  "manager.profile.saveFailed": "Could not save. Try again."
+  "manager.profile.saveFailed": "Could not save. Try again.",
+  "settings.session": "Session",
+  "auth.signOutEverywhere": "Sign out on every device",
+  "auth.signOutEverywhereConfirm": "Every device will ask to sign in again, this one included.",
+  "auth.signOutEverywhereFailed": "Could not reach the server, so nothing was signed out. Try again.",
+  "manager.login.throttled": "Too many attempts. Wait a minute and try again."
 }

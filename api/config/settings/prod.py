@@ -1,3 +1,5 @@
+import os
+
 from .base import *  # noqa: F401,F403
 
 DEBUG = False
@@ -14,6 +16,21 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
+
+# Sign-in limits must count across every gunicorn process and survive a
+# restart, so they live in the database. The table is created at build time
+# (`manage.py createcachetable`, render.yaml).
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "django_cache",
+    }
+}
+
+# Behind the platform's proxy the client address arrives in X-Forwarded-For.
+# Counting the proxies lets the sign-in limits use the real client address and
+# ignore whatever a client puts in that header itself. Verify on deploy.
+REST_FRAMEWORK = {**REST_FRAMEWORK, "NUM_PROXIES": int(os.environ.get("NUM_PROXIES", "1"))}  # noqa: F405
 
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_SECONDS = 31_536_000

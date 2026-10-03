@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import uuid
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -62,6 +64,17 @@ class Branch(models.Model):
 
     def delete(self, *args, **kwargs):
         raise HardDeleteBlocked("Branches are never deleted. Set is_active=False.")
+
+    def save(self, *args, **kwargs):
+        # Isolation between branches is unfinished (review finding F02), so a
+        # second branch is refused while SINGLE_BRANCH is on. Inactive branches
+        # count: their records are just as reachable.
+        if self._state.adding and settings.SINGLE_BRANCH and Branch.objects.exists():
+            raise ValidationError(
+                "This installation runs a single branch. Records are not yet "
+                "isolated between branches, so a second one cannot be added."
+            )
+        super().save(*args, **kwargs)
 
 
 class BaseModel(models.Model):

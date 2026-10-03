@@ -41,7 +41,7 @@ describe('allEntries', () => {
     const name = freshDbName();
     const db = await queueOrders(name, 2);
     const [first] = await allEntries(db);
-    await backoff(db, first.id, 'rejected');
+    await backoff(db, first, 'rejected');
 
     expect(await dueEntries(db)).toHaveLength(1);
     expect(await allEntries(db)).toHaveLength(2);
@@ -53,7 +53,7 @@ describe('retryNow', () => {
     const name = freshDbName();
     const db = await queueOrders(name, 1);
     const [entry] = await allEntries(db);
-    await backoff(db, entry.id, 'rejected');
+    await backoff(db, entry, 'rejected');
     expect(await dueEntries(db)).toHaveLength(0);
 
     const rescheduled = await retryNow(db);
@@ -66,7 +66,7 @@ describe('retryNow', () => {
     const name = freshDbName();
     const db = await queueOrders(name, 1);
     const [entry] = await allEntries(db);
-    await backoff(db, entry.id, 'the old reason');
+    await backoff(db, entry, 'the old reason');
 
     await retryNow(db);
 
@@ -78,7 +78,7 @@ describe('retryNow', () => {
     const name = freshDbName();
     const db = await queueOrders(name, 3);
     const all = await allEntries(db);
-    for (const entry of all) await backoff(db, entry.id, 'rejected');
+    for (const entry of all) await backoff(db, entry, 'rejected');
 
     const rescheduled = await retryNow(db, [all[1].id]);
 
@@ -91,8 +91,8 @@ describe('retryNow', () => {
     const name = freshDbName();
     const db = await queueOrders(name, 1);
     const [entry] = await allEntries(db);
-    await backoff(db, entry.id, 'rejected');
-    await backoff(db, entry.id, 'rejected again');
+    await backoff(db, entry, 'rejected');
+    await backoff(db, entry, 'rejected again');
 
     await retryNow(db);
 

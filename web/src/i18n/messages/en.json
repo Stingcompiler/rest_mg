@@ -497,6 +497,14 @@
   "manager.profile.uploading": "Uploading…",
   "manager.profile.noLogo": "No logo",
   "manager.profile.noHero": "No cover image",
-  "manager.profile.imageTooBig": "That image is larger than 5 MB.",
-  "manager.profile.notAnImage": "Choose an image file."
+  "common.imageNotAccepted": "Choose a JPEG, PNG or WebP image.",
+  "common.imageTooBig": "That image is larger than 5 MB.",
+  "common.imageRefused": "That image was not accepted. Try another JPEG, PNG or WebP image.",
+  "landing.orderingClosed": "Ordering from this page is not available right now. You can order by WhatsApp or phone.",
+  "landing.order.closed": "The restaurant has stopped taking orders from this page for now. You can order by WhatsApp or phone.",
+  "manager.profile.orderingEnabled": "Accept orders from the page",
+  "manager.profile.orderingHintOn": "Delivery orders from the page reach the kitchen and the deliveries screen.",
+  "manager.profile.orderingHintOff": "The page shows the menu; ordering from it is closed.",
+  "manager.profile.orderingNeedsPage": "Publish the page first.",
+  "manager.profile.saveFailed": "Could not save. Try again."
 }

@@ -69,18 +69,8 @@ export class OrderRepository {
     return byStatus.flat().sort((a, b) => a.openedAt.localeCompare(b.openedAt));
   }
 
-  /** Mark server-acknowledged after a successful push. Does not re-enqueue. */
-  async markSynced(id: string, syncedAt: string): Promise<void> {
-    const db = await this.db();
-    const tx = db.transaction(STORES.orders, 'readwrite');
-    const store = tx.objectStore(STORES.orders);
-    const record = (await request(store.get(id))) as OrderRecord | undefined;
-    if (record) {
-      record.syncedAt = syncedAt;
-      store.put(record);
-    }
-    await txDone(tx);
-  }
+  // `syncedAt` is written by the outbox's `acknowledge`, in the same transaction
+  // that removes the queue row and only for the snapshot the server answered.
 }
 
 export const orderRepository = new OrderRepository();

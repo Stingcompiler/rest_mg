@@ -39,6 +39,9 @@ interface CartLine {
 }
 
 interface CartApi {
+  /** Whether the restaurant takes orders from the page right now. When it does
+   *  not, nothing can be added and the cart never shows. */
+  ordering: boolean;
   lines: CartLine[];
   count: number;
   subtotalMinor: bigint;
@@ -57,7 +60,7 @@ export function useCart(): CartApi {
   return ctx;
 }
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProvider({ children, ordering }: { children: React.ReactNode; ordering: boolean }) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -65,10 +68,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const count = lines.reduce((sum, l) => sum + l.qty, 0);
     const subtotalMinor = lines.reduce((sum, l) => sum + BigInt(l.item.price_minor) * BigInt(l.qty), 0n);
     return {
+      ordering,
       lines,
       count,
       subtotalMinor,
       add(item) {
+        if (!ordering) return;
         setLines((cur) => {
           const found = cur.find((l) => l.item.id === item.id);
           if (found) return cur.map((l) => (l.item.id === item.id ? { ...l, qty: l.qty + 1 } : l));
@@ -91,13 +96,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setSheetOpen(true);
       },
     };
-  }, [lines]);
+  }, [lines, ordering]);
 
   return (
     <CartContext.Provider value={api}>
       {children}
-      <CartBar onOpen={() => setSheetOpen(true)} />
-      {sheetOpen ? <OrderSheet onClose={() => setSheetOpen(false)} /> : null}
+      {ordering ? <CartBar onOpen={() => setSheetOpen(true)} /> : null}
+      {ordering && sheetOpen ? <OrderSheet onClose={() => setSheetOpen(false)} /> : null}
     </CartContext.Provider>
   );
 }
@@ -260,7 +265,15 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(response.status === 409 ? label('landing.order.unavailable') : label('landing.order.error'));
+        // Ordering closed since the page loaded: say so and keep the cart.
+        const closed = body?.error?.code === 'online_ordering_closed';
+        setError(
+          closed
+            ? label('landing.order.closed')
+            : response.status === 409
+              ? label('landing.order.unavailable')
+              : label('landing.order.error'),
+        );
         setSending(false);
         return;
       }

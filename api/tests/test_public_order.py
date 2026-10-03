@@ -45,6 +45,7 @@ class PublicOrderTestCase(TestCase):
             slug="mataam",
             name_ar="مطعم",
             landing_page_enabled=True,
+            online_ordering_enabled=True,
             created_at=now,
             updated_at=now,
         )

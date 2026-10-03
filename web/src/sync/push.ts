@@ -11,14 +11,17 @@
  *
  * A rejected record (a validation failure) is backed off and kept, so a bad row
  * cannot silently vanish, but it also never blocks the rows behind it.
+ *
+ * Every answer acts on the snapshot that was sent, not on whatever row now has
+ * its id: a bill saved again while the push was out keeps its newer row queued
+ * (see `db/outbox.ts`).
  */
 import {
-  OrderRepository,
-  ShiftRepository,
+  acknowledgeOutboxEntry,
   backoffOutboxEntry,
+  discardOutboxEntry,
   dueEntries,
   openDatabase,
-  removeOutboxEntry,
   type OutboxRecord,
   type PriceChangeRecord,
 } from '@/db';
@@ -71,8 +74,6 @@ export async function pushOutbox(
   // removed, so every record is retried next run.
   const response = await transport.push(token, envelope);
 
-  const orders = new OrderRepository(dbName);
-  const shifts = new ShiftRepository(dbName);
   const byRecordId = new Map(entries.map((entry) => [entry.recordId, entry]));
   const now = response.server_time;
 
@@ -84,21 +85,18 @@ export async function pushOutbox(
     if (!entry) continue;
 
     if (result.status === 'accepted' || result.status === 'duplicate') {
-      await removeOutboxEntry(db, entry.id);
-      // Mark the source record synced so the per-order badge flips to مُزامن.
-      if (entry.type === 'order') await orders.markSynced(entry.recordId, now);
-      else if (entry.type === 'shift') await shifts.markSynced(entry.recordId, now);
-      pushed += 1;
+      // Removes the row and marks the record synced (the per-order badge flips
+      // to مُزامن) — unless a newer snapshot replaced it, which stays queued.
+      if (await acknowledgeOutboxEntry(db, entry, now)) pushed += 1;
     } else if (isUnsendable(entry)) {
       // A record the server can never accept, however many times it is offered.
       // The clearest case: a price change for a menu item that only ever existed
       // on this device (an early build seeded readable ids, and the server
       // requires a real menu item). Retrying it forever achieves nothing except
       // an ever-growing pile of "rejected" that buries anything real.
-      await removeOutboxEntry(db, entry.id);
-      discarded += 1;
+      if (await discardOutboxEntry(db, entry)) discarded += 1;
     } else {
-      await backoffOutboxEntry(db, entry.id, JSON.stringify(result.reason ?? 'rejected'));
+      await backoffOutboxEntry(db, entry, JSON.stringify(result.reason ?? 'rejected'));
       failed += 1;
     }
   }

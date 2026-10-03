@@ -41,6 +41,9 @@ class RestaurantProfile(BaseModel):
     delivery_links = models.JSONField(default=list, blank=True)
 
     landing_page_enabled = models.BooleanField(default=False)
+    # Separate from publishing: a restaurant can show its menu before it is
+    # ready to collect delivery orders. Off until the manager turns it on.
+    online_ordering_enabled = models.BooleanField(default=False)
     prices_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

@@ -11,9 +11,9 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path, re_path
-from django.views.static import serve
 from rest_framework.routers import DefaultRouter
 
+from config.media import serve_media
 from config.spa import spa
 
 from apps.accounts.staff import StaffViewSet
@@ -63,10 +63,11 @@ urlpatterns = [
     # page without hardcoding a slug into the frontend build.
     path("api/v1/public/", PublicLandingView.as_view()),
     path("api/v1/", include(router.urls)),
-    # Uploaded media (item photos), served by this same process in the monolith.
+    # Uploaded media (item photos, logo, hero), served by this same process in
+    # the monolith — image files only, sandboxed (see config/media.py).
     re_path(
         r"^media/(?P<path>.*)$",
-        serve,
+        serve_media,
         {"document_root": settings.MEDIA_ROOT},
     ),
     # Everything else is the exported frontend: /, /pos/*, /manager/*, /r/<slug>,

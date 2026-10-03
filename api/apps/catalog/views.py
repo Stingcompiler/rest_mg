@@ -20,6 +20,7 @@ from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.catalog.models import Category, MenuItem, PriceChange
 from apps.catalog.serializers import CategorySerializer, MenuItemSerializer
+from apps.core.images import ITEM_PHOTO, InvalidImage, clean_image, invalid_image_response
 
 
 def _serialize_item(item, request):
@@ -249,8 +250,9 @@ class MenuItemViewSet(viewsets.ViewSet):
         """Upload or replace an item's photo (multipart, field ``image``).
 
         Kept as its own action so the JSON create/update body stays clean and a
-        photo can be changed without resubmitting the whole item. Validation of
-        the file being a real image is Django's, via ImageField.
+        photo can be changed without resubmitting the whole item. The file is
+        decoded and re-encoded by ``clean_image`` — ImageField itself validates
+        nothing on save — so what is stored is always an image the server made.
         """
         item = MenuItem.objects.filter(id=pk).first()
         if item is None:
@@ -264,7 +266,10 @@ class MenuItemViewSet(viewsets.ViewSet):
                 {"error": {"code": "validation_error", "message": "No image file provided."}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        item.image = upload
+        try:
+            item.image = clean_image(upload, ITEM_PHOTO)
+        except InvalidImage as error:
+            return invalid_image_response(error)
         item.updated_at = timezone.now()
         item.save(update_fields=["image", "updated_at", "server_updated_at"])
         audit.record(

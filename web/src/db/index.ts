@@ -28,7 +28,8 @@ export {
 export {
   enqueue,
   dueEntries,
-  remove as removeOutboxEntry,
+  acknowledge as acknowledgeOutboxEntry,
+  discard as discardOutboxEntry,
   backoff as backoffOutboxEntry,
   pendingCount,
   rejectedEntries,

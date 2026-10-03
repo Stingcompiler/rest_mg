@@ -299,7 +299,30 @@ class PublicOrderIsolationTests(IsolationTestCase):
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(Order.objects.get(id=response.data["id"]).branch_id, self.a.id)
 
+    def test_the_page_tells_the_order_form_which_restaurant_it_is(self):
+        page = APIClient().get("/api/v1/public/branch-a/").data
+        self.assertEqual(page["slug"], "branch-a")
+
     def test_another_restaurants_item_cannot_be_ordered(self):
         response = self.order(self.item_b, slug="branch-a")
         self.assertEqual(response.status_code, 409)
         self.assertEqual(response.data["error"]["code"], "item_unavailable")
+
+
+class StaffBranchTests(IsolationTestCase):
+    def new_cashier(self, client, **extra):
+        body = {"username": f"c.{uuid.uuid4().hex[:6]}", "role": "cashier", "password": "a-long-password", **extra}
+        return client.post("/api/v1/staff/", body, format="json")
+
+    def test_the_owner_places_new_staff_in_a_branch(self):
+        response = self.new_cashier(self.as_user(self.owner), branch_id=str(self.b.id))
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(ManagerUser.objects.get(id=response.data["id"]).branch_id, self.b.id)
+
+    def test_a_branch_manager_cannot_place_staff_in_another_branch(self):
+        response = self.new_cashier(self.as_user(self.manager_a), branch_id=str(self.b.id))
+        self.assertEqual(response.status_code, 400)
+
+    def test_a_branch_managers_new_staff_join_that_branch(self):
+        response = self.new_cashier(self.as_user(self.manager_a))
+        self.assertEqual(ManagerUser.objects.get(id=response.data["id"]).branch_id, self.a.id)

@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.permissions import IsManager
 from apps.core.query import parse_window
+from apps.core.scoping import visible
 from apps.customers.models import CustomerSettlement
 from apps.orders.models import Order, Payment
 from apps.shifts.serializers import ShiftReadSerializer
@@ -27,7 +28,7 @@ class ShiftViewSet(viewsets.ViewSet):
         return Response(ShiftReadSerializer(shifts[:limit], many=True).data)
 
     def retrieve(self, request, pk=None):
-        shift = ShiftReadSerializer.queryset().filter(id=pk).first()
+        shift = visible(ShiftReadSerializer.queryset(), request.user).filter(id=pk).first()
         if shift is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown shift."}},

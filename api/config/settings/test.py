@@ -80,3 +80,12 @@ SINGLE_BRANCH = False
 import tempfile  # noqa: E402
 
 MEDIA_ROOT = tempfile.mkdtemp(prefix="sudanpos-test-media-")
+
+# Refused sync records are logged as warnings (apps.sync.views); many tests push
+# a bad record on purpose. Keep that out of the test output — tests that check
+# the log line capture it with assertLogs, which lowers the level itself.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "loggers": {"sudanpos.sync": {"level": "ERROR"}},
+}

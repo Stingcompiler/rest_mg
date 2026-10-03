@@ -44,6 +44,8 @@ interface CartApi {
   /** Whether the restaurant takes orders from the page right now. When it does
    *  not, nothing can be added and the cart never shows. */
   ordering: boolean;
+  /** The restaurant the order is for, when the page knows it. */
+  slug?: string;
   lines: CartLine[];
   count: number;
   subtotalMinor: bigint;
@@ -62,7 +64,15 @@ export function useCart(): CartApi {
   return ctx;
 }
 
-export function CartProvider({ children, ordering }: { children: React.ReactNode; ordering: boolean }) {
+export function CartProvider({
+  children,
+  ordering,
+  slug,
+}: {
+  children: React.ReactNode;
+  ordering: boolean;
+  slug?: string;
+}) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -71,6 +81,7 @@ export function CartProvider({ children, ordering }: { children: React.ReactNode
     const subtotalMinor = lines.reduce((sum, l) => sum + BigInt(l.item.price_minor) * BigInt(l.qty), 0n);
     return {
       ordering,
+      slug,
       lines,
       count,
       subtotalMinor,
@@ -98,7 +109,7 @@ export function CartProvider({ children, ordering }: { children: React.ReactNode
         setSheetOpen(true);
       },
     };
-  }, [lines, ordering]);
+  }, [lines, ordering, slug]);
 
   return (
     <CartContext.Provider value={api}>
@@ -274,6 +285,7 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
           customer_address: address.trim(),
           customer_area: area.trim(),
           customer_notes: notes.trim(),
+          ...(cart.slug ? { slug: cart.slug } : {}),
           items: cart.lines.map((l) => ({ item_id: l.item.id, qty: l.qty })),
         }),
       });

@@ -27,6 +27,7 @@ from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.core.fields import MoneyField
 from apps.core.query import page, parse_page
+from apps.core.scoping import in_branch_or_shared
 from apps.customers.models import Customer, CustomerSettlement
 from apps.orders.models import Payment
 
@@ -127,7 +128,7 @@ class CustomerViewSet(viewsets.ViewSet):
     def _scope(self, request):
         people = Customer.objects.all()
         if request.user.branch_id:
-            people = people.filter(branch_id__in=[request.user.branch_id, None])
+            people = people.filter(in_branch_or_shared(request.user.branch_id))
         return people
 
     def list(self, request):

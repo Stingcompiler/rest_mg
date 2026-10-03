@@ -20,6 +20,7 @@ from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.catalog.models import Category, MenuItem, PriceChange
 from apps.catalog.serializers import CategorySerializer, MenuItemSerializer
+from apps.core.scoping import can_change, not_found, shared_record, visible
 from apps.core.images import ITEM_PHOTO, InvalidImage, clean_image, invalid_image_response
 
 
@@ -33,11 +34,11 @@ class CategoryViewSet(viewsets.ViewSet):
     permission_classes = [IsCatalogEditor]
 
     def list(self, request):
-        categories = Category.objects.filter(is_active=True)
+        categories = visible(Category.objects.filter(is_active=True), request.user, shared=True)
         return Response(CategorySerializer(categories, many=True).data)
 
     def retrieve(self, request, pk=None):
-        category = Category.objects.filter(id=pk).first()
+        category = visible(Category.objects, request.user, shared=True).filter(id=pk).first()
         if category is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown category."}},
@@ -69,12 +70,14 @@ class CategoryViewSet(viewsets.ViewSet):
         return Response(CategorySerializer(category).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None):
-        category = Category.objects.filter(id=pk).first()
+        category = visible(Category.objects, request.user, shared=True).filter(id=pk).first()
         if category is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown category."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not can_change(category, request.user):
+            return shared_record()
         payload = CategorySerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
@@ -94,12 +97,14 @@ class CategoryViewSet(viewsets.ViewSet):
 
     def destroy(self, request, pk=None):
         """No hard deletes. A category leaves the menu by going inactive."""
-        category = Category.objects.filter(id=pk).first()
+        category = visible(Category.objects, request.user, shared=True).filter(id=pk).first()
         if category is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown category."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not can_change(category, request.user):
+            return shared_record()
         category.is_active = False
         category.updated_at = timezone.now()
         category.save(update_fields=["is_active", "updated_at", "server_updated_at"])
@@ -120,7 +125,7 @@ class MenuItemViewSet(viewsets.ViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def list(self, request):
-        items = MenuItem.objects.select_related("category")
+        items = visible(MenuItem.objects.select_related("category"), request.user, shared=True)
         if request.query_params.get("category"):
             items = items.filter(category_id=request.query_params["category"])
         if request.query_params.get("include_retired") != "true":
@@ -128,7 +133,7 @@ class MenuItemViewSet(viewsets.ViewSet):
         return Response(MenuItemSerializer(items, many=True, context={"request": request}).data)
 
     def retrieve(self, request, pk=None):
-        item = MenuItem.objects.filter(id=pk).first()
+        item = visible(MenuItem.objects, request.user, shared=True).filter(id=pk).first()
         if item is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown item."}},
@@ -140,6 +145,11 @@ class MenuItemViewSet(viewsets.ViewSet):
         payload = MenuItemSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
+        if not visible(Category.objects, request.user, shared=True).filter(id=data["category_id"]).exists():
+            return Response(
+                {"error": {"code": "validation_error", "message": "Unknown category."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         now = timezone.now()
         item = MenuItem.objects.create(
             id=data["id"],
@@ -167,12 +177,14 @@ class MenuItemViewSet(viewsets.ViewSet):
         return Response(_serialize_item(item, request), status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None):
-        item = MenuItem.objects.filter(id=pk).first()
+        item = visible(MenuItem.objects, request.user, shared=True).filter(id=pk).first()
         if item is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown item."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not can_change(item, request.user):
+            return shared_record()
         payload = MenuItemSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
@@ -185,6 +197,11 @@ class MenuItemViewSet(viewsets.ViewSet):
             "is_featured": item.is_featured,
         }
         old_price = item.price_minor
+        if not visible(Category.objects, request.user, shared=True).filter(id=data["category_id"]).exists():
+            return Response(
+                {"error": {"code": "validation_error", "message": "Unknown category."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         item.category_id = data["category_id"]
         item.name_ar = data["name_ar"]
         item.name_en = data.get("name_en", "")
@@ -230,12 +247,14 @@ class MenuItemViewSet(viewsets.ViewSet):
         return Response(_serialize_item(item, request))
 
     def destroy(self, request, pk=None):
-        item = MenuItem.objects.filter(id=pk).first()
+        item = visible(MenuItem.objects, request.user, shared=True).filter(id=pk).first()
         if item is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown item."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not can_change(item, request.user):
+            return shared_record()
         item.retire()
         audit.record(
             action=AuditLog.Action.ITEM_RETIRED,
@@ -254,12 +273,14 @@ class MenuItemViewSet(viewsets.ViewSet):
         decoded and re-encoded by ``clean_image`` — ImageField itself validates
         nothing on save — so what is stored is always an image the server made.
         """
-        item = MenuItem.objects.filter(id=pk).first()
+        item = visible(MenuItem.objects, request.user, shared=True).filter(id=pk).first()
         if item is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown item."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not can_change(item, request.user):
+            return shared_record()
         upload = request.FILES.get("image")
         if upload is None:
             return Response(
@@ -296,8 +317,12 @@ class MenuItemViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        items = MenuItem.objects.filter(is_active=True)
+        # Only what the caller may change: their own branch's items (everything,
+        # for the owner). Without a category this used to reprice every branch.
+        items = visible(MenuItem.objects.filter(is_active=True), request.user)
         if category_id:
+            if not visible(Category.objects, request.user, shared=True).filter(id=category_id).exists():
+                return not_found("Unknown category.")
             items = items.filter(category_id=category_id)
 
         now = timezone.now()

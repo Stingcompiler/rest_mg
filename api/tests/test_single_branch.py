@@ -1,12 +1,11 @@
-"""While branch isolation (review finding F02) is unfinished, a second branch
-cannot be created.
+"""An installation set up for one branch (SINGLE_BRANCH, on by default) refuses
+a second one.
 
-Records are not yet scoped to their branch on every read and write, so the
-system is only safe with one branch in the database. ``SINGLE_BRANCH`` (on by
-default) turns that assumption into a rule: creating a second branch — from the
-admin, a management command or a shell — is refused, and a check that runs
-after migrations on deploy fails if a database already holds more than one.
-Inactive branches count: their records are just as reachable.
+Creating a second branch — from the admin, a management command or a shell —
+is refused, and a check that runs after migrations on deploy fails if a
+database already holds more than one. Inactive branches count. A restaurant
+with several branches turns the setting off; records are isolated per branch
+(apps.core.scoping, tests/test_branch_isolation.py).
 
 The rest of the suite runs with ``SINGLE_BRANCH=False`` because several tests
 need two branches.

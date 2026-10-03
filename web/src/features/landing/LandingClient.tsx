@@ -64,6 +64,8 @@ interface Landing {
   /** The manager's own branding. Either may be null; the page copes with both. */
   logo_url: string | null;
   hero_image_url: string | null;
+  /** Which restaurant this page is; sent back with each order. */
+  slug?: string;
   /** Whether the page takes delivery orders; the menu is public either way. */
   online_ordering_enabled?: boolean;
   menu: LandingCategory[];
@@ -134,7 +136,7 @@ function Landing({ data }: { data: Landing }) {
   const ordering = data.online_ordering_enabled === true;
 
   return (
-    <CartProvider ordering={data.online_ordering_enabled === true}>
+    <CartProvider ordering={data.online_ordering_enabled === true} slug={data.slug}>
       <main dir="rtl" lang="ar" className="min-h-screen bg-bg text-text">
       {/* Sticky top bar */}
       <header className="sticky top-0 z-40 border-b border-line/60 bg-surface/80 backdrop-blur">

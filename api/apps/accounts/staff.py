@@ -14,6 +14,7 @@ from rest_framework.response import Response
 
 from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.models import ManagerUser
+from apps.core.models import Branch
 from apps.accounts.permissions import IsManager
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
@@ -33,6 +34,9 @@ class StaffSerializer(serializers.Serializer):
     display_name = serializers.CharField(max_length=80, required=False, allow_blank=True)
     role = serializers.ChoiceField(choices=[(r.value, r.label) for r in ASSIGNABLE_ROLES])
     is_active = serializers.BooleanField(required=False, default=True)
+    # Which branch the person works in. Only the owner (who has no branch) may
+    # choose it; a branch manager's new staff join their own branch.
+    branch_id = serializers.UUIDField(required=False, allow_null=True)
     # Write-only: a password is set, never read back.
     password = serializers.CharField(write_only=True, required=False, min_length=8)
 
@@ -61,6 +65,13 @@ class StaffViewSet(viewsets.ViewSet):
             raise serializers.ValidationError({"password": "A new account needs a password."})
         if ManagerUser.objects.filter(username=data["username"]).exists():
             raise serializers.ValidationError({"username": "That username is taken."})
+        branch = request.user.branch
+        if "branch_id" in data and data["branch_id"] != request.user.branch_id:
+            if request.user.branch_id is not None:
+                raise serializers.ValidationError({"branch_id": "Staff join your own branch."})
+            branch = Branch.objects.filter(id=data["branch_id"]).first() if data["branch_id"] else None
+            if data["branch_id"] and branch is None:
+                raise serializers.ValidationError({"branch_id": "Unknown branch."})
 
         person = ManagerUser.objects.create_user(
             id=uuid.uuid4(),
@@ -68,7 +79,7 @@ class StaffViewSet(viewsets.ViewSet):
             password=data["password"],
             role=data["role"],
             display_name=data.get("display_name", ""),
-            branch=request.user.branch,
+            branch=branch,
         )
         audit.record(
             action=AuditLog.Action.STAFF_CREATED,

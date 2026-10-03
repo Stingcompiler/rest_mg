@@ -20,6 +20,7 @@ from rest_framework.response import Response
 
 from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.permissions import IsKitchen
+from apps.core.scoping import visible
 from apps.orders.models import Order
 
 # A ticket leaves the board once the kitchen has served it. A voided order
@@ -106,7 +107,7 @@ class KitchenViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        order = Order.objects.filter(id=pk).prefetch_related("lines").first()
+        order = visible(Order.objects, request.user).filter(id=pk).prefetch_related("lines").first()
         if order is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown ticket."}},

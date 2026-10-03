@@ -29,6 +29,7 @@ from __future__ import annotations
 import uuid
 
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
@@ -36,6 +37,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.catalog.models import MenuItem
+from apps.core.scoping import in_branch_or_shared
 from apps.orders.models import Order, OrderLine
 from apps.orders.numbers import next_online_number
 from apps.orders.throttles import PUBLIC_ORDER_THROTTLES
@@ -58,6 +60,9 @@ class PublicOrderSerializer(serializers.Serializer):
     customer_address = serializers.CharField(max_length=300)
     customer_area = serializers.CharField(max_length=120, required=False, allow_blank=True)
     customer_notes = serializers.CharField(max_length=400, required=False, allow_blank=True)
+    # Which restaurant's page the order came from (/r/<slug>). Required only
+    # when more than one page is published.
+    slug = serializers.SlugField(max_length=80, required=False)
     items = _LineInput(many=True, max_length=MAX_LINES)
 
     def validate_items(self, value):
@@ -105,8 +110,25 @@ class PublicOrderView(APIView):
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
 
-        # Orders are only accepted while the page is actually published.
-        profile = RestaurantProfile.objects.filter(landing_page_enabled=True).first()
+        # Orders are only accepted while the page is actually published — and go
+        # to the restaurant whose page it is. With several published, an order
+        # that does not say which is refused rather than sent to whichever
+        # happens to come first.
+        published = RestaurantProfile.objects.filter(landing_page_enabled=True)
+        if data.get("slug"):
+            profile = published.filter(slug=data["slug"]).first()
+        elif published.count() > 1:
+            return Response(
+                {
+                    "error": {
+                        "code": "restaurant_required",
+                        "message": "Say which restaurant this order is for.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            profile = published.first()
         if profile is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Online ordering is not available."}},
@@ -125,7 +147,7 @@ class PublicOrderView(APIView):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
-        branch_scope = [profile.branch_id, None]
+        branch_scope = Q() if profile.branch_id is None else in_branch_or_shared(profile.branch_id)
 
         # Resolve every line against the live menu. Price and name come from the
         # database row, not the request.
@@ -134,6 +156,7 @@ class PublicOrderView(APIView):
         items = {
             str(item.id): item
             for item in MenuItem.objects.filter(
+                branch_scope,
                 id__in=wanted_ids,
                 is_active=True,
                 is_available=True,
@@ -142,7 +165,6 @@ class PublicOrderView(APIView):
                 # orderable either — otherwise a stale cart (or a crafted
                 # request) could buy something the restaurant has taken off.
                 category__is_active=True,
-                branch_id__in=branch_scope,
             )
         }
 

@@ -60,6 +60,13 @@ def apply_record(record: dict, device, branch=None) -> RecordResult:
     model = MODELS_BY_TYPE[record_type]
 
     existing = model.objects.filter(id=record_id).first()
+    # A record already on the server belongs to its branch. A device or cashier
+    # of another branch may not overwrite it, collect it or take it over — the
+    # writer below would otherwise re-save it under the pusher's branch.
+    if existing is not None and not _same_branch(existing, branch):
+        return RecordResult(record_id, REJECTED, _refusal(
+            "other_branch", "This record belongs to another branch.",
+        ))
     online = record_type == "order" and existing is not None and existing.channel == Order.Channel.ONLINE
     if existing is not None:
         # An order fired to the kitchen is pushed while still live, then pushed
@@ -105,6 +112,19 @@ def apply_record(record: dict, device, branch=None) -> RecordResult:
         return RecordResult(record_id, REJECTED, {"detail": str(exc)})
 
     return RecordResult(record_id, ACCEPTED)
+
+
+def _same_branch(record, branch) -> bool:
+    """Is the record the pusher's to touch? A pusher with no branch may touch all."""
+    return branch is None or record.branch_id == branch.id
+
+
+def _shift_in_branch(shift_ref, branch):
+    """The shift an order names — only if it is in the pusher's branch."""
+    shifts = Shift.objects.filter(id=shift_ref)
+    if branch is not None:
+        shifts = shifts.filter(branch_id=branch.id)
+    return shifts.first()
 
 
 def _refusal(code: str, message: str) -> dict:
@@ -154,7 +174,7 @@ def _collect_online_order(data: dict, device, existing: Order) -> Order:
     existing.cashier_id = data.get("cashier_id")
     existing.cashier_name = data.get("cashier_name", "")
     existing.shift_ref = shift_ref
-    existing.shift = Shift.objects.filter(id=shift_ref).first() if shift_ref else None
+    existing.shift = _shift_in_branch(shift_ref, existing.branch) if shift_ref else None
     existing.device = device
     now = timezone.now()
     existing.updated_at = data.get("updated_at") or now
@@ -230,7 +250,7 @@ def _write_order(data: dict, device, branch=None, existing: Order | None = None)
     # The shift usually lands after its orders; link it now if it is already here,
     # otherwise the shift writer backfills.
     if shift_ref:
-        order.shift = Shift.objects.filter(id=shift_ref).first()
+        order.shift = _shift_in_branch(shift_ref, branch)
     if existing is not None:
         # Carry the kitchen's own state across the re-save. Rebuilding the row
         # from the device payload would otherwise reset a ticket the kitchen had
@@ -295,12 +315,19 @@ def _write_shift(data: dict, device, branch=None, existing: Shift | None = None)
         )
 
     # Backfill orders that named this shift before it existed.
-    Order.objects.filter(shift_ref=shift.id, shift__isnull=True).update(shift=shift)
+    orphans = Order.objects.filter(shift_ref=shift.id, shift__isnull=True)
+    if branch is not None:
+        orphans = orphans.filter(branch_id=branch.id)
+    orphans.update(shift=shift)
     return shift
 
 
 def _write_price_change(data: dict, device, branch=None, existing: PriceChange | None = None) -> PriceChange:
     item = MenuItem.objects.get(id=data["item_id"])
+    # A tablet reprices its own branch's dishes only: not another branch's, and
+    # not a dish shared by every branch, which only the owner may change.
+    if branch is not None and item.branch_id != branch.id:
+        raise ValueError("other_branch: this menu item belongs to another branch.")
 
     change = PriceChange.objects.create(
         id=data["id"],

@@ -121,7 +121,7 @@ export function KitchenScreen() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir} data-screen="kitchen">
       <header className="flex h-header flex-none items-center justify-between gap-10 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex items-baseline gap-12">
           <h1 className="text-ar-lg font-semibold sm:text-ar-xl">{i18n.t('kitchen.title')}</h1>

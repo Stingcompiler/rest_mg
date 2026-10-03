@@ -205,23 +205,14 @@
   /* The --font-cairo/plex-sans/plex-mono variables come from next/font
      (self-hosted, wired in the root layout); the quoted names are the fallback
      if a face fails to load. */
-  --font-arabic: var(--font-cairo), var(--font-tajawal), 'Cairo', 'Tajawal', system-ui, sans-serif;
-  --font-latin: var(--font-plex-sans), 'IBM Plex Sans', system-ui, sans-serif;
+  --font-arabic: var(--font-cairo), 'Cairo', system-ui, sans-serif;
+  /* Cairo behind Plex Sans: menu names stay Arabic in the English interface,
+     and Plex Sans has no Arabic glyphs to draw them with. */
+  --font-latin: var(--font-plex-sans), 'IBM Plex Sans', var(--font-cairo), 'Cairo', system-ui, sans-serif;
   /* Plex Mono carries no Arabic-Indic glyphs; Cairo is the working fallback
      for ٠١٢٣, so tabular alignment comes from --numeric-tabular, not the font. */
-  --font-numeric: var(--font-plex-mono), var(--font-cairo), var(--font-tajawal), 'IBM Plex Mono', 'Cairo', 'Tajawal', monospace;
+  --font-numeric: var(--font-plex-mono), var(--font-cairo), 'IBM Plex Mono', 'Cairo', monospace;
   --numeric-tabular: tabular-nums lining-nums;
-
-  /* Arabic scale — Cairo */
-  --text-ar-xs: 13px;
-  --text-ar-sm: 15px;
-  --text-ar-base: 17px;
-  --text-ar-md: 19px;
-  --text-ar-lg: 22px;
-  --text-ar-xl: 24px;
-  --text-ar-2xl: 27px;
-  --text-ar-3xl: 34px;
-  --text-ar-4xl: 44px;
 
   /* Latin scale — IBM Plex Sans (one rank smaller than Arabic) */
   --text-la-xs: 12px;
@@ -260,6 +251,55 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
+}
+
+/* The interface scale. Components size text with `text-ar-*`, and these
+   blocks decide what that means where they sit:
+   - Arabic, the default, and again inside any lang="ar" block (the public
+     page is always Arabic, whatever the till was last switched to).
+   - English, one step smaller by design: the Latin scale.
+   - The kitchen on a wide display, read from across the room. */
+:root,
+[lang='ar'] {
+  /* 14px, not 13: Cairo's dots and joins blur below it on the low-density
+     tablets restaurants buy. */
+  --text-ar-xs: 14px;
+  --text-ar-sm: 15px;
+  --text-ar-base: 17px;
+  --text-ar-md: 19px;
+  --text-ar-lg: 22px;
+  --text-ar-xl: 24px;
+  --text-ar-2xl: 27px;
+  --text-ar-3xl: 34px;
+  --text-ar-4xl: 44px;
+}
+
+[lang='en'] {
+  --text-ar-xs: var(--text-la-xs);
+  --text-ar-sm: var(--text-la-sm);
+  --text-ar-base: var(--text-la-base);
+  --text-ar-md: var(--text-la-md);
+  --text-ar-lg: var(--text-la-lg);
+  --text-ar-xl: var(--text-la-xl);
+  --text-ar-2xl: var(--text-la-2xl);
+  --text-ar-3xl: var(--text-la-3xl);
+  --text-ar-4xl: var(--text-la-4xl);
+}
+
+/* A kitchen display is a wall screen read from two or three metres, not a
+   tablet at arm's length. From 1280px up the tickets take a larger scale, and
+   a wider floor so their lines still fit. */
+@media (min-width: 1280px) {
+  [data-screen='kitchen'] {
+    --text-ar-sm: 19px;
+    --text-ar-base: 24px;
+    --text-ar-md: 26px;
+    --text-ar-lg: 30px;
+    --text-ar-xl: 34px;
+    --text-num-base: 24px;
+    --text-num-xl: 34px;
+    --ticket-min-width: 380px;
+  }
 }
 
 /* -----------------------------------------------------------------------------

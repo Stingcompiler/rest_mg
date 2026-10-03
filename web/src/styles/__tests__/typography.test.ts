@@ -56,6 +56,23 @@ describe('the English interface', () => {
   });
 });
 
+describe('Arabic text in an English interface', () => {
+  it('is drawn in Cairo, not the system font', () => {
+    // Menu names stay Arabic when the till is switched to English. Plex Sans
+    // has no Arabic glyphs, so without Cairo in the Latin stack those names
+    // fell through to whatever the device had (found verifying batch 10).
+    const latin = /--font-latin:([^;]*);/.exec(tokens)?.[1] ?? '';
+    expect(latin).toMatch(/var\(--font-cairo\)/);
+  });
+
+  it('switches back to the Arabic face inside a lang="ar" block', () => {
+    // The public page is Arabic, and it inherited Plex Sans from <body> on a
+    // device last switched to English.
+    const globals = readFileSync(resolve(SRC, 'app/globals.css'), 'utf-8');
+    expect(globals).toMatch(/\[lang='ar'\][^{]*\{[^}]*font-family:\s*var\(--font-arabic\)/);
+  });
+});
+
 describe('the kitchen screen', () => {
   it('marks its root so the scale can follow it', () => {
     const screen = readFileSync(resolve(SRC, 'features/kitchen/KitchenScreen.tsx'), 'utf-8');

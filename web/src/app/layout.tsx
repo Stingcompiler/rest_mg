@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Cairo, Tajawal, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Cairo, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 
 import { DEFAULT_LOCALE, direction, t } from '@/i18n';
 
@@ -21,18 +21,6 @@ const cairo = Cairo({
   display: 'swap',
 });
 
-// Tajawal sits behind Cairo in the Arabic stack: the two are close in metrics,
-// so a glyph Cairo lacks falls through without the line jumping.
-const tajawal = Tajawal({
-  subsets: ['arabic', 'latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-tajawal',
-  display: 'swap',
-  // Only drawn for a glyph Cairo lacks. A preload would fetch it on every page
-  // for nothing — six files, on a customer's mobile data.
-  preload: false,
-});
-
 const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -44,7 +32,9 @@ const plexSans = IBM_Plex_Sans({
 
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  // 700 for the totals, which are set bold: without it the browser fakes the
+  // weight from the 600 face, and Western numerals come out smeared.
+  weight: ['400', '500', '600', '700'],
   variable: '--font-plex-mono',
   display: 'swap',
 });
@@ -90,7 +80,7 @@ const BOOTSTRAP = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = DEFAULT_LOCALE;
-  const fontVariables = `${cairo.variable} ${tajawal.variable} ${plexSans.variable} ${plexMono.variable}`;
+  const fontVariables = `${cairo.variable} ${plexSans.variable} ${plexMono.variable}`;
 
   return (
     <html

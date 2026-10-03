@@ -20,6 +20,12 @@
     font-family: var(--font-latin);
   }
 
+  /* And back: an Arabic block on an English page (the public page always is
+     one) must not inherit the Latin face from <body>. */
+  [lang='en'] [lang='ar'] {
+    font-family: var(--font-arabic);
+  }
+
   /* Numerals are monospaced and tabular wherever money is shown. */
   .numeric {
     font-family: var(--font-numeric);

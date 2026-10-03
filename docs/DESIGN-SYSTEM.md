@@ -154,6 +154,17 @@ Three families, loaded from Google Fonts:
 The `1a` panel states the rule: *"Arabic runs ~2–3px larger than Latin at the same rank, with
 line-height 1.5–1.7 to clear ascenders and dots"* and *"NUMERALS — MONOSPACE, NEVER MIRRORED"*.
 
+**In the build (batch 10):**
+
+- **Fonts:** all three families are self-hosted by next/font, not fetched from Google at runtime. Cairo is a variable font, so a single Arabic file serves every weight. Plex Mono now also loads 700, the weight totals are set in. Tajawal was configured as a fallback but never drawn, and has been removed.
+- **Language:** components size text with `text-ar-*`, and the language decides what that resolves to.
+  - Under `[lang='en']` each step takes the Latin value, one rank smaller as the panel describes.
+  - A `lang="ar"` block restores the Arabic values and the Arabic face. The public page is one, and it stays Arabic whatever the till was switched to.
+  - Cairo sits behind Plex Sans in the Latin stack, so Arabic menu names in the English interface still get Arabic glyphs.
+- **Smallest Arabic step:** 14px (was 13px).
+- **Kitchen display:** from 1280px up (`[data-screen='kitchen']`), tickets take a larger scale (24px base) and a 380px floor.
+- **Receipts:** 14px body, 13px secondary text, black only. A thermal head prints grey as faint dither.
+
 ### 2.1 Documented scale vs. what the screens use
 
 **Arabic — documented in `1a`:** 44/1.5/700 · 34/1.5/600 · 27/1.5/600 · 19/1.7/400 · 16/1.6/400

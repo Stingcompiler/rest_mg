@@ -63,7 +63,7 @@ const PRINT_STYLE_ID = 'sp-print-style';
  * of it from code; with a margin set, every receipt comes out with
  * "127.0.0.1:8000/pos/shift-close" across the top.
  *
- * `var(--font-arabic)` is Cairo, then Tajawal, self-hosted by next/font. It
+ * `var(--font-arabic)` is Cairo, self-hosted by next/font. It
  * resolves because this prints from *inside* the app's own document. The old
  * path opened a blank popup and named the fonts in a CSS stack the popup had
  * never loaded, so every receipt silently fell back to the system font.
@@ -83,8 +83,10 @@ const PRINT_CSS = `
     width: 72mm;
     margin: 0 auto;
     padding: 4mm 0 8mm;
-    font-family: var(--font-arabic), 'Cairo', 'Tajawal', system-ui, sans-serif;
-    font-size: 12px;
+    font-family: var(--font-arabic), 'Cairo', system-ui, sans-serif;
+    /* 14px, and black throughout: a thermal head prints dots, not greys, and
+       small Arabic loses its dots at 203dpi. */
+    font-size: 14px;
     line-height: 1.6;
     /* Always ink on paper, whatever theme the screen is in. */
     color: #000;
@@ -95,16 +97,16 @@ const PRINT_CSS = `
   #${PRINT_ROOT_ID} .line { white-space: pre-wrap; word-break: break-word; }
   #${PRINT_ROOT_ID} .center { text-align: center; }
   #${PRINT_ROOT_ID} .right { text-align: right; }
-  #${PRINT_ROOT_ID} .muted { color: #333; font-size: 11px; }
+  #${PRINT_ROOT_ID} .muted { color: #000; font-size: 13px; }
   #${PRINT_ROOT_ID} .bold { font-weight: 700; }
-  #${PRINT_ROOT_ID} .big { font-size: 19px; font-weight: 700; line-height: 1.3; }
+  #${PRINT_ROOT_ID} .big { font-size: 20px; font-weight: 700; line-height: 1.3; }
   #${PRINT_ROOT_ID} .row {
     display: flex;
     justify-content: space-between;
     gap: 10px;
     align-items: baseline;
   }
-  #${PRINT_ROOT_ID} .row.bold { font-size: 14px; }
+  #${PRINT_ROOT_ID} .row.bold { font-size: 16px; }
   #${PRINT_ROOT_ID} .row .amount {
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -129,18 +131,18 @@ export function renderDocumentToHtml(doc: PrintDocument, title = 'receipt'): str
      families and let the device use them if they are installed. Inside the app
      printDocumentInBrowser is used instead, and gets the real Cairo. */
   body {
-    font-family: 'Cairo', 'Tajawal', 'Segoe UI', system-ui, sans-serif;
-    font-size: 12px; line-height: 1.6; color: #000; background: #fff;
+    font-family: 'Cairo', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px; line-height: 1.6; color: #000; background: #fff;
     width: 72mm; margin: 0 auto; padding: 4mm 0 8mm;
   }
   .line { white-space: pre-wrap; word-break: break-word; }
   .center { text-align: center; }
   .right { text-align: right; }
   .bold { font-weight: 700; }
-  .big { font-size: 19px; font-weight: 700; line-height: 1.3; }
+  .big { font-size: 20px; font-weight: 700; line-height: 1.3; }
   .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-  .row.bold { font-size: 14px; }
-  .muted { color: #333; font-size: 11px; }
+  .row.bold { font-size: 16px; }
+  .muted { color: #000; font-size: 13px; }
   .row .amount { white-space: nowrap; font-variant-numeric: tabular-nums; }
   .divider { border-top: 1px dashed #000; margin: 6px 0; }
   .feed { height: 6px; }

@@ -177,7 +177,7 @@ function Landing({ data }: { data: Landing }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
         <div className="relative mx-auto w-full max-w-6xl px-16 pb-40 pt-56 sm:px-24">
           <div className="flex max-w-2xl flex-col gap-16 text-white">
-            <h1 className="text-ar-3xl font-bold leading-tight sm:text-[2.75rem]">{data.name_ar}</h1>
+            <h1 className="text-ar-3xl font-bold leading-normal sm:text-ar-4xl">{data.name_ar}</h1>
             {data.description_ar ? (
               <p className="max-w-xl text-ar-lg text-white/85">{data.description_ar}</p>
             ) : (

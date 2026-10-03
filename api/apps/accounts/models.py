@@ -1,14 +1,16 @@
 """Two kinds of identity, deliberately kept apart.
 
-**Manager users** authenticate over the network with a password and carry a JWT
-in httpOnly cookies. They exist only for `/manager`.
+**Staff users** (owner, manager, cashier, kitchen — the class keeps its old
+name, ManagerUser) sign in over the network with a username and password and
+carry a JWT in httpOnly cookies. `role` decides which app a sign-in lands in.
+There is no PIN: an earlier design checked a cashier PIN on the tablet, and the
+hashing for it still exists on the client, but sign-in is the same for everyone.
 
-**Devices** are the cashier tablets. A tablet never authenticates a *person* to
-the server — the cashier's PIN is checked locally against a hash in IndexedDB and
-never leaves the device. What the tablet does need is credentials of its own, so
-the server can tell one restaurant's tablet from another's when a sync batch
-arrives. That is this token: enrolled once from the manager dashboard, bound to a
-branch, revocable when a tablet is lost.
+**Devices** are the cashier tablets' own credentials, for a tablet that syncs
+with nobody signed in: the server can tell one restaurant's tablet from
+another's when a sync batch arrives. That is this token: enrolled once from the
+manager dashboard, bound to a branch, revocable when a tablet is lost. A
+signed-in cashier's session syncs just as well.
 """
 from __future__ import annotations
 

@@ -511,5 +511,20 @@
   "auth.signOutEverywhere": "تسجيل الخروج من كل الأجهزة",
   "auth.signOutEverywhereConfirm": "سيُطلب تسجيل الدخول من جديد على كل جهاز، ومنها هذا الجهاز.",
   "auth.signOutEverywhereFailed": "تعذّر الوصول إلى الخادم، فلم يُسجَّل الخروج. حاول مرة أخرى.",
-  "manager.login.throttled": "محاولات كثيرة. انتظر دقيقة ثم حاول مرة أخرى."
+  "manager.login.throttled": "محاولات كثيرة. انتظر دقيقة ثم حاول مرة أخرى.",
+  "pos.saveFailed": "تعذّر حفظ آخر تغيير على هذا الجهاز. راجع الطلب قبل المتابعة.",
+  "pos.saveFailedDismiss": "فهمت",
+  "pos.menu.waiting": "لم يصل المنيو من الخادم بعد، ويُحدَّث تلقائيًا عند الاتصال.",
+  "pos.menu.syncNow": "مزامنة الآن",
+  "pos.shift.countLess": "إنقاص العدد",
+  "pos.shift.countMore": "زيادة العدد",
+  "pos.shift.coinsAmount": "مبلغ المعدن",
+  "pos.shift.openOrdersList": "الطلبات: {numbers}",
+  "pos.payment.referenceTitle": "مرجع العملية",
+  "pos.payment.referencePlaceholder": "رقم العملية في إشعار العميل",
+  "pos.payment.referenceHint": "يُسجَّل يدويًا ولا يُتحقق منه مع البنك. أربعة أحرف على الأقل.",
+  "pos.payment.referenceConfirm": "تسجيل الدفعة",
+  "manager.money.creditMovement": "آجل في الفترة {sales} · سُدِّد {repaid}",
+  "pos.cart.qtyLess": "إنقاص كمية {name}",
+  "pos.cart.qtyMore": "زيادة كمية {name}"
 }

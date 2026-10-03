@@ -79,7 +79,15 @@ function Dashboard({ data }: { data: import('./api').RevenueReport }) {
         <KpiCard label={i18n.t('pos.report.collected')} value={i18n.money(BigInt(data.collected_minor))} tone="success" />
         <KpiCard label={i18n.t('pos.report.orderCount')} value={i18n.int(data.order_count)} />
         <KpiCard label={i18n.t('pos.report.averageTicket')} value={i18n.money(BigInt(data.average_ticket_minor))} />
-        <KpiCard label={i18n.t('pos.report.credit')} value={i18n.money(BigInt(data.credit_outstanding_minor))} tone="credit" />
+        <KpiCard
+          label={i18n.t('pos.report.credit')}
+          value={i18n.money(BigInt(data.credit_outstanding_minor))}
+          sub={i18n.t('manager.money.creditMovement', {
+            sales: i18n.money(BigInt(data.credit_sales_minor)),
+            repaid: i18n.money(BigInt(data.settlements_minor)),
+          })}
+          tone="credit"
+        />
       </div>
 
       {/* The money that has not finished moving. Reporting only what was

@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.permissions import IsManager
 from apps.core.query import parse_window
+from apps.customers.models import CustomerSettlement
 from apps.orders.models import Order, Payment
 from apps.shifts.serializers import ShiftReadSerializer
 
@@ -73,7 +74,37 @@ class ReportViewSet(viewsets.ViewSet):
         collected = sum(
             amount for method, amount in by_method.items() if method != Payment.Method.CREDIT
         )
-        credit_outstanding = by_method.get(Payment.Method.CREDIT, 0)
+        # --- credit (آجل) ------------------------------------------------------
+        # Three different numbers that used to be one (review finding F11): credit
+        # given on bills closed in the period; what is still owed at the end of
+        # the period — every credit payment up to then, less every repayment up to
+        # then; and what customers paid back during the period. A repayment is
+        # money received but not a new sale, so it stays out of `collected`.
+        credit_sales = by_method.get(Payment.Method.CREDIT, 0)
+
+        credit_given = Payment.objects.filter(method=Payment.Method.CREDIT)
+        repaid = CustomerSettlement.objects.all()
+        if request.user.branch_id:
+            credit_given = credit_given.filter(branch_id=request.user.branch_id)
+            repaid = repaid.filter(branch_id=request.user.branch_id)
+        if window_to:
+            credit_given = credit_given.filter(taken_at__lte=window_to)
+            repaid_until_end = repaid.filter(taken_at__lte=window_to)
+        else:
+            repaid_until_end = repaid
+        credit_outstanding = int(
+            credit_given.aggregate(total=Sum("amount_minor"))["total"] or 0
+        ) - int(repaid_until_end.aggregate(total=Sum("amount_minor"))["total"] or 0)
+
+        repaid_in_period = repaid
+        if window_from:
+            repaid_in_period = repaid_in_period.filter(taken_at__gte=window_from)
+        if window_to:
+            repaid_in_period = repaid_in_period.filter(taken_at__lte=window_to)
+        settlements_by_method = {
+            row["method"]: int(row["total"] or 0)
+            for row in repaid_in_period.values("method").annotate(total=Sum("amount_minor"))
+        }
 
         summary = orders.aggregate(
             order_count=Count("id"), gross=Sum("total_minor"), discount=Sum("discount_minor")
@@ -135,6 +166,11 @@ class ReportViewSet(viewsets.ViewSet):
                 "gross_minor": str(gross),
                 "collected_minor": str(collected),
                 "credit_outstanding_minor": str(credit_outstanding),
+                "credit_sales_minor": str(credit_sales),
+                "settlements_minor": str(sum(settlements_by_method.values())),
+                "settlements_by_method": {
+                    method: str(total) for method, total in settlements_by_method.items()
+                },
                 "average_ticket_minor": str(gross // order_count if order_count else 0),
                 "by_method": {method: str(total) for method, total in by_method.items()},
                 "by_type": by_type,

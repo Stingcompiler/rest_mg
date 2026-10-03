@@ -157,8 +157,13 @@ export class Shift {
 
   // --- closing --------------------------------------------------------------
 
-  hasOpenOrders(): boolean {
-    return this.orders.some((order) => WORKING_STATUSES.includes(order.status));
+  /**
+   * The shift holds the bills it closed; the bills still open live on the till.
+   * The caller passes how many there are — the device's storage is the only
+   * place that knows — and any one of them blocks the close.
+   */
+  hasOpenOrders(openOrderCount = 0): boolean {
+    return openOrderCount > 0 || this.orders.some((order) => WORKING_STATUSES.includes(order.status));
   }
 
   needsVarianceReason(): boolean {
@@ -166,24 +171,24 @@ export class Shift {
   }
 
   /** Why this shift cannot close yet. Empty means it can. */
-  blockingReasons(): ShiftBlockingReason[] {
+  blockingReasons(openOrderCount = 0): ShiftBlockingReason[] {
     const reasons: ShiftBlockingReason[] = [];
-    if (this.hasOpenOrders()) reasons.push('open_orders');
+    if (this.hasOpenOrders(openOrderCount)) reasons.push('open_orders');
     if (this.needsVarianceReason() && this.state.varianceReason.trim() === '') {
       reasons.push('unexplained_variance');
     }
     return reasons;
   }
 
-  canClose(): boolean {
-    return this.state.status === 'open' && this.blockingReasons().length === 0;
+  canClose(openOrderCount = 0): boolean {
+    return this.state.status === 'open' && this.blockingReasons(openOrderCount).length === 0;
   }
 
-  close(input: { reason?: string; at?: string } = {}): void {
+  close(input: { reason?: string; at?: string; openOrderCount?: number } = {}): void {
     assert(this.state.status === 'open', 'shift_already_closed', 'This shift is already closed.');
     if (input.reason !== undefined) this.state.varianceReason = input.reason;
 
-    const [firstBlock] = this.blockingReasons();
+    const [firstBlock] = this.blockingReasons(input.openOrderCount ?? 0);
     if (firstBlock === 'open_orders') {
       throw new DomainError('shift_open_orders', 'Close every order before closing the shift.');
     }

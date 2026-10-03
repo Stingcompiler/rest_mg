@@ -511,5 +511,20 @@
   "auth.signOutEverywhere": "Sign out on every device",
   "auth.signOutEverywhereConfirm": "Every device will ask to sign in again, this one included.",
   "auth.signOutEverywhereFailed": "Could not reach the server, so nothing was signed out. Try again.",
-  "manager.login.throttled": "Too many attempts. Wait a minute and try again."
+  "manager.login.throttled": "Too many attempts. Wait a minute and try again.",
+  "pos.saveFailed": "The last change could not be saved on this device. Check the bill before going on.",
+  "pos.saveFailedDismiss": "Got it",
+  "pos.menu.waiting": "The menu has not arrived from the server yet. It updates by itself once connected.",
+  "pos.menu.syncNow": "Sync now",
+  "pos.shift.countLess": "One fewer",
+  "pos.shift.countMore": "One more",
+  "pos.shift.coinsAmount": "Coins amount",
+  "pos.shift.openOrdersList": "Bills: {numbers}",
+  "pos.payment.referenceTitle": "Transaction reference",
+  "pos.payment.referencePlaceholder": "The number on the customer's confirmation",
+  "pos.payment.referenceHint": "Recorded by hand; nothing checks it with the bank. At least 4 characters.",
+  "pos.payment.referenceConfirm": "Record payment",
+  "manager.money.creditMovement": "Credit in period {sales} · repaid {repaid}",
+  "pos.cart.qtyLess": "One fewer {name}",
+  "pos.cart.qtyMore": "One more {name}"
 }

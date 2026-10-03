@@ -3,8 +3,11 @@
 /**
  * Shift close. Denomination count on the start side, sales-by-method and the
  * variance callout on the end side. The close is blocked while any order is open
- * or while a variance beyond tolerance has no written reason — the entity
- * decides, and the button reflects it.
+ * on the till or while a variance beyond tolerance — short or over — has no
+ * written reason. The entity decides, and the button reflects it.
+ *
+ * The counts shown are the shift's own, so a reload mid-count picks up where
+ * the cashier left off instead of showing zeros over a non-zero total.
  */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -32,7 +35,12 @@ export function ShiftCloseScreen() {
   const i18n = useI18n();
   const router = useRouter();
   const shift = pos.shift;
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const countRows = shift.toSnapshot().counts;
+  const counts = Object.fromEntries(countRows.map((row) => [row.label, row.count]));
+  const lumpAmount = (label: string) => countRows.find((row) => row.label === label)?.lineTotalMinor ?? 0n;
+  // Every bill still open on this till — the shift itself only holds the ones
+  // it closed, so it cannot see these on its own.
+  const openOrders = pos.cart.list();
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   // One press, one close. The handler is async, so without this the button
@@ -44,8 +52,9 @@ export function ShiftCloseScreen() {
   const expected = shift.expectedCash();
   const counted = shift.countedCash();
   const variance = shift.variance();
-  const blocking = shift.blockingReasons();
+  const blocking = shift.blockingReasons(openOrders.length);
   const isShort = variance < 0n;
+  const isOver = variance > 0n;
   // Every method, not only the drawer. A till short by exactly the day's bank
   // transfers is not a missing-money problem, and the cashier being asked to
   // explain the difference is the one person who cannot see that yet.
@@ -57,9 +66,8 @@ export function ShiftCloseScreen() {
     setNote(i18n.t(ok ? 'pos.shift.printed' : 'pos.shift.printBlocked'));
   };
 
-  const changeCount = (label: string, denominationMinor: bigint | null, delta: number) => {
+  const changeCount = (label: string, denominationMinor: bigint, delta: number) => {
     const next = Math.max(0, (counts[label] ?? 0) + delta);
-    setCounts((current) => ({ ...current, [label]: next }));
     pos.setDenominationCount(denominationMinor, label, next);
   };
 
@@ -96,26 +104,43 @@ export function ShiftCloseScreen() {
       <div className="flex min-h-0 flex-1 flex-col gap-16 overflow-y-auto p-16 md:flex-row md:overflow-visible">
         <div className="flex w-full flex-none flex-col gap-10 md:w-denomination-panel">
           <span className="text-ar-base text-text-muted">{i18n.t('pos.shift.countByDenomination')}</span>
-          {DENOMINATIONS.map((denomination) => {
-            const count = counts[denomination.key] ?? 0;
-            const sum =
-              denomination.denominationMinor === null
-                ? 0n
-                : denomination.denominationMinor * BigInt(count);
+          {DENOMINATIONS.map(({ key, denominationMinor }) => {
+            if (denominationMinor === null) {
+              // Coins have no single face value: counted as one amount.
+              const amount = lumpAmount(key);
+              return (
+                <DenominationRow
+                  key={key}
+                  note={i18n.t('pos.shift.coins')}
+                  sum={i18n.money(amount)}
+                  stepper={
+                    <TextField
+                      inputMode="numeric"
+                      dir="ltr"
+                      aria-label={i18n.t('pos.shift.coinsAmount')}
+                      placeholder={i18n.int(0)}
+                      value={amount > 0n ? amount.toString() : ''}
+                      onChange={(event) =>
+                        pos.setLumpAmount(key, BigInt(event.target.value.replace(/\D/g, '') || '0'))
+                      }
+                    />
+                  }
+                />
+              );
+            }
+            const count = counts[key] ?? 0;
             return (
               <DenominationRow
-                key={denomination.key}
-                note={denomination.denominationMinor === null
-                  ? i18n.t('pos.shift.coins')
-                  : i18n.int(Number(denomination.denominationMinor))}
-                sum={i18n.money(sum)}
+                key={key}
+                note={i18n.int(Number(denominationMinor))}
+                sum={i18n.money(denominationMinor * BigInt(count))}
                 stepper={
                   <QtyStepper
                     qty={i18n.int(count)}
-                    decrementLabel={i18n.t('pos.actions.discount')}
-                    incrementLabel={i18n.t('pos.cart.pay')}
-                    onDecrement={() => changeCount(denomination.key, denomination.denominationMinor, -1)}
-                    onIncrement={() => changeCount(denomination.key, denomination.denominationMinor, +1)}
+                    decrementLabel={i18n.t('pos.shift.countLess')}
+                    incrementLabel={i18n.t('pos.shift.countMore')}
+                    onDecrement={() => changeCount(key, denominationMinor, -1)}
+                    onIncrement={() => changeCount(key, denominationMinor, +1)}
                   />
                 }
               />
@@ -143,9 +168,11 @@ export function ShiftCloseScreen() {
           )}
           <AmountRow label={i18n.t('pos.shift.expectedCash')} amount={i18n.money(expected)} />
 
-          {isShort ? (
+          {/* Short or over, the difference is shown and — beyond tolerance —
+              explained. Over used to ask for a reason with nowhere to write it. */}
+          {isShort || isOver ? (
             <CalloutPanel
-              title={i18n.t('pos.shift.shortfall')}
+              title={i18n.t(isShort ? 'pos.shift.shortfall' : 'pos.shift.surplus')}
               amount={i18n.money(variance)}
               detail={`${i18n.t('pos.shift.expectedCash')} ${i18n.money(expected)} · ${i18n.t('pos.shift.counted')} ${i18n.money(counted)}`}
               icon={<TriangleAlert size={30} />}
@@ -172,7 +199,16 @@ export function ShiftCloseScreen() {
             <div className="rounded-lg border border-line bg-surface-2 px-14 py-10 text-ar-sm text-text-muted">
               <span className="font-medium">{i18n.t('pos.shift.blocked')}</span>
               <ul className="mt-6 flex list-disc flex-col gap-2 ps-18">
-                {blocking.includes('open_orders') ? <li>{i18n.t('pos.shift.blockedOpenOrders')}</li> : null}
+                {blocking.includes('open_orders') ? (
+                  <li>
+                    {i18n.t('pos.shift.blockedOpenOrders')}{' '}
+                    <button type="button" onClick={() => router.push('/pos/orders')} className="font-medium text-accent underline">
+                      {i18n.t('pos.shift.openOrdersList', {
+                        numbers: openOrders.map((order) => `#${order.toSnapshot().number}`).join(' · '),
+                      })}
+                    </button>
+                  </li>
+                ) : null}
                 {blocking.includes('unexplained_variance') ? <li>{i18n.t('pos.shift.blockedReason')}</li> : null}
               </ul>
             </div>

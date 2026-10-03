@@ -1,6 +1,9 @@
 /**
  * Pulling menu and settings deltas down.
  *
+ * The first pull, with no cursor, is a full snapshot and replaces the device's
+ * menu (see `MenuRepository.replaceWithSnapshot`); later pulls are deltas.
+ *
  * The cursor is the server's clock, carried across runs. Deltas are applied to
  * the menu store only — categories and items — and **never to orders**. A price
  * that comes down changes the local menu; an order already taken kept a snapshot
@@ -49,8 +52,11 @@ export async function pullMenu(
   );
   const items = (response.items as ServerMenuItem[]).map((item) => serverItemToRecord(item, syncedAt));
 
+  // The first pull (no cursor) is everything the server has, so it replaces the
+  // device's menu; later ones carry only what changed.
   const menu = new MenuRepository(dbName);
-  await menu.applyPull(categories, items);
+  if (response.full_snapshot) await menu.replaceWithSnapshot(categories, items);
+  else await menu.applyPull(categories, items);
 
   // Customers ride the same pull as the menu: a credit sale must name who owes
   // it, and the till gives credit with the line down as readily as with it up.

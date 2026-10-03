@@ -24,16 +24,9 @@ import {
   pendingCount,
   settingsRepository,
   shiftRepository,
-  type MenuItemRecord,
 } from '@/db';
-import { runSync, startSyncPump } from '@/sync';
-import {
-  hydrateMenuItem,
-  hydrateOrder,
-  orderToRecord,
-  shiftRecordToSnapshot,
-  shiftToRecord,
-} from '@/db/mappers';
+import { runSync, startSyncPump, type SyncResult } from '@/sync';
+import { hydrateOrder, orderToRecord, shiftRecordToSnapshot, shiftToRecord } from '@/db/mappers';
 import {
   CartSession,
   CashCount,
@@ -55,6 +48,11 @@ import {
 import { readLocale, readNumerals } from '@/i18n/preferences';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { seedCategories, seedItems } from './seed-data';
+import { afterSave } from './durableStep';
+import { loadMenu, shouldSeedDemoMenu, type PosMenuCategory } from './menuLoad';
+import { closeShiftOnDevice } from './shiftClose';
+
+export type { PosMenuCategory } from './menuLoad';
 
 /** The print context for the cashier's current language and numerals. */
 function currentPrintContext() {
@@ -64,13 +62,6 @@ function currentPrintContext() {
 /** Nudge the print queue to drain now rather than waiting for the interval. */
 function kickPrintQueue() {
   void drainPrintQueue(getPrintService()).catch((error) => console.error('[print] drain', error));
-}
-
-export interface PosMenuCategory {
-  id: string;
-  nameAr: string;
-  nameEn: string;
-  items: MenuItem[];
 }
 
 interface PosContextValue {
@@ -93,6 +84,12 @@ interface PosContextValue {
   pendingDeliveries: string[] | null;
   /** Force a sync now. Background sync makes this never *required*. */
   syncNow(): void;
+  /**
+   * A write to the device's storage failed. The screen says so until the
+   * cashier acknowledges it: a bill that was not saved must not look saved.
+   */
+  saveFailed: boolean;
+  dismissSaveFailure(): void;
 
   // Order entry
   newCart(): Promise<void>;
@@ -117,7 +114,9 @@ interface PosContextValue {
   bulkPriceChange(categoryId: string, percent: number): Promise<void>;
 
   // Shift
-  setDenominationCount(denominationMinor: Money | null, label: string, count: number): void;
+  setDenominationCount(denominationMinor: Money, label: string, count: number): void;
+  /** Coins are counted as one amount, not by face value. */
+  setLumpAmount(label: string, amountMinor: Money): void;
   setVarianceReason(reason: string): void;
   closeShift(): Promise<void>;
 }
@@ -139,7 +138,12 @@ const PosContext = createContext<PosContextValue | null>(null);
 async function seedOrRepairMenu(): Promise<void> {
   const retired = await menuRepository.retireNonUuidRows();
   const categories = await menuRepository.listCategories();
-  if (categories.length === 0) {
+  // Development only: in production a fresh till waits for the server's menu.
+  const demo = shouldSeedDemoMenu({
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_DEMO_MENU: process.env.NEXT_PUBLIC_DEMO_MENU,
+  });
+  if (categories.length === 0 && demo) {
     await menuRepository.applyPull(seedCategories(), seedItems());
   }
   if (retired > 0) {
@@ -171,8 +175,24 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   // null until a sync run has actually answered. Starting at [] would make
   // the first successful run look like three orders arriving at once.
   const [pendingDeliveries, setPendingDeliveries] = useState<string[] | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   const bump = useCallback(() => setVersion((value) => value + 1), []);
+
+  const reportSaveFailure = useCallback((error: unknown) => {
+    console.error('[pos] save failed', error);
+    setSaveFailed(true);
+  }, []);
+  const dismissSaveFailure = useCallback(() => setSaveFailed(false), []);
+
+  // The menu as the device's storage holds it. Rebuilt after every pull that
+  // changed something, so a new price or a sold-out dish shows without a
+  // reload; bills already rung up keep the prices on their lines.
+  const reloadMenu = useCallback(async () => {
+    const menu = await loadMenu(menuRepository);
+    itemByIdRef.current = menu.itemById;
+    setCategories(menu.categories);
+  }, []);
 
   const refreshPending = useCallback(async () => {
     const db = await openDatabase();
@@ -184,19 +204,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     (async () => {
       await seedOrRepairMenu();
-
-      const categoryRecords = await menuRepository.listCategories();
-      const menu: PosMenuCategory[] = [];
-      const index = new Map<string, MenuItem>();
-      for (const category of categoryRecords) {
-        const itemRecords = await menuRepository.listItemsByCategory(category.id);
-        const items = itemRecords.map((record: MenuItemRecord) => {
-          const item = hydrateMenuItem(record);
-          index.set(item.id, item);
-          return item;
-        });
-        menu.push({ id: category.id, nameAr: category.nameAr, nameEn: category.nameEn, items });
-      }
+      const menu = await loadMenu(menuRepository);
 
       // Restore any open carts left on the device.
       const openRecords = await orderRepository.listOpen();
@@ -224,8 +232,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       if (cancelled) return;
       cartRef.current = session;
       shiftRef.current = shift;
-      itemByIdRef.current = index;
-      setCategories(menu);
+      itemByIdRef.current = menu.itemById;
+      setCategories(menu.categories);
       setReady(true);
       void refreshPending();
     })().catch((error) => console.error('[pos] load failed', error));
@@ -242,22 +250,26 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   // The sync loop: push the outbox and pull menu deltas on an interval and on
   // reconnect. Its result drives the connection indicator and the unsynced
   // count; it never blocks anything the cashier does.
-  useEffect(
-    () =>
-      startSyncPump((result) => {
-        if (!result.skipped) setOnline(result.online);
-        setPending(result.pending);
-        // Undefined means the run never reached the server. Keep the last known
-        // list rather than clearing it, so a dropped connection does not read
-        // as "nobody is waiting" — the rail's offline dot says the rest.
-        if (result.pendingDeliveries) setPendingDeliveries(result.pendingDeliveries);
-        // A run that fails says why. This was silent, so a till that had stopped
-        // syncing looked exactly like one with nothing to send — and the only
-        // clue was an "offline" badge nobody could explain.
-        if (result.error) console.error('[sync] run failed:', result.error);
-      }),
-    [],
+  const applySyncResult = useCallback(
+    (result: SyncResult) => {
+      if (!result.skipped) setOnline(result.online);
+      setPending(result.pending);
+      // Undefined means the run never reached the server. Keep the last known
+      // list rather than clearing it, so a dropped connection does not read
+      // as "nobody is waiting" — the rail's offline dot says the rest.
+      if (result.pendingDeliveries) setPendingDeliveries(result.pendingDeliveries);
+      // A run that fails says why. This was silent, so a till that had stopped
+      // syncing looked exactly like one with nothing to send — and the only
+      // clue was an "offline" badge nobody could explain.
+      if (result.error) console.error('[sync] run failed:', result.error);
+      if (result.pulled > 0) {
+        void reloadMenu().catch((error) => console.error('[pos] reload menu', error));
+      }
+    },
+    [reloadMenu],
   );
+
+  useEffect(() => startSyncPump(applySyncResult), [applySyncResult]);
 
   // The browser's own connectivity signal, for the indicator between sync runs.
   useEffect(() => {
@@ -273,26 +285,25 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
 
   const syncNow = useCallback(() => {
     void runSync().then((result) => {
-      if (!result.skipped) setOnline(result.online);
-      setPending(result.pending);
-      if (result.pendingDeliveries) setPendingDeliveries(result.pendingDeliveries);
-      if (result.error) console.error('[sync] run failed:', result.error);
+      applySyncResult(result);
       bump();
     });
-  }, [bump]);
+  }, [applySyncResult, bump]);
 
-  // Returns the write so a caller can sequence after it. Most callers ignore it
-  // (paint first, persist after), but anything that must observe the saved state
-  // — syncing a fired ticket, for one — has to await it.
-  const persistOrder = useCallback((order: Order) => {
-    return orderRepository
-      .save(orderToRecord(order))
-      .catch((error) => console.error('[pos] save order', error));
-  }, []);
+  // Paint first, persist after — but a failed write is shown, never only
+  // logged: a bill the device did not record must not look recorded.
+  const saveOrder = useCallback((order: Order) => orderRepository.save(orderToRecord(order)), []);
+  const persistOrder = useCallback(
+    (order: Order) => saveOrder(order).catch(reportSaveFailure),
+    [reportSaveFailure, saveOrder],
+  );
 
-  const persistShift = useCallback((shift: Shift) => {
-    void shiftRepository.save(shiftToRecord(shift)).catch((error) => console.error('[pos] save shift', error));
-  }, []);
+  const persistShift = useCallback(
+    (shift: Shift) => {
+      void shiftRepository.save(shiftToRecord(shift)).catch(reportSaveFailure);
+    },
+    [reportSaveFailure],
+  );
 
   const ensureActiveOrder = useCallback(async (): Promise<Order> => {
     const existing = cartRef.current.active();
@@ -391,24 +402,29 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     const order = cartRef.current.active();
     if (!order) return;
     order.send();
-    // Persist first, then print — a kitchen ticket is never sent for work the
-    // device hasn't recorded. The print itself is queued durably and drained in
-    // the background, so a dead printer never blocks the send.
-    // The sync must wait for the write: the order and its outbox entry land in
-    // one transaction, and syncing before that commits would find an empty
-    // queue and leave the kitchen waiting a full interval for its ticket.
-    void persistOrder(order).then(() => {
-      void refreshPending();
-      // Nudge the sync so the kitchen display sees the ticket now rather than at
-      // the next interval. If the line is down this does nothing and the printed
-      // ticket carries the order, which is the point of printing it.
-      syncNow();
-    });
-    void printKitchenTicket(order, currentPrintContext())
-      .then(kickPrintQueue)
-      .catch((error) => console.error('[print] kitchen ticket', error));
+    // Persist first, then print and sync — a kitchen ticket is never sent for
+    // work the device hasn't recorded, and if the write fails nothing goes out
+    // and the screen says so. The sync must wait for the write too: the order
+    // and its outbox entry land in one transaction, and syncing before that
+    // commits would find an empty queue and leave the kitchen waiting a full
+    // interval for its ticket. The print is queued durably and drained in the
+    // background, so a dead printer never blocks the send.
+    void afterSave(
+      () => saveOrder(order),
+      () => {
+        void refreshPending();
+        // Nudge the sync so the kitchen display sees the ticket now rather than
+        // at the next interval. If the line is down this does nothing and the
+        // printed ticket carries the order, which is the point of printing it.
+        syncNow();
+        void printKitchenTicket(order, currentPrintContext())
+          .then(kickPrintQueue)
+          .catch((error) => console.error('[print] kitchen ticket', error));
+      },
+      reportSaveFailure,
+    );
     bump();
-  }, [bump, persistOrder, refreshPending, syncNow]);
+  }, [bump, refreshPending, reportSaveFailure, saveOrder, syncNow]);
 
   const addPayment = useCallback(
     (input: NewPaymentInput) => {
@@ -548,24 +564,34 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     [bump, categories, refreshPending],
   );
 
-  const setDenominationCount = useCallback(
-    (denominationMinor: Money | null, label: string, count: number) => {
+  const replaceCountRow = useCallback(
+    (label: string, row: CashCount | null) => {
       const shift = shiftRef.current;
       if (!shift) return;
-      const existing = shift.toSnapshot().counts.filter((row) => row.label !== label);
-      const rows = existing.map((row) => CashCount.fromSnapshot(row));
-      if (count > 0 || denominationMinor === null) {
-        rows.push(
-          denominationMinor === null
-            ? CashCount.lump(0n, label)
-            : CashCount.forDenomination(denominationMinor, count, label),
-        );
-      }
+      const rows = shift
+        .toSnapshot()
+        .counts.filter((existing) => existing.label !== label)
+        .map((existing) => CashCount.fromSnapshot(existing));
+      if (row) rows.push(row);
       shift.setCounts(rows);
       persistShift(shift);
       bump();
     },
     [bump, persistShift],
+  );
+
+  const setDenominationCount = useCallback(
+    (denominationMinor: Money, label: string, count: number) =>
+      replaceCountRow(label, count > 0 ? CashCount.forDenomination(denominationMinor, count, label) : null),
+    [replaceCountRow],
+  );
+
+  // Coins used to be stored as a lump of zero whatever was counted, so the
+  // drawer always read short by its coins.
+  const setLumpAmount = useCallback(
+    (label: string, amountMinor: Money) =>
+      replaceCountRow(label, amountMinor > 0n ? CashCount.lump(amountMinor, label) : null),
+    [replaceCountRow],
   );
 
   const setVarianceReason = useCallback(
@@ -584,20 +610,17 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     if (!shift) return;
     // Throws shift_open_orders / shift_variance_needs_reason — surfaced by caller.
     // It also throws shift_already_closed, which is what stops a second press
-    // from closing the same shift twice.
-    shift.close();
-    await shiftRepository.save(shiftToRecord(shift));
-
-    // The till must always have exactly one open shift. Without this the closed
-    // one stayed in memory and kept accepting sales — money landing in a drawer
-    // that had already been counted and handed over — until a reload quietly
-    // started a fresh shift and the expected cash read zero again.
-    const next = Shift.open({
-      cashierId: cashierRef.current.id,
-      cashierName: cashierRef.current.name,
-    });
-    await shiftRepository.save(shiftToRecord(next));
-    shiftRef.current = next;
+    // from closing the same shift twice. Open bills are counted from storage,
+    // not from the shift, which only ever held the bills it closed.
+    //
+    // The till must always have exactly one open shift. Without the next one the
+    // closed shift stayed in memory and kept accepting sales — money landing in
+    // a drawer that had already been counted and handed over.
+    shiftRef.current = await closeShiftOnDevice(
+      shift,
+      { cashierId: cashierRef.current.id, cashierName: cashierRef.current.name },
+      { orders: orderRepository, shifts: shiftRepository },
+    );
 
     bump();
     // Sync runs on shift close, per the offline contract.
@@ -616,6 +639,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       pendingCount: pending,
       pendingDeliveries,
       syncNow,
+      saveFailed,
+      dismissSaveFailure,
       newCart,
       switchCart,
       parkActive,
@@ -631,13 +656,14 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       toggleItemAvailability,
       bulkPriceChange,
       setDenominationCount,
+      setLumpAmount,
       setVarianceReason,
       closeShift,
     }),
     // `version` changes on every mutation, giving the context value a new
     // identity so consumers re-render and read the mutated entities. The action
     // callbacks are stable, so these are the real deps.
-    [ready, version, categories, online, pending, pendingDeliveries, syncNow],
+    [ready, version, categories, online, pending, pendingDeliveries, syncNow, saveFailed, dismissSaveFailure],
   );
 
   return <PosContext.Provider value={value}>{children}</PosContext.Provider>;

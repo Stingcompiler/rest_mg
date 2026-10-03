@@ -28,22 +28,57 @@ function localDate(at: Date): string {
   }).format(at);
 }
 
+/** A calendar date `days` away from `date`, both YYYY-MM-DD. Zone-free. */
+function addDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
+/** How far the restaurant's clock is ahead of UTC at an instant, in ms. */
+function zoneOffset(at: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIME_ZONE,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(at);
+  const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value);
+  const wallClock = Date.UTC(part('year'), part('month') - 1, part('day'), part('hour'), part('minute'), part('second'));
+  return wallClock - Math.floor(at.getTime() / 1000) * 1000;
+}
+
+/**
+ * The instant midnight begins on `date` in the restaurant's zone.
+ *
+ * Built from UTC arithmetic and the zone's offset, never from a Date parsed in
+ * the browser's own zone — that is what made a manager abroad (or a CI machine
+ * in UTC) see boundaries two hours off.
+ */
+function restaurantMidnight(date: string): Date {
+  const utcMidnight = Date.parse(`${date}T00:00:00Z`);
+  const guess = utcMidnight - zoneOffset(new Date(utcMidnight));
+  // Re-read the offset at the guess, in case the zone changed its offset that night.
+  return new Date(utcMidnight - zoneOffset(new Date(guess)));
+}
+
 /**
  * The `from`/`to` the revenue endpoint expects, or an empty object for "all".
  *
- * `to` is the end of today rather than "now", so an order closed later in the
- * day does not fall outside a range the manager is still looking at.
+ * Half-open, `from <= t < to`, the server's rule too. `to` is the next midnight
+ * rather than "now", so an order closed later in the day does not fall outside
+ * a range the manager is still looking at.
  */
 export function periodRange(period: PeriodKey, now = new Date()): { from?: string; to?: string } {
   if (period === 'all') return {};
 
-  const startOfToday = new Date(`${localDate(now)}T00:00:00`);
-  const from = new Date(startOfToday);
-  if (period === 'week') from.setDate(from.getDate() - 6); // today plus the six before it
-  if (period === 'month') from.setDate(from.getDate() - 29);
-
-  const to = new Date(startOfToday);
-  to.setDate(to.getDate() + 1);
-
-  return { from: from.toISOString(), to: to.toISOString() };
+  const today = localDate(now);
+  const back = period === 'week' ? 6 : period === 'month' ? 29 : 0; // today plus the days before it
+  return {
+    from: restaurantMidnight(addDays(today, -back)).toISOString(),
+    to: restaurantMidnight(addDays(today, 1)).toISOString(),
+  };
 }

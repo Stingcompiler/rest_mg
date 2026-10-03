@@ -15,9 +15,28 @@ import {
   type Numerals,
 } from '@/i18n';
 import type { PrintContext } from './document';
+import type { RestaurantIdentity } from '@/sync/identity';
+
+/**
+ * The restaurant a receipt is printed for. Set by the till from the profile it
+ * keeps on the device (it arrives with the menu); until the first sync there is
+ * none, and the header falls back to a neutral word rather than a name that
+ * belongs to some other restaurant.
+ */
+let identity: RestaurantIdentity | null = null;
+
+export function setRestaurantIdentity(next: RestaurantIdentity | null): void {
+  identity = next;
+}
+
+function restaurantName(locale: Locale, fallback: string): string {
+  if (!identity) return fallback;
+  return locale === 'en' && identity.nameEn ? identity.nameEn : identity.nameAr;
+}
 
 export function buildPrintContext(locale: Locale, numerals: Numerals): PrintContext {
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+  const name = restaurantName(locale, t('print.restaurantName'));
   return {
     dir: direction(locale),
     formatMoney: (minor) => formatMoney(minor, numerals),
@@ -26,7 +45,7 @@ export function buildPrintContext(locale: Locale, numerals: Numerals): PrintCont
     formatDate: (date) => formatDate(date),
     labels: {
       kitchen: t('print.kitchen'),
-      receipt: t('print.restaurantName'),
+      receipt: name,
       order: t('print.order'),
       table: t('print.table'),
       subtotal: t('pos.cart.subtotal'),
@@ -35,7 +54,7 @@ export function buildPrintContext(locale: Locale, numerals: Numerals): PrintCont
       change: t('pos.payment.change'),
       paid: t('pos.payment.recorded'),
       thanks: t('print.thanks'),
-      restaurantName: t('print.restaurantName'),
+      restaurantName: name,
       shiftReport: t('pos.shift.reportTitle'),
       expectedCash: t('pos.shift.expectedCash'),
       countedCash: t('pos.shift.counted'),

@@ -36,6 +36,7 @@ import {
   newId,
   type NewPaymentInput,
   type Money,
+  type OrderType,
 } from '@/domain';
 import {
   buildPrintContext,
@@ -43,14 +44,17 @@ import {
   getPrintService,
   printKitchenTicket,
   printReceipt,
+  setRestaurantIdentity,
   startPrintPump,
 } from '@/print';
+import { RESTAURANT_IDENTITY_KEY, type RestaurantIdentity } from '@/sync';
 import { readLocale, readNumerals } from '@/i18n/preferences';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { seedCategories, seedItems } from './seed-data';
 import { afterSave } from './durableStep';
 import { loadMenu, shouldSeedDemoMenu, type PosMenuCategory } from './menuLoad';
 import { closeShiftOnDevice } from './shiftClose';
+import { nextOrderNumber as nextDeviceOrderNumber } from './orderNumber';
 
 export type { PosMenuCategory } from './menuLoad';
 
@@ -97,6 +101,9 @@ interface PosContextValue {
   parkActive(): void;
   addItem(itemId: string): void;
   changeQty(lineId: string, delta: number): void;
+  /** A cook's note on a line; throws the entity's refusal for the caller to show. */
+  noteLine(lineId: string, note: string): void;
+  setOrderType(type: OrderType): void;
   applyDiscount(amountMinor: Money): void;
   sendToKitchen(): void;
 
@@ -151,10 +158,8 @@ async function seedOrRepairMenu(): Promise<void> {
   }
 }
 
-async function nextOrderNumber(): Promise<string> {
-  const current = (await settingsRepository.get<number>('orderSeq')) ?? 1048;
-  await settingsRepository.set('orderSeq', current + 1);
-  return String(current);
+function nextOrderNumber(): Promise<string> {
+  return nextDeviceOrderNumber(settingsRepository);
 }
 
 export function PosProvider({ children }: { children: React.ReactNode }) {
@@ -194,6 +199,11 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     setCategories(menu.categories);
   }, []);
 
+  // The receipt's header: the restaurant's profile, which every pull brings.
+  const refreshIdentity = useCallback(async () => {
+    setRestaurantIdentity((await settingsRepository.get<RestaurantIdentity>(RESTAURANT_IDENTITY_KEY)) ?? null);
+  }, []);
+
   const refreshPending = useCallback(async () => {
     const db = await openDatabase();
     setPending(await pendingCount(db));
@@ -205,6 +215,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       await seedOrRepairMenu();
       const menu = await loadMenu(menuRepository);
+      setRestaurantIdentity((await settingsRepository.get<RestaurantIdentity>(RESTAURANT_IDENTITY_KEY)) ?? null);
 
       // Restore any open carts left on the device.
       const openRecords = await orderRepository.listOpen();
@@ -265,8 +276,9 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       if (result.pulled > 0) {
         void reloadMenu().catch((error) => console.error('[pos] reload menu', error));
       }
+      if (result.online) void refreshIdentity();
     },
-    [reloadMenu],
+    [refreshIdentity, reloadMenu],
   );
 
   useEffect(() => startSyncPump(applySyncResult), [applySyncResult]);
@@ -379,8 +391,39 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       if (!order) return;
       const line = order.toSnapshot().lines.find((candidate) => candidate.id === lineId);
       if (!line) return;
-      const next = Math.max(1, line.qty + delta);
-      order.changeQty(lineId, next);
+      const next = line.qty + delta;
+      if (next >= 1) {
+        order.changeQty(lineId, next);
+      } else if (order.status !== 'sent') {
+        // Below one, the line goes — the way to correct a mistaken tap without
+        // cancelling the whole bill. Once the kitchen has the ticket a line can
+        // only be voided with a reason, so the stepper stops at one there.
+        order.removeLine(lineId);
+      } else {
+        return;
+      }
+      persistOrder(order);
+      bump();
+    },
+    [bump, persistOrder],
+  );
+
+  const noteLine = useCallback(
+    (lineId: string, note: string) => {
+      const order = cartRef.current.active();
+      if (!order) return;
+      order.noteLine(lineId, note);
+      persistOrder(order);
+      bump();
+    },
+    [bump, persistOrder],
+  );
+
+  const setOrderType = useCallback(
+    (type: OrderType) => {
+      const order = cartRef.current.active();
+      if (!order || order.type === type) return;
+      order.setType(type);
       persistOrder(order);
       bump();
     },
@@ -646,6 +689,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       parkActive,
       addItem,
       changeQty,
+      noteLine,
+      setOrderType,
       applyDiscount,
       sendToKitchen,
       addPayment,

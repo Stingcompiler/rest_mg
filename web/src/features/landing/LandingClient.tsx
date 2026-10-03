@@ -10,9 +10,9 @@
  * with prices and availability, the featured shelf the manager curates, and the
  * contact details — never invented.
  *
- * Arabic-first and RTL, Mobile-first, theme-aware through the design tokens. The
- * ordering CTAs in this phase take the visitor to order by WhatsApp or phone
- * (both real, working links); the in-page cart and delivery form arrive next.
+ * Arabic-first and RTL, Mobile-first, theme-aware through the design tokens.
+ * When the restaurant takes orders from the page, "order now" leads to the menu
+ * and its cart; when it does not, to the WhatsApp and phone links.
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -129,6 +129,9 @@ function Landing({ data }: { data: Landing }) {
     data.featured.find((i) => i.image_url)?.image_url ??
     null;
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  // "Order now" goes where ordering actually happens: the menu and its cart
+  // when the page takes orders, the WhatsApp and phone section when it does not.
+  const ordering = data.online_ordering_enabled === true;
 
   return (
     <CartProvider ordering={data.online_ordering_enabled === true}>
@@ -153,7 +156,7 @@ function Landing({ data }: { data: Landing }) {
           </span>
           <button
             type="button"
-            onClick={() => scrollTo('order')}
+            onClick={() => scrollTo(ordering ? 'menu' : 'order')}
             className="inline-flex min-h-control-md items-center gap-6 rounded-full bg-accent px-16 text-ar-sm font-semibold text-text-on-accent transition hover:opacity-90"
           >
             <ShoppingBag size={16} />
@@ -181,7 +184,7 @@ function Landing({ data }: { data: Landing }) {
             <div className="flex flex-wrap gap-12 pt-4">
               <button
                 type="button"
-                onClick={() => scrollTo('order')}
+                onClick={() => scrollTo(ordering ? 'menu' : 'order')}
                 className="inline-flex min-h-control-xl items-center gap-8 rounded-full bg-accent px-24 text-ar-md font-semibold text-text-on-accent shadow-lg transition hover:opacity-90"
               >
                 <ShoppingBag size={20} />
@@ -302,7 +305,7 @@ function Landing({ data }: { data: Landing }) {
         </div>
       </section>
 
-        <Footer data={data} onNavigate={scrollTo} />
+        <Footer data={data} onNavigate={(id) => scrollTo(id === 'order' && ordering ? 'menu' : id)} />
       </main>
     </CartProvider>
   );

@@ -131,7 +131,9 @@ export function Toggle({ checked, onChange, label, disabled }: ToggleProps) {
       onClick={() => onChange?.(!checked)}
       className={cn(
         'inline-flex h-toggle-h w-toggle-w items-center rounded-pill p-4 outline-none transition-colors',
-        checked ? 'justify-end bg-accent-pressed' : 'justify-start bg-border',
+        // Off is the strong line colour (3:1 against the surface, WCAG 1.4.11).
+        // It was `bg-border`, which is not a colour here, so the track had none.
+        checked ? 'justify-end bg-accent-pressed' : 'justify-start bg-line-strong',
         disabled && 'opacity-60',
       )}
     >

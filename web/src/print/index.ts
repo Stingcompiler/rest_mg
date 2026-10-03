@@ -27,7 +27,7 @@ export {
   type PrintContext,
 } from './document';
 export { EscPosBuilder, utf8Encoder } from './escpos';
-export { buildPrintContext } from './context';
+export { buildPrintContext, setRestaurantIdentity } from './context';
 export {
   drainPrintQueue,
   enqueuePrintJob,

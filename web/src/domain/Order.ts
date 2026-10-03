@@ -26,6 +26,9 @@ import {
   type PaymentMethod,
 } from './types';
 
+/** The server stores up to 240 characters of a line's note (modifiers_text). */
+const MAX_NOTE_LENGTH = 240;
+
 export interface OrderSnapshot {
   id: string;
   number: string;
@@ -166,6 +169,28 @@ export class Order {
   voidLine(lineId: string, reason: string): void {
     this.assertMutable();
     this.findLine(lineId).void(reason);
+  }
+
+  /**
+   * A cook's note on one line ("بدون شطة"). Editable until the kitchen has the
+   * ticket: after that the printed ticket and the bill would disagree.
+   */
+  noteLine(lineId: string, note: string): void {
+    this.assertMutable();
+    assert(
+      this.state.status !== 'sent',
+      'line_note_after_send',
+      'The kitchen already has this ticket; a new note would not reach it.',
+    );
+    const text = note.trim();
+    assert(text.length <= MAX_NOTE_LENGTH, 'line_note_too_long', `A note is at most ${MAX_NOTE_LENGTH} characters.`);
+    this.findLine(lineId).setModifiers(text);
+  }
+
+  /** Dine-in, takeaway or delivery — changeable until the bill is closed. */
+  setType(type: OrderType): void {
+    this.assertMutable();
+    this.state.type = type;
   }
 
   /**

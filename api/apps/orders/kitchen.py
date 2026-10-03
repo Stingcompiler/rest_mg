@@ -30,6 +30,8 @@ from apps.orders.models import Order
 # can be delivered, the kitchen should not be cooking it.
 AWAITING_CONFIRMATION = Q(channel=Order.Channel.ONLINE, delivery_status=Order.DeliveryStatus.PENDING)
 
+BOARD_LIMIT = 100
+
 ACTIVE_KITCHEN_STATUSES = [
     Order.KitchenStatus.QUEUED,
     Order.KitchenStatus.PREPARING,
@@ -82,7 +84,12 @@ class KitchenViewSet(viewsets.ViewSet):
         if request.user.branch_id:
             orders = orders.filter(branch_id=request.user.branch_id)
 
-        return Response({"tickets": [_ticket(order) for order in orders[:100]]})
+        # The oldest 100 are what the pass can work; the total says whether
+        # more are waiting behind them, so a busy night is not mistaken for a
+        # quiet one.
+        return Response(
+            {"tickets": [_ticket(order) for order in orders[:BOARD_LIMIT]], "total": orders.count()}
+        )
 
     @action(detail=True, methods=["post"], url_path="status")
     def set_status(self, request, pk=None):

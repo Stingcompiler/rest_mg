@@ -24,7 +24,8 @@ export interface KitchenTicket {
 }
 
 export const kitchenApi = {
-  tickets: () => request<{ tickets: KitchenTicket[] }>('kitchen/tickets'),
+  /** The oldest tickets on the pass (at most 100) and how many there are in all. */
+  tickets: () => request<{ tickets: KitchenTicket[]; total?: number }>('kitchen/tickets'),
   setStatus: (id: string, kitchen_status: KitchenStatus) =>
     request<KitchenTicket>(`kitchen/tickets/${id}/status`, {
       method: 'POST',

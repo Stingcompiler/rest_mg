@@ -11,7 +11,8 @@
  * separation is structural: this code has no access to and never opens the
  * orders store.
  */
-import { CustomerRepository, MenuRepository, SyncStateRepository, openDatabase } from '@/db';
+import { CustomerRepository, MenuRepository, SettingsRepository, SyncStateRepository, openDatabase } from '@/db';
+import { RESTAURANT_IDENTITY_KEY, identityFromProfile } from './identity';
 import {
   serverCategoryToRecord,
   serverItemToRecord,
@@ -68,6 +69,11 @@ export async function pullMenu(
     updatedAt: syncedAt,
   }));
   await new CustomerRepository(dbName).applyPull(customers);
+
+  // The restaurant's name and contact details, for the receipt. Present only
+  // when the profile changed since the cursor; otherwise the stored one stands.
+  const identity = identityFromProfile(response.profile);
+  if (identity) await new SettingsRepository(dbName).set(RESTAURANT_IDENTITY_KEY, identity);
 
   // Advance the cursor only after the deltas are safely applied, so a crash
   // mid-apply re-fetches rather than skipping.

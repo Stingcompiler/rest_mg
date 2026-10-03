@@ -56,6 +56,9 @@ class ReportViewSet(viewsets.ViewSet):
     permission_classes = [IsManager]
 
     def list(self, request):
+        # Half-open, from <= t < to: the dashboard asks for midnight to the next
+        # midnight, and a bill closed exactly at midnight belongs to the new day
+        # only, not to both.
         window_from, window_to = parse_window(request.query_params)
 
         orders = Order.objects.filter(status=Order.Status.CLOSED)
@@ -64,7 +67,7 @@ class ReportViewSet(viewsets.ViewSet):
         if window_from:
             orders = orders.filter(closed_at__gte=window_from)
         if window_to:
-            orders = orders.filter(closed_at__lte=window_to)
+            orders = orders.filter(closed_at__lt=window_to)
 
         payments = Payment.objects.filter(order__in=orders)
         by_method = defaultdict(int)
@@ -88,8 +91,8 @@ class ReportViewSet(viewsets.ViewSet):
             credit_given = credit_given.filter(branch_id=request.user.branch_id)
             repaid = repaid.filter(branch_id=request.user.branch_id)
         if window_to:
-            credit_given = credit_given.filter(taken_at__lte=window_to)
-            repaid_until_end = repaid.filter(taken_at__lte=window_to)
+            credit_given = credit_given.filter(taken_at__lt=window_to)
+            repaid_until_end = repaid.filter(taken_at__lt=window_to)
         else:
             repaid_until_end = repaid
         credit_outstanding = int(
@@ -100,7 +103,7 @@ class ReportViewSet(viewsets.ViewSet):
         if window_from:
             repaid_in_period = repaid_in_period.filter(taken_at__gte=window_from)
         if window_to:
-            repaid_in_period = repaid_in_period.filter(taken_at__lte=window_to)
+            repaid_in_period = repaid_in_period.filter(taken_at__lt=window_to)
         settlements_by_method = {
             row["method"]: int(row["total"] or 0)
             for row in repaid_in_period.values("method").annotate(total=Sum("amount_minor"))
@@ -157,7 +160,7 @@ class ReportViewSet(viewsets.ViewSet):
         if window_from:
             voided = voided.filter(opened_at__gte=window_from)
         if window_to:
-            voided = voided.filter(opened_at__lte=window_to)
+            voided = voided.filter(opened_at__lt=window_to)
         void_summary = voided.aggregate(count=Count("id"), total=Sum("total_minor"))
 
         return Response(

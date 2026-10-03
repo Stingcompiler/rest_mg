@@ -33,13 +33,15 @@ import {
   Numeric,
   QtyStepper,
   SearchField,
+  SegmentedControl,
   SettingsMenu,
   StatusChip,
   TextField,
   TotalsBlock,
 } from '@/components';
 import { formatTime, useI18n } from '@/i18n';
-import { DomainError } from '@/domain';
+import { getPrintService } from '@/print';
+import { DomainError, type OrderType } from '@/domain';
 import { usePos } from './PosProvider';
 import { PosRail } from './PosRail';
 
@@ -68,6 +70,12 @@ export function OrderEntryScreen() {
   const liveLines = orderSnapshot?.lines.filter((line) => !line.isVoid) ?? [];
   const hasLines = liveLines.length > 0;
   const [discountOpen, setDiscountOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const orderTypes: { value: OrderType; label: string }[] = [
+    { value: 'dine_in', label: i18n.t('pos.orderType.dineIn') },
+    { value: 'takeaway', label: i18n.t('pos.orderType.takeaway') },
+    { value: 'delivery', label: i18n.t('pos.orderType.delivery') },
+  ];
 
   const cartTabs = pos.cart.list().map((cartOrder) => ({
     id: cartOrder.id,
@@ -96,6 +104,19 @@ export function OrderEntryScreen() {
           addLabel={i18n.t('pos.title')}
         />
       </div>
+
+      {order ? (
+        /* Every bill used to go down as dine-in; the kitchen and the reports
+           need to know a takeaway from a table. */
+        <div className="flex-none px-14 pt-10">
+          <SegmentedControl
+            options={orderTypes}
+            value={order.type}
+            onChange={pos.setOrderType}
+            ariaLabel={i18n.t('pos.orderType.label')}
+          />
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto p-14">
         {liveLines.length === 0 ? (
@@ -130,7 +151,7 @@ export function OrderEntryScreen() {
                 it all along. The other two have no entity behind them at all,
                 so they say so rather than swallowing the press. */}
             <CartAction label={i18n.t('pos.actions.discount')} onClick={() => setDiscountOpen(true)} />
-            <CartAction label={i18n.t('pos.actions.note')} disabled hint={i18n.t('pos.actions.soon')} />
+            <CartAction label={i18n.t('pos.actions.note')} onClick={() => setNoteOpen(true)} />
             <CartAction label={i18n.t('pos.actions.split')} disabled hint={i18n.t('pos.actions.soon')} />
             <CartAction label={i18n.t('pos.actions.hold')} onClick={pos.parkActive} />
           </CartActionBar>
@@ -205,6 +226,15 @@ export function OrderEntryScreen() {
                     tone="neutral"
                   />
                 </button>
+              ) : null}
+              {/* In a browser there is no thermal printer: kitchen tickets and
+                  receipts go nowhere, and the queue would still report them
+                  done. Said plainly, so the kitchen screen and the browser's
+                  print button are known to be the way. */}
+              {getPrintService().simulated ? (
+                <span className="hidden md:inline" title={i18n.t('pos.printer.simulatedHint')}>
+                  <StatusChip label={i18n.t('pos.printer.simulated')} tone="neutral" />
+                </span>
               ) : null}
               <Numeric className="hidden text-num-base sm:inline">{formatTime(new Date())}</Numeric>
               <SettingsMenu />
@@ -332,6 +362,14 @@ export function OrderEntryScreen() {
         </div>
       ) : null}
 
+      {noteOpen && order ? (
+        <NoteSheet
+          lines={liveLines.map((line) => ({ id: line.id, name: line.nameAr, note: line.modifiersText }))}
+          onSave={pos.noteLine}
+          onClose={() => setNoteOpen(false)}
+        />
+      ) : null}
+
       {discountOpen && order ? (
         <DiscountSheet
           currentMinor={order.toSnapshot().discountMinor}
@@ -412,6 +450,96 @@ function DiscountSheet({
           </Button>
           <Button variant="primary" size="lg" onClick={() => submit(BigInt(raw || '0'))}>
             {i18n.t('pos.discount.apply')}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A cook's note on one line — "بدون شطة", "نص استواء". The last line rung up is
+ * picked by default, because that is almost always the one being described.
+ * Refused, with the reason shown, once the kitchen already has the ticket.
+ */
+function NoteSheet({
+  lines,
+  onSave,
+  onClose,
+}: {
+  lines: { id: string; name: string; note: string }[];
+  onSave: (lineId: string, note: string) => void;
+  onClose: () => void;
+}) {
+  const i18n = useI18n();
+  const [lineId, setLineId] = useState(lines[lines.length - 1]?.id ?? '');
+  const [note, setNote] = useState(lines[lines.length - 1]?.note ?? '');
+  const [error, setError] = useState<string | null>(null);
+
+  const pick = (id: string) => {
+    setLineId(id);
+    setNote(lines.find((line) => line.id === id)?.note ?? '');
+    setError(null);
+  };
+
+  const save = () => {
+    try {
+      onSave(lineId, note);
+      onClose();
+    } catch (caught) {
+      const code = caught instanceof DomainError ? `error.${caught.code}` : 'error.unknown';
+      setError(i18n.t(code as Parameters<typeof i18n.t>[0]));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
+      <button type="button" aria-label={i18n.t('common.back')} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={i18n.t('pos.note.title')}
+        className="relative flex max-h-[85vh] w-full max-w-md flex-col gap-14 rounded-t-2xl border border-line bg-surface p-18 sm:rounded-2xl"
+      >
+        <span className="text-ar-lg font-semibold">{i18n.t('pos.note.title')}</span>
+        <div role="radiogroup" aria-label={i18n.t('pos.note.line')} className="flex min-h-0 flex-col gap-6 overflow-y-auto">
+          {lines.map((line) => (
+            <button
+              key={line.id}
+              type="button"
+              role="radio"
+              aria-checked={line.id === lineId}
+              onClick={() => pick(line.id)}
+              className={
+                line.id === lineId
+                  ? 'flex min-h-control-lg items-center justify-between gap-10 rounded-md border-strong border-accent bg-accent-tint px-14 text-start text-ar-base font-medium'
+                  : 'flex min-h-control-lg items-center justify-between gap-10 rounded-md border border-line bg-surface-2 px-14 text-start text-ar-base'
+              }
+            >
+              <span className="truncate">{line.name}</span>
+              {line.note ? <span className="truncate text-ar-sm text-text-muted">{line.note}</span> : null}
+            </button>
+          ))}
+        </div>
+        <TextField
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder={i18n.t('pos.note.placeholder')}
+          aria-label={i18n.t('pos.note.title')}
+          maxLength={240}
+          autoFocus
+        />
+        {error ? (
+          <span role="status" aria-live="polite" className="text-ar-sm text-danger">
+            {error}
+          </span>
+        ) : null}
+        <div className="grid grid-cols-2 gap-10">
+          <Button variant="secondary" size="lg" onClick={onClose}>
+            {i18n.t('common.cancel')}
+          </Button>
+          <Button variant="primary" size="lg" onClick={save} disabled={!lineId}>
+            {i18n.t('pos.note.save')}
           </Button>
         </div>
       </div>

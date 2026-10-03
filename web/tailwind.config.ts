@@ -7,10 +7,12 @@ import type { Config } from 'tailwindcss';
  * `src/styles/design-tokens.css`. Nothing in this file is a literal colour,
  * size or spacing value, and no component may introduce one.
  *
- * Note on opacity modifiers: colours are plain hex vars, so `bg-accent/50`
- * will not work. The design uses no translucent fills, so this is deliberate.
- * If translucency is ever needed, move that token to channel triplets and
- * `rgb(var(--x) / <alpha-value>)`.
+ * Note on opacity modifiers: most colours are plain hex vars, so an opacity
+ * modifier (`bg-accent/50`) does nothing with them. The three the public page
+ * uses translucently — surface, line and accent — also exist as channel
+ * triplets (`--color-*-rgb`, kept equal to the hex by a test), and are written
+ * as `rgb(var(--x-rgb) / <alpha-value>)` so the modifier works. Do the same for
+ * any other token that needs translucency.
  */
 const config: Config = {
   darkMode: ['class', '[data-theme="dark"]'],
@@ -24,13 +26,13 @@ const config: Config = {
           sunken: 'var(--color-bg-sunken)',
         },
         surface: {
-          DEFAULT: 'var(--color-surface)',
+          DEFAULT: 'rgb(var(--color-surface-rgb) / <alpha-value>)',
           2: 'var(--color-surface-2)',
           3: 'var(--color-surface-3)',
           quiet: 'var(--color-surface-quiet)',
         },
         line: {
-          DEFAULT: 'var(--color-border)',
+          DEFAULT: 'rgb(var(--color-border-rgb) / <alpha-value>)',
           strong: 'var(--color-border-strong)',
         },
         text: {
@@ -40,7 +42,7 @@ const config: Config = {
           'on-accent': 'var(--color-text-on-accent)',
         },
         accent: {
-          DEFAULT: 'var(--color-accent)',
+          DEFAULT: 'rgb(var(--color-accent-rgb) / <alpha-value>)',
           hover: 'var(--color-accent-hover)',
           pressed: 'var(--color-accent-pressed)',
           soft: 'var(--color-accent-soft)',

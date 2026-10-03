@@ -211,7 +211,8 @@ class OrderViewSet(viewsets.ViewSet):
         if window_from:
             orders = orders.filter(opened_at__gte=window_from)
         if window_to:
-            orders = orders.filter(opened_at__lte=window_to)
+            # Half-open like the revenue report: from <= opened_at < to.
+            orders = orders.filter(opened_at__lt=window_to)
 
         limit, offset = parse_page(request.query_params, default=50, maximum=500)
         total = orders.count()

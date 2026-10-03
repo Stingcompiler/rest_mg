@@ -103,17 +103,20 @@ export function MenuItemCard({
       onClick={onClick}
       disabled={!available}
       className={cn(
-        'relative flex h-item-card flex-col justify-between rounded-lg border bg-surface p-14 text-start shadow-card outline-none',
+        // A floor, not a fixed height: a long name or description used to push
+        // the price out of the card on a tablet (review, 1024×768). The text is
+        // clamped so cards in a row stay close in size.
+        'relative flex min-h-item-card flex-col justify-between gap-8 rounded-lg border bg-surface p-14 text-start shadow-card outline-none',
         inCart ? 'border-accent-pressed' : 'border-line',
         !available && 'cursor-not-allowed',
       )}
     >
       <div className="flex flex-col gap-2">
-        <span className={cn('text-ar-md font-medium', available ? 'text-text' : 'text-text-disabled')}>
+        <span className={cn('line-clamp-2 text-ar-md font-medium', available ? 'text-text' : 'text-text-disabled')}>
           {name}
         </span>
         {sub ? (
-          <span className={cn('text-ar-sm', available ? 'text-text-muted' : 'text-text-disabled')}>
+          <span className={cn('line-clamp-1 text-ar-sm', available ? 'text-text-muted' : 'text-text-disabled')}>
             {sub}
           </span>
         ) : null}

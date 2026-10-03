@@ -157,9 +157,10 @@ PUBLIC_ORDER_THROTTLE_RATES = {
 # shares them across processes (config/settings/prod.py).
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-# Records are not yet scoped to their branch on every read and write (review
-# finding F02), so a second branch is refused until that work is done
-# (apps.core.models.Branch, apps.core.checks). Turn off only together with it.
+# One restaurant, one branch: a second branch is refused (apps.core.models.Branch,
+# apps.core.checks). Every read and write is scoped to the caller's branch
+# (apps.core.scoping), so a restaurant with several branches sets this to false
+# — and gives each branch's staff and tablets their branch.
 SINGLE_BRANCH = os.environ.get("SINGLE_BRANCH", "true").lower() not in {"0", "false", "no"}
 
 # Manager auth travels in httpOnly cookies, never in localStorage.

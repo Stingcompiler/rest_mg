@@ -1,6 +1,7 @@
 """Restaurant profile — the manager editor, and the public landing endpoint."""
 from __future__ import annotations
 
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -15,6 +16,7 @@ from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.catalog.models import Category, MenuItem
 from apps.core.images import HERO_IMAGE, LOGO, InvalidImage, clean_image, invalid_image_response
+from apps.core.scoping import can_change, in_branch_or_shared, shared_record, visible
 from apps.profiles.models import RestaurantProfile
 from apps.profiles.serializers import RestaurantProfileSerializer
 
@@ -48,13 +50,13 @@ class RestaurantProfileViewSet(viewsets.ViewSet):
     def list(self, request):
         profiles = RestaurantProfile.objects.all()
         if request.user.branch_id:
-            profiles = profiles.filter(branch_id__in=[request.user.branch_id, None])
+            profiles = profiles.filter(in_branch_or_shared(request.user.branch_id))
         return Response(
             RestaurantProfileSerializer(profiles, many=True, context={'request': request}).data
         )
 
     def retrieve(self, request, pk=None):
-        profile = RestaurantProfile.objects.filter(id=pk).first()
+        profile = visible(RestaurantProfile.objects, request.user, shared=True).filter(id=pk).first()
         if profile is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown profile."}},
@@ -81,12 +83,14 @@ class RestaurantProfileViewSet(viewsets.ViewSet):
         return Response(RestaurantProfileSerializer(profile).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None):
-        profile = RestaurantProfile.objects.filter(id=pk).first()
+        profile = visible(RestaurantProfile.objects, request.user, shared=True).filter(id=pk).first()
         if profile is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown profile."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not can_change(profile, request.user):
+            return shared_record()
         payload = RestaurantProfileSerializer(data=request.data)
         payload.instance = profile
         payload.is_valid(raise_exception=True)
@@ -112,12 +116,14 @@ class RestaurantProfileViewSet(viewsets.ViewSet):
         saved, and one unusable file refuses the whole request — a logo is never
         half-applied next to a rejected hero image.
         """
-        profile = RestaurantProfile.objects.filter(id=pk).first()
+        profile = visible(RestaurantProfile.objects, request.user, shared=True).filter(id=pk).first()
         if profile is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown profile."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if not can_change(profile, request.user):
+            return shared_record()
 
         slots = {"logo": LOGO, "hero_image": HERO_IMAGE}
         cleaned = {}
@@ -184,15 +190,15 @@ class PublicLandingView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        branch_scope = [profile.branch_id, None]
-        categories = Category.objects.filter(
-            is_active=True, branch_id__in=branch_scope
-        ).order_by("sort", "name_ar")
+        # A profile tied to a branch shows that branch's menu and the shared one;
+        # a profile with no branch speaks for the whole restaurant.
+        branch_scope = Q() if profile.branch_id is None else in_branch_or_shared(profile.branch_id)
+        categories = Category.objects.filter(branch_scope, is_active=True).order_by("sort", "name_ar")
         # The same rule the order endpoint applies: an item under a retired
         # category is not orderable, so it is not offered either — including on
         # the featured shelf, which is built from this list.
         items = MenuItem.objects.filter(
-            is_active=True, is_available=True, category__is_active=True, branch_id__in=branch_scope
+            branch_scope, is_active=True, is_available=True, category__is_active=True
         ).order_by("sort", "name_ar")
 
         def item_json(item):
@@ -231,6 +237,9 @@ class PublicLandingView(APIView):
 
         return Response(
             {
+                # Sent back with every order from this page, so the order goes to
+                # this restaurant when several are published.
+                "slug": profile.slug,
                 "name_ar": profile.name_ar,
                 "name_en": profile.name_en,
                 "description_ar": profile.description_ar,

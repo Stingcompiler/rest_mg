@@ -17,6 +17,7 @@ from apps.accounts.authentication import CookieJWTAuthentication, DeviceAuthenti
 from apps.accounts.models import Device
 from apps.accounts.permissions import IsSyncPrincipal
 from apps.catalog.models import Category, MenuItem
+from apps.core.scoping import in_branch_or_shared
 from apps.customers.models import Customer
 from apps.orders.models import Order
 from apps.catalog.serializers import CategorySerializer, MenuItemSerializer
@@ -124,10 +125,10 @@ class SyncViewSet(viewsets.ViewSet):
         customers = Customer.objects.filter(server_updated_at__lte=cursor)
 
         if branch_id:
-            categories = categories.filter(branch_id__in=[branch_id, None])
-            items = items.filter(branch_id__in=[branch_id, None])
-            profiles = profiles.filter(branch_id__in=[branch_id, None])
-            customers = customers.filter(branch_id__in=[branch_id, None])
+            categories = categories.filter(in_branch_or_shared(branch_id))
+            items = items.filter(in_branch_or_shared(branch_id))
+            profiles = profiles.filter(in_branch_or_shared(branch_id))
+            customers = customers.filter(in_branch_or_shared(branch_id))
 
         if since is not None:
             categories = categories.filter(server_updated_at__gt=since)

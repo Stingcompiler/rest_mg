@@ -20,7 +20,8 @@ services:
     # Build the static frontend, then install and migrate the Django app that
     # serves it. Node is available on Render's Python image via the build.
     # createcachetable: the sign-in limits count in the database cache.
-    # check --tag single_branch: refuse to deploy over a second branch (F02).
+    # check --tag single_branch: refuse to deploy over a second branch while
+    #   SINGLE_BRANCH is on.
     # flushexpiredtokens: drop refresh tokens past their expiry from the
     #   revocation tables, which otherwise grow with every sign-in.
     buildCommand: >
@@ -62,6 +63,7 @@ services:
       # and order limits count the real client address. Verify on deploy.
       - key: NUM_PROXIES
         value: "1"
-      # Branch isolation is unfinished (F02); keep this on until it is done.
+      # One branch. Set to "false" for a restaurant with several; records are
+      # isolated per branch (apps/core/scoping.py).
       - key: SINGLE_BRANCH
         value: "true"

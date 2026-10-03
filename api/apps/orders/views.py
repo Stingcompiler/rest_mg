@@ -29,6 +29,7 @@ from apps.accounts.permissions import IsManager, IsOrderProcessor
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.core.query import page, parse_page, parse_window
+from apps.core.scoping import visible
 from apps.orders.models import Order
 from apps.orders.serializers import OrderReadSerializer
 
@@ -103,7 +104,7 @@ class OrderViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["post"], url_path="delivery-status")
     def delivery_status(self, request, pk=None):
         """Advance (or cancel) a delivery order's fulfilment status."""
-        order = Order.objects.filter(id=pk).first()
+        order = visible(Order.objects, request.user).filter(id=pk).first()
         if order is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown order."}},
@@ -220,7 +221,7 @@ class OrderViewSet(viewsets.ViewSet):
         return Response(page(rows, total, limit, offset))
 
     def retrieve(self, request, pk=None):
-        order = OrderReadSerializer.queryset().filter(id=pk).first()
+        order = visible(OrderReadSerializer.queryset(), request.user).filter(id=pk).first()
         if order is None:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown order."}},

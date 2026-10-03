@@ -66,13 +66,13 @@ class Branch(models.Model):
         raise HardDeleteBlocked("Branches are never deleted. Set is_active=False.")
 
     def save(self, *args, **kwargs):
-        # Isolation between branches is unfinished (review finding F02), so a
-        # second branch is refused while SINGLE_BRANCH is on. Inactive branches
-        # count: their records are just as reachable.
+        # An installation configured for one branch refuses a second, so one is
+        # never added by accident (an admin form, a script). Inactive branches
+        # count. Set SINGLE_BRANCH=false to run several.
         if self._state.adding and settings.SINGLE_BRANCH and Branch.objects.exists():
             raise ValidationError(
-                "This installation runs a single branch. Records are not yet "
-                "isolated between branches, so a second one cannot be added."
+                "This installation is set up for a single branch. "
+                "Set SINGLE_BRANCH=false to add another."
             )
         super().save(*args, **kwargs)
 

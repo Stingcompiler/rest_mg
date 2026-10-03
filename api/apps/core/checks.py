@@ -28,10 +28,9 @@ def single_branch(app_configs, **kwargs):
         return []
     return [
         Error(
-            f"{count} branches exist, but records are not yet isolated between "
-            "branches (review finding F02).",
-            hint="Keep a single branch, or finish branch isolation before "
-            "setting SINGLE_BRANCH=false.",
+            f"{count} branches exist, but this installation is set up for one.",
+            hint="Set SINGLE_BRANCH=false if the restaurant runs several branches, "
+            "and give each branch's staff and devices their branch.",
             id="core.E001",
         )
     ]

@@ -21,6 +21,7 @@ from apps.accounts.permissions import IsManager, IsStaff
 from apps.accounts.throttles import LOGIN_THROTTLES
 from apps.accounts.tokens import issue_tokens, session_is_current
 from apps.core.models import Branch
+from apps.core.scoping import visible
 
 
 class LoginSerializer(serializers.Serializer):
@@ -181,8 +182,14 @@ class DeviceViewSet(viewsets.ViewSet):
         payload = DeviceSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
 
+        # A branch manager enrols tablets for their own branch only; the owner,
+        # over every branch, for any.
+        branch_id = payload.validated_data["branch_id"]
+        own = getattr(request.user, "branch_id", None)
         try:
-            branch = Branch.objects.get(id=payload.validated_data["branch_id"])
+            if own is not None and branch_id != own:
+                raise Branch.DoesNotExist
+            branch = Branch.objects.get(id=branch_id)
         except Branch.DoesNotExist:
             raise serializers.ValidationError({"branch_id": "Unknown branch."})
 
@@ -197,7 +204,7 @@ class DeviceViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["post"])
     def revoke(self, request, pk=None):
         try:
-            device = Device.objects.get(id=pk)
+            device = visible(Device.objects, request.user).get(id=pk)
         except Device.DoesNotExist:
             return Response(
                 {"error": {"code": "not_found", "message": "Unknown device."}},

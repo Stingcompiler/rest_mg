@@ -97,7 +97,9 @@ describe('every manager page', () => {
     for (const name of screens) {
       const text = readFileSync(resolve(DIR, name), 'utf-8');
       if (!text.includes('<ManagerShell')) continue;
-      expect(text, name).toMatch(/<ManagerShell\s+title=\{[^}]*\}\s+description=\{i18n\.t\('[^']+\.description'\)\}/);
+      // `.pageDescription`, not `.description`: that name was already taken
+      // by a form label on the profile page (batch 23).
+      expect(text, name).toMatch(/<ManagerShell\s+title=\{[^}]*\}\s+description=\{i18n\.t\('[^']+\.pageDescription'\)\}/);
     }
   });
 });

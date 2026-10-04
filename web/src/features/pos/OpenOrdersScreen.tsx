@@ -13,7 +13,7 @@ import { ListOrdered } from 'lucide-react';
 
 import { AppHeader, Button, EmptyState, Numeric, OrderCard, ConfirmDialog, SegmentedControl } from '@/components';
 import { useI18n } from '@/i18n';
-import type { OrderType } from '@/domain';
+import { DomainError, type OrderType } from '@/domain';
 import { usePos } from './PosProvider';
 import { PosRail } from './PosRail';
 
@@ -33,6 +33,7 @@ export function OpenOrdersScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>('all');
   const [pendingCancel, setPendingCancel] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   // The age bar is the point of these cards — it escalates from green through
   // amber to red as an order sits — so the clock has to move on its own. Read
@@ -171,10 +172,29 @@ export function OpenOrdersScreen() {
         body={i18n.t('pos.orders.cancelBody')}
         confirmLabel={i18n.t('common.confirm')}
         cancelLabel={i18n.t('common.back')}
-        onCancel={() => setPendingCancel(null)}
-        onConfirm={() => {
-          if (pendingCancel) void pos.cancelOrder(pendingCancel, i18n.t('pos.orders.cancel'));
+        // The reason was always the button's own label ("cancel"), so the log
+        // could never say why a bill was dropped.
+        reasons={[i18n.t('pos.void.customer'), i18n.t('pos.void.mistake'), i18n.t('pos.orders.cancelDuplicate')]}
+        otherReason={{ label: i18n.t('pos.void.other'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
+        error={cancelError}
+        onCancel={() => {
           setPendingCancel(null);
+          setCancelError(null);
+        }}
+        onConfirm={(reason) => {
+          if (!pendingCancel || !reason) return;
+          pos
+            .cancelOrder(pendingCancel, reason)
+            .then(() => {
+              setPendingCancel(null);
+              setCancelError(null);
+            })
+            .catch((error: unknown) => {
+              // A bill with money on it is refused by the entity: the payments
+              // come off first, on the payment screen.
+              const code = error instanceof DomainError ? `error.${error.code}` : 'error.unknown';
+              setCancelError(i18n.t(code as Parameters<typeof i18n.t>[0]));
+            });
         }}
       />
     </div>

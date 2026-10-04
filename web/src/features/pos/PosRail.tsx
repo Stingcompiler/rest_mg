@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 
-import { IconButton, NavRail, NavRailItem, RailStatus } from '@/components';
+import { ConfirmDialog, IconButton, NavRail, NavRailItem, RailStatus } from '@/components';
 import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
 import { useI18n } from '@/i18n';
@@ -84,12 +84,18 @@ export function PosRail({ active }: { active: RailTarget }) {
   };
   const bar = phoneBar(active);
   const [moreOpen, setMoreOpen] = useState(false);
+  // Signing back in needs the server. One stray tap on a till with no line
+  // used to lock the cashier out mid-service, so it asks first.
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const signOut = {
     icon: <LogOut size={24} />,
     // Shift handover: the day cashier signs out, the night cashier signs in,
     // and from then on the orders carry the right name.
     label: auth.user?.display_name || i18n.t('manager.logout'),
-    onClick: () => void auth.signOut(),
+    onClick: () => {
+      setMoreOpen(false);
+      setConfirmingSignOut(true);
+    },
   };
 
   return (
@@ -125,6 +131,20 @@ export function PosRail({ active }: { active: RailTarget }) {
           className="md:hidden"
         />
       </NavRail>
+
+      <ConfirmDialog
+        open={confirmingSignOut}
+        tone="accent"
+        title={i18n.t('pos.signOut.title')}
+        body={i18n.t(pos.online ? 'pos.signOut.body' : 'pos.signOut.bodyOffline')}
+        confirmLabel={i18n.t('manager.logout')}
+        cancelLabel={i18n.t('common.back')}
+        onCancel={() => setConfirmingSignOut(false)}
+        onConfirm={() => {
+          setConfirmingSignOut(false);
+          void auth.signOut();
+        }}
+      />
 
       {moreOpen ? (
         <MoreSheet

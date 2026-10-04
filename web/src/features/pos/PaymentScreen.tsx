@@ -13,7 +13,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowRight, Banknote, CheckCircle2, Landmark, Printer, Smartphone, Clock3 } from 'lucide-react';
+import { AlertCircle, ArrowRight, Banknote, CheckCircle2, Landmark, Printer, Smartphone, Clock3, Trash2 } from 'lucide-react';
 
 import {
   AmountRow,
@@ -34,10 +34,10 @@ import { customerRepository, type CustomerRecord } from '@/db';
 import { formatTime, useI18n } from '@/i18n';
 import { buildPrintContext, printReceiptToPaper } from '@/print';
 import { DomainError, WALK_IN_CUSTOMER_ID, type PaymentMethod } from '@/domain';
+import { setFlash } from '@/lib/flash';
 import { usePos } from './PosProvider';
 import { MAX_REFERENCE_LENGTH, cleanReference, isUsableReference } from './paymentReference';
-
-const QUICK_CASH = [5_000n, 10_000n, 20_000n];
+import { quickCashOptions } from './quickCash';
 
 const METHOD_LABEL_KEY = {
   cash: 'pos.payment.cash',
@@ -61,6 +61,11 @@ export function PaymentScreen() {
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   // A transfer or wallet payment waiting for its reference.
   const [referenceFor, setReferenceFor] = useState<'bank' | 'wallet' | null>(null);
+  const [closing, setClosing] = useState(false);
+  // The bill is closed and change is owed: the screen says so, large, until
+  // the cashier has handed it over. Closing used to jump straight to a new
+  // order, with the change in small grey text on the screen just left.
+  const [changeOwed, setChangeOwed] = useState<{ number: string; change: bigint } | null>(null);
 
   useEffect(() => {
     void customerRepository.list().then(setCustomers).catch(() => setCustomers([]));
@@ -91,6 +96,16 @@ export function PaymentScreen() {
       })),
     [i18n],
   );
+
+  if (changeOwed) {
+    return (
+      <ChangeDueScreen
+        number={changeOwed.number}
+        change={changeOwed.change}
+        onDone={() => router.push('/pos')}
+      />
+    );
+  }
 
   if (!order) {
     return (
@@ -194,12 +209,32 @@ export function PaymentScreen() {
     });
   };
 
-  const closeBill = async () => {
+  const removePayment = (paymentId: string) => {
     try {
-      await pos.closeActiveOrder();
-      router.push('/pos');
+      pos.removePayment(paymentId);
+      setFeedback({ tone: 'ok', text: i18n.t('pos.payment.removed') });
     } catch (error) {
       setFeedback({ tone: 'error', text: describe(error) });
+    }
+  };
+
+  const closeBill = async () => {
+    if (closing) return;
+    setClosing(true);
+    const number = order.toSnapshot().number;
+    const change = order.changeDue();
+    try {
+      await pos.closeActiveOrder();
+      if (change > 0n) {
+        setChangeOwed({ number, change });
+      } else {
+        setFlash(i18n.t('pos.payment.closedToast', { number }));
+        router.push('/pos');
+      }
+    } catch (error) {
+      setFeedback({ tone: 'error', text: describe(error) });
+    } finally {
+      setClosing(false);
     }
   };
 
@@ -214,7 +249,13 @@ export function PaymentScreen() {
         title={`${i18n.t('pos.payment.title')} · ${order.toSnapshot().number}`}
         trailing={
           <>
-            <StatusChip label={i18n.t('pos.status.savedLocally')} tone="warning" dot />
+            {/* The real connection, as on every other till screen. This said
+                "offline, saved locally" whatever the line was doing. */}
+            <StatusChip
+              label={i18n.t(pos.online ? 'pos.status.online' : 'pos.status.savedLocally')}
+              tone={pos.online ? 'success' : 'warning'}
+              dot
+            />
             <Numeric className="text-num-base">{formatTime(new Date())}</Numeric>
           </>
         }
@@ -270,7 +311,10 @@ export function PaymentScreen() {
             <PaymentMethodCard label={i18n.t('pos.payment.credit')} hint={i18n.t('pos.payment.creditNote')} tone="credit" icon={<Clock3 size={24} />} disabled={due <= 0n} onClick={() => pay('credit')} />
           </div>
           <div className="flex flex-wrap gap-10">
-            {QUICK_CASH.map((amount) => (
+            {/* The notes a customer hands over for this bill: the next round
+                amounts above it. These were fixed at 5,000 to 20,000, all
+                below a typical bill, so a tap made a partial payment. */}
+            {quickCashOptions(due).map((amount) => (
               <QuickCashButton
                 key={amount.toString()}
                 label={i18n.money(amount)}
@@ -296,24 +340,51 @@ export function PaymentScreen() {
           <span className="text-ar-base text-text-muted">{i18n.t('pos.payment.recorded')}</span>
           <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
             {payments.map((payment) => (
-              <AmountRow
-                key={payment.id}
-                label={i18n.t(METHOD_LABEL_KEY[payment.method])}
-                note={payment.reference || undefined}
-                amount={i18n.money(payment.amountMinor)}
-                tone={payment.method === 'credit' ? 'credit' : 'neutral'}
-              />
+              <div key={payment.id} className="flex items-center gap-6">
+                <div className="min-w-0 flex-1">
+                  <AmountRow
+                    label={i18n.t(METHOD_LABEL_KEY[payment.method])}
+                    note={payment.reference || undefined}
+                    amount={i18n.money(payment.amountMinor)}
+                    tone={payment.method === 'credit' ? 'credit' : 'neutral'}
+                  />
+                </div>
+                {/* The wrong method or amount comes off here. The only way out
+                    used to be cancelling the whole bill. */}
+                <IconButton
+                  variant="quiet"
+                  className="text-danger"
+                  label={i18n.t('pos.payment.remove', {
+                    method: i18n.t(METHOD_LABEL_KEY[payment.method]),
+                    amount: i18n.money(payment.amountMinor),
+                  })}
+                  onClick={() => removePayment(payment.id)}
+                >
+                  <Trash2 size={18} />
+                </IconButton>
+              </div>
             ))}
           </div>
           <CalloutPanel title={i18n.t('pos.payment.remaining')} tone="neutral">
-            <div className="flex items-baseline justify-between">
-              <span className="text-ar-base text-text-muted">{i18n.t('pos.payment.change')}</span>
-              <Numeric className="text-num-md text-text-muted">{i18n.money(order.changeDue())}</Numeric>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.remaining')}</span>
-              <Numeric className="text-num-5xl font-bold text-warning">{i18n.money(due)}</Numeric>
-            </div>
+            {/* Whichever matters now is the big number: what is still owed, or,
+                once paid, the change to hand back. */}
+            {due > 0n || order.changeDue() === 0n ? (
+              <>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-ar-base text-text-muted">{i18n.t('pos.payment.change')}</span>
+                  <Numeric className="text-num-md text-text-muted">{i18n.money(order.changeDue())}</Numeric>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.remaining')}</span>
+                  <Numeric className="text-num-5xl font-bold text-warning">{i18n.money(due)}</Numeric>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-baseline justify-between">
+                <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.change')}</span>
+                <Numeric className="text-num-5xl font-bold text-success">{i18n.money(order.changeDue())}</Numeric>
+              </div>
+            )}
           </CalloutPanel>
           <div className="grid grid-cols-[1fr_1.4fr] gap-10">
             <Button variant="secondary" size="xl" onClick={printNow}>
@@ -322,7 +393,7 @@ export function PaymentScreen() {
                 {i18n.t('pos.payment.printReceipt')}
               </span>
             </Button>
-            <Button variant="primary" size="xl" disabled={due > 0n} onClick={closeBill}>
+            <Button variant="primary" size="xl" disabled={due > 0n || closing} onClick={() => void closeBill()}>
               {i18n.t('pos.payment.closeBill')}
             </Button>
           </div>
@@ -486,6 +557,29 @@ function ReferenceDialog({
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+/**
+ * After a cash bill closes with change owed: the amount to hand back, as the
+ * whole screen, until the cashier has done it.
+ */
+function ChangeDueScreen({ number, change, onDone }: { number: string; change: bigint; onDone(): void }) {
+  const i18n = useI18n();
+  return (
+    <div className="flex h-screen flex-col items-center justify-center gap-24 bg-bg p-24 text-center text-text" dir={i18n.dir}>
+      <CheckCircle2 size={48} className="text-success" />
+      <div className="flex flex-col gap-8">
+        <span className="text-ar-lg text-text-muted">{i18n.t('pos.payment.closedTitle', { number })}</span>
+        <span className="text-ar-2xl font-semibold">{i18n.t('pos.payment.giveChange')}</span>
+      </div>
+      <div role="status" aria-live="assertive">
+        <Numeric className="text-num-6xl font-bold text-success">{i18n.money(change)}</Numeric>
+      </div>
+      <Button variant="primary" size="xl" className="min-w-thumb-w" autoFocus onClick={onDone}>
+        {i18n.t('pos.payment.nextOrder')}
+      </Button>
     </div>
   );
 }

@@ -15,6 +15,8 @@ import re
 from django.conf import settings
 from rest_framework.throttling import SimpleRateThrottle
 
+from apps.orders.phone import normalize_sudan_phone
+
 
 class PublicOrderAddressThrottle(SimpleRateThrottle):
     scope = "public_order_address"
@@ -33,7 +35,10 @@ class PublicOrderPhoneThrottle(SimpleRateThrottle):
         return settings.PUBLIC_ORDER_THROTTLE_RATES["phone"]
 
     def get_cache_key(self, request, view):
-        digits = re.sub(r"\D", "", str(request.data.get("customer_phone", "")))
+        raw = str(request.data.get("customer_phone", ""))
+        # One key per number however it is written: "+249 91…" and "091…" are
+        # the same customer, and a format change must not reset the limit.
+        digits = normalize_sudan_phone(raw) or re.sub(r"\D", "", raw)
         if not digits:
             return None
         ident = hashlib.sha256(digits.encode("utf-8")).hexdigest()

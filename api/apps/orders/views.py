@@ -166,6 +166,20 @@ class OrderViewSet(viewsets.ViewSet):
         # go back first, and there is no refund flow yet — so that is refused
         # rather than leaving a paid bill marked cancelled.
         cancelling = target == Order.DeliveryStatus.CANCELLED and target != order.delivery_status
+        # A customer's order is not dropped without saying why: the reason is
+        # what the activity log shows, and what the restaurant tells the
+        # customer when they call (user-experience review, batch 11).
+        reason = str(request.data.get("reason") or "").strip()[:200]
+        if cancelling and not reason:
+            return Response(
+                {
+                    "error": {
+                        "code": "reason_required",
+                        "message": "Say why this order is being cancelled.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if cancelling and order.payments.exists():
             return Response(
                 {
@@ -186,7 +200,7 @@ class OrderViewSet(viewsets.ViewSet):
             if cancelling:
                 order.status = Order.Status.VOID
                 order.closed_at = now
-                order.void_reason = "Delivery cancelled"
+                order.void_reason = reason
                 written += ["status", "closed_at", "void_reason"]
             order.save(update_fields=written)
             audit.record(
@@ -194,7 +208,10 @@ class OrderViewSet(viewsets.ViewSet):
                 actor=request.user,
                 target=order,
                 target_label=f"#{order.number}",
-                metadata={"delivery_status": [previous, target]},
+                metadata={
+                    "delivery_status": [previous, target],
+                    **({"reason": reason} if cancelling else {}),
+                },
             )
         return Response(OrderReadSerializer(OrderReadSerializer.queryset().get(id=pk)).data)
 

@@ -52,7 +52,11 @@ class DeliveryStatusTestCase(TestCase):
         return c
 
     def set_status(self, client, oid, value):
-        return client.post(f"/api/v1/orders/{oid}/delivery-status/", {"delivery_status": value}, format="json")
+        body = {"delivery_status": value}
+        if value == "cancelled":
+            # Cancelling needs a reason since batch 11 (test_mistakes_and_money).
+            body["reason"] = "طلب الزبون"
+        return client.post(f"/api/v1/orders/{oid}/delivery-status/", body, format="json")
 
     def kitchen_says(self, oid, value):
         """The kitchen advancing its own ticket, which is the other half of the

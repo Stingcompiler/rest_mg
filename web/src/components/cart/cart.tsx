@@ -9,6 +9,7 @@
  */
 import { cn } from '@/lib/cn';
 import { Numeric } from '../primitives/indicators';
+import { digitsOnly } from '@/lib/digits';
 
 export interface CartTab {
   id: string;
@@ -63,6 +64,10 @@ export interface QtyStepperProps {
   onIncrement?(): void;
   decrementLabel: string;
   incrementLabel: string;
+  /** Make the count typeable; called with the typed number. */
+  onSet?(qty: number): void;
+  /** The typed field's accessible name, e.g. "عدد ورقات ١٬٠٠٠". */
+  valueLabel?: string;
 }
 
 export function QtyStepper({
@@ -71,6 +76,8 @@ export function QtyStepper({
   onIncrement,
   decrementLabel,
   incrementLabel,
+  onSet,
+  valueLabel,
 }: QtyStepperProps) {
   return (
     <div className="flex flex-none items-center gap-2">
@@ -82,9 +89,22 @@ export function QtyStepper({
       >
         −
       </button>
-      <span className="inline-flex h-stepper min-w-stepper items-center justify-center bg-surface text-num-base font-semibold text-text">
-        <Numeric>{qty}</Numeric>
-      </span>
+      {onSet ? (
+        // Typed, for counting: 60 notes used to be 60 taps on "+".
+        <input
+          inputMode="numeric"
+          dir="ltr"
+          aria-label={valueLabel}
+          value={qty}
+          onFocus={(event) => event.target.select()}
+          onChange={(event) => onSet(Number(digitsOnly(event.target.value).slice(0, 5) || '0'))}
+          className="numeric h-stepper w-stepper-value bg-surface text-center text-num-base font-semibold text-text outline-none"
+        />
+      ) : (
+        <span className="inline-flex h-stepper min-w-stepper items-center justify-center bg-surface text-num-base font-semibold text-text">
+          <Numeric>{qty}</Numeric>
+        </span>
+      )}
       <button
         type="button"
         aria-label={incrementLabel}

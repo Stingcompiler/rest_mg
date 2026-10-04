@@ -12,17 +12,21 @@
  * The board is big, high-contrast, and touch-first: a cook glances at it from a
  * metre away with their hands full. Each ticket advances queued → preparing →
  * ready → served with a single large button, and leaves the board when served.
+ * A step taken by mistake can be taken back: "back" on the ticket, and "undo"
+ * for a few seconds after it was served.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { BellRing } from 'lucide-react';
 
-import { Button, EmptyState, Numeric, SettingsMenu, StatusChip } from '@/components';
+import { Button, EmptyState, Numeric, SettingsMenu, StatusChip, Toast } from '@/components';
 import { AlertBell } from '@/features/alerts/AlertBell';
 import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
 import { formatTime, useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { ApiError } from '@/lib/http';
 import { kitchenApi, type KitchenStatus, type KitchenTicket } from './api';
+import { nextKitchenStatus, previousKitchenStatus } from './steps';
 
 // Five seconds, not ten. The cashier's press pushes the ticket to the server
 // straight away, so this interval is the whole of the remaining delay between
@@ -36,12 +40,6 @@ function age(sentAt: string, now: number) {
     minutes < 10 ? 'success' : minutes < 20 ? 'warning' : 'danger';
   return { minutes, tone };
 }
-
-const NEXT_STATUS: Partial<Record<KitchenStatus, KitchenStatus>> = {
-  queued: 'preparing',
-  preparing: 'ready',
-  ready: 'served',
-};
 
 const ACTION_KEY = {
   queued: 'kitchen.start',
@@ -99,25 +97,56 @@ export function KitchenScreen() {
     noticeBody: (count) => i18n.t('alerts.newTicketBody', { count: i18n.int(count) }),
   });
 
-  const advance = async (ticket: KitchenTicket) => {
-    const next = NEXT_STATUS[ticket.kitchen_status];
-    if (!next) return;
+  // Tickets with a step in flight. Their buttons wait, so a double tap on
+  // "start" no longer marks the ticket ready.
+  const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
+  const [notice, setNotice] = useState<{ text: string; undo?: KitchenTicket } | null>(null);
+
+  const move = async (ticket: KitchenTicket, to: KitchenStatus) => {
+    if (busy.has(ticket.id)) return;
+    setBusy((current) => new Set(current).add(ticket.id));
     // Optimistic: the board reacts under the cook's hand, then reconciles.
     setTickets((current) =>
       (current ?? []).flatMap((entry) =>
-        entry.id !== ticket.id
-          ? [entry]
-          : next === 'served'
-            ? []
-            : [{ ...entry, kitchen_status: next }],
+        entry.id !== ticket.id ? [entry] : to === 'served' ? [] : [{ ...entry, kitchen_status: to }],
       ),
     );
     try {
-      await kitchenApi.setStatus(ticket.id, next);
-    } catch {
-      setOnline(false);
+      await kitchenApi.setStatus(ticket.id, to);
+      setOnline(true);
+      if (to === 'served') {
+        setNotice({ text: i18n.t('kitchen.servedNotice', { number: ticket.number }), undo: ticket });
+      }
+    } catch (error) {
+      // A refusal is not a dropped line: say what the server said (a cancelled
+      // order, say) instead of showing "offline" and quietly putting it back.
+      if (error instanceof ApiError && error.status < 500) {
+        setNotice({
+          text: i18n.t(error.code === 'order_cancelled' ? 'kitchen.refusedCancelled' : 'kitchen.refused', {
+            number: ticket.number,
+          }),
+        });
+      } else {
+        setOnline(false);
+      }
+    } finally {
+      setBusy((current) => {
+        const rest = new Set(current);
+        rest.delete(ticket.id);
+        return rest;
+      });
     }
     void load();
+  };
+
+  const advance = (ticket: KitchenTicket) => {
+    const next = nextKitchenStatus(ticket.kitchen_status);
+    if (next) void move(ticket, next);
+  };
+
+  const stepBack = (ticket: KitchenTicket) => {
+    const previous = previousKitchenStatus(ticket.kitchen_status);
+    if (previous) void move(ticket, previous);
   };
 
   return (
@@ -227,9 +256,28 @@ export function KitchenScreen() {
                   </ul>
 
                   {action ? (
-                    <Button variant="primary" size="xl" onClick={() => void advance(ticket)}>
-                      {i18n.t(action)}
-                    </Button>
+                    <div className="flex gap-10">
+                      <Button
+                        variant="primary"
+                        size="xl"
+                        className="flex-1"
+                        disabled={busy.has(ticket.id)}
+                        onClick={() => advance(ticket)}
+                      >
+                        {i18n.t(action)}
+                      </Button>
+                      {previousKitchenStatus(ticket.kitchen_status) ? (
+                        <Button
+                          variant="secondary"
+                          size="xl"
+                          disabled={busy.has(ticket.id)}
+                          aria-label={i18n.t('kitchen.stepBackLabel', { number: ticket.number })}
+                          onClick={() => stepBack(ticket)}
+                        >
+                          {i18n.t('kitchen.stepBack')}
+                        </Button>
+                      ) : null}
+                    </div>
                   ) : null}
                 </article>
               );
@@ -237,6 +285,15 @@ export function KitchenScreen() {
           </div>
         )}
       </main>
+      {notice ? (
+        <Toast
+          message={notice.text}
+          actionLabel={notice.undo ? i18n.t('kitchen.undo') : undefined}
+          onAction={notice.undo ? () => void move({ ...notice.undo!, kitchen_status: 'served' }, 'ready') : undefined}
+          onDismiss={() => setNotice(null)}
+          durationMs={notice.undo ? 8_000 : 6_000}
+        />
+      ) : null}
     </div>
   );
 }

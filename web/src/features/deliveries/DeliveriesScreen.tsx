@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BellRing, Banknote, Clock, MapPin, Phone, StickyNote, Truck, X } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
+import { Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
 import { formatTime, useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { ApiError, homeForRole } from '@/lib/http';
@@ -70,6 +70,7 @@ const REFUSAL_KEY = {
   kitchen_owned_status: 'error.kitchen_owned_status',
   invalid_transition: 'error.invalid_transition',
   paid_order_cancel: 'error.paid_order_cancel',
+  reason_required: 'error.reason_required',
 } as const;
 
 const STATUS_KEY = {
@@ -231,10 +232,15 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
   const router = useRouter();
   const setStatus = useSetDeliveryStatus();
   const [collecting, setCollecting] = useState(false);
+  const [collectFailed, setCollectFailed] = useState(false);
+  // Cancelling a customer's order took one tap and recorded no reason; a
+  // mis-tap dropped the order for good (user-experience review, batch 11).
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   // Hand the till a copy of the order and open its payment screen there.
   const collect = async () => {
     setCollecting(true);
+    setCollectFailed(false);
     try {
       const shift = await shiftRepository.activeShift();
       await orderRepository.adopt(
@@ -247,6 +253,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
       router.push(`/pos/payment/?order=${order.id}`);
     } catch (error) {
       console.error('[deliveries] collect', error);
+      setCollectFailed(true);
       setCollecting(false);
     }
   };
@@ -351,21 +358,48 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
               {i18n.t('deliveries.awaitingKitchen')}
             </span>
           ) : null}
-          <Button
-            variant="secondary"
-            onClick={() => setStatus.mutate({ id: order.id, status: 'cancelled' })}
-            disabled={setStatus.isPending}
-          >
+          <Button variant="secondary" onClick={() => setConfirmingCancel(true)} disabled={setStatus.isPending}>
             <span className="flex items-center gap-6">
               <X size={16} />
               {i18n.t('deliveries.cancel')}
             </span>
           </Button>
-          {refusal ? (
+          {refusal && !confirmingCancel ? (
             <span role="status" aria-live="polite" className="w-full text-ar-sm text-danger">
               {refusal}
             </span>
           ) : null}
+          {collectFailed ? (
+            <span role="alert" className="w-full text-ar-sm text-danger">
+              {i18n.t('deliveries.collectFailed')}
+            </span>
+          ) : null}
+          <ConfirmDialog
+            open={confirmingCancel}
+            title={i18n.t('deliveries.cancelTitle', { number: order.number })}
+            body={i18n.t('deliveries.cancelBody')}
+            confirmLabel={i18n.t('deliveries.cancel')}
+            cancelLabel={i18n.t('common.back')}
+            reasons={[
+              i18n.t('deliveries.reason.noAnswer'),
+              i18n.t('deliveries.reason.customerCancelled'),
+              i18n.t('deliveries.reason.outOfArea'),
+              i18n.t('deliveries.reason.unavailable'),
+            ]}
+            otherReason={{ label: i18n.t('pos.void.other'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
+            pending={setStatus.isPending}
+            error={confirmingCancel ? refusal : null}
+            onCancel={() => {
+              setConfirmingCancel(false);
+              setStatus.reset();
+            }}
+            onConfirm={(reason) =>
+              setStatus.mutate(
+                { id: order.id, status: 'cancelled', reason },
+                { onSuccess: () => setConfirmingCancel(false) },
+              )
+            }
+          />
         </div>
       ) : null}
     </article>

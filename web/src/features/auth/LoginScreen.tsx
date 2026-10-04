@@ -22,7 +22,7 @@ export function LoginScreen() {
   const search = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<'credentials' | 'throttled' | null>(null);
+  const [error, setError] = useState<'credentials' | 'throttled' | 'network' | null>(null);
   const [pending, setPending] = useState(false);
 
   // Already signed in? Then this page has nothing to ask. Someone arrives here
@@ -47,8 +47,12 @@ export function LoginScreen() {
       // should not inherit the cook's destination.
       window.location.assign(destinationAfterLogin(search.get('next'), user.role));
     } catch (caught) {
-      if (caught instanceof ApiError) setError(caught.status === 429 ? 'throttled' : 'credentials');
-      else throw caught;
+      // Only a refusal means the password was wrong. A server error or no
+      // line at all used to leave the button disabled with nothing said, or
+      // blame the password for an outage.
+      if (caught instanceof ApiError && caught.status === 429) setError('throttled');
+      else if (caught instanceof ApiError && caught.status < 500) setError('credentials');
+      else setError('network');
       setPending(false);
     }
   };
@@ -86,7 +90,13 @@ export function LoginScreen() {
         </label>
         {error ? (
           <span role="alert" className="text-ar-sm text-danger">
-            {i18n.t(error === 'throttled' ? 'manager.login.throttled' : 'manager.login.error')}
+            {i18n.t(
+              error === 'throttled'
+                ? 'manager.login.throttled'
+                : error === 'network'
+                  ? 'login.networkError'
+                  : 'manager.login.error',
+            )}
           </span>
         ) : null}
         <Button type="submit" variant="primary" size="lg" disabled={pending}>

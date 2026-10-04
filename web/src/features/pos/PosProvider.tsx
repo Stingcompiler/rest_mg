@@ -34,6 +34,7 @@ import {
   Order,
   Shift,
   newId,
+  type KitchenSend,
   type NewPaymentInput,
   type Money,
   type OrderType,
@@ -100,15 +101,24 @@ interface PosContextValue {
   switchCart(orderId: string): void;
   parkActive(): void;
   addItem(itemId: string): void;
+  /**
+   * Step a line's quantity. Below one, a line the kitchen never saw is removed;
+   * a line the kitchen has stays at one and must be voided with a reason.
+   */
   changeQty(lineId: string, delta: number): void;
+  /** Take a line the kitchen has off the bill, keeping it as an audit record. */
+  voidLine(lineId: string, reason: string): void;
   /** A cook's note on a line; throws the entity's refusal for the caller to show. */
   noteLine(lineId: string, note: string): void;
   setOrderType(type: OrderType): void;
   applyDiscount(amountMinor: Money): void;
-  sendToKitchen(): void;
+  /** Send what the kitchen does not have yet. Null when nothing was sent. */
+  sendToKitchen(): KitchenSend | null;
 
   // Payment
   addPayment(input: NewPaymentInput): void;
+  /** Take a payment off the open bill (the wrong method or amount). */
+  removePayment(paymentId: string): void;
   closeActiveOrder(): Promise<void>;
 
   // Open orders
@@ -125,6 +135,8 @@ interface PosContextValue {
   /** Coins are counted as one amount, not by face value. */
   setLumpAmount(label: string, amountMinor: Money): void;
   setVarianceReason(reason: string): void;
+  /** What the drawer held when the shift started; asked once per shift. */
+  setOpeningFloat(amountMinor: Money): Promise<void>;
   closeShift(): Promise<void>;
 }
 
@@ -394,14 +406,25 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       const next = line.qty + delta;
       if (next >= 1) {
         order.changeQty(lineId, next);
-      } else if (order.status !== 'sent') {
-        // Below one, the line goes — the way to correct a mistaken tap without
-        // cancelling the whole bill. Once the kitchen has the ticket a line can
-        // only be voided with a reason, so the stepper stops at one there.
+      } else if (!order.lineSentToKitchen(lineId)) {
+        // Below one, the line goes: the way to correct a mistaken tap without
+        // cancelling the whole bill. A line the kitchen has is voided with a
+        // reason instead (voidLine); the screen asks for it.
         order.removeLine(lineId);
       } else {
         return;
       }
+      persistOrder(order);
+      bump();
+    },
+    [bump, persistOrder],
+  );
+
+  const voidLine = useCallback(
+    (lineId: string, reason: string) => {
+      const order = cartRef.current.active();
+      if (!order) return;
+      order.voidLine(lineId, reason);
       persistOrder(order);
       bump();
     },
@@ -441,10 +464,10 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     [bump, persistOrder],
   );
 
-  const sendToKitchen = useCallback(() => {
+  const sendToKitchen = useCallback((): KitchenSend | null => {
     const order = cartRef.current.active();
-    if (!order) return;
-    order.send();
+    if (!order || order.kitchenChanges().length === 0) return null;
+    const sent = order.send();
     // Persist first, then print and sync — a kitchen ticket is never sent for
     // work the device hasn't recorded, and if the write fails nothing goes out
     // and the screen says so. The sync must wait for the write too: the order
@@ -460,13 +483,16 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
         // at the next interval. If the line is down this does nothing and the
         // printed ticket carries the order, which is the point of printing it.
         syncNow();
-        void printKitchenTicket(order, currentPrintContext())
+        // An amendment prints only what changed: a second copy of the whole
+        // order is cooked twice.
+        void printKitchenTicket(order, currentPrintContext(), sent)
           .then(kickPrintQueue)
           .catch((error) => console.error('[print] kitchen ticket', error));
       },
       reportSaveFailure,
     );
     bump();
+    return sent;
   }, [bump, refreshPending, reportSaveFailure, saveOrder, syncNow]);
 
   const addPayment = useCallback(
@@ -474,6 +500,17 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       const order = cartRef.current.active();
       if (!order) return;
       order.addPayment(input);
+      persistOrder(order);
+      bump();
+    },
+    [bump, persistOrder],
+  );
+
+  const removePayment = useCallback(
+    (paymentId: string) => {
+      const order = cartRef.current.active();
+      if (!order) return;
+      order.removePayment(paymentId);
       persistOrder(order);
       bump();
     },
@@ -648,6 +685,19 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     [bump, persistShift],
   );
 
+  const setOpeningFloat = useCallback(
+    async (amountMinor: Money) => {
+      const shift = shiftRef.current;
+      if (!shift) return;
+      shift.setOpeningFloat(amountMinor);
+      // Awaited: the float is what the close will be measured against.
+      await shiftRepository.save(shiftToRecord(shift));
+      bump();
+      void refreshPending();
+    },
+    [bump, refreshPending],
+  );
+
   const closeShift = useCallback(async () => {
     const shift = shiftRef.current;
     if (!shift) return;
@@ -689,11 +739,13 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       parkActive,
       addItem,
       changeQty,
+      voidLine,
       noteLine,
       setOrderType,
       applyDiscount,
       sendToKitchen,
       addPayment,
+      removePayment,
       closeActiveOrder,
       resumeOrder,
       cancelOrder,
@@ -703,6 +755,7 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       setDenominationCount,
       setLumpAmount,
       setVarianceReason,
+      setOpeningFloat,
       closeShift,
     }),
     // `version` changes on every mutation, giving the context value a new

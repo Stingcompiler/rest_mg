@@ -8,7 +8,7 @@
  */
 import { useMemo, useState } from 'react';
 
-import { AppHeader, Button, EmptyState, Numeric, Toggle } from '@/components';
+import { AppHeader, Button, ConfirmDialog, EmptyState, Numeric, Toast, Toggle } from '@/components';
 import { Utensils } from 'lucide-react';
 import { toMinor, fromMinor } from '@/db';
 import { useI18n } from '@/i18n';
@@ -23,6 +23,11 @@ export function MenuManagementScreen() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [percent, setPercent] = useState(15);
   const [edits, setEdits] = useState<Record<string, string>>({});
+  // A raise across a category is one tap away from every price in it, and each
+  // tap compounded: +15% twice is +32%. It asks first and says when it is done.
+  const [confirmingBulk, setConfirmingBulk] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const activeCategoryId = categoryId ?? pos.categories[0]?.id ?? null;
   const category = useMemo(
@@ -100,7 +105,8 @@ export function MenuManagementScreen() {
               <div className="ms-auto">
                 <Button
                   variant="primary"
-                  onClick={() => activeCategoryId && void pos.bulkPriceChange(activeCategoryId, percent)}
+                  disabled={!category || category.items.length === 0}
+                  onClick={() => setConfirmingBulk(true)}
                 >
                   {i18n.t('pos.menu.applyToItems', { count: i18n.int(category?.items.length ?? 0) })}
                 </Button>
@@ -147,6 +153,32 @@ export function MenuManagementScreen() {
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmingBulk}
+        tone="accent"
+        title={i18n.t('pos.menu.bulkTitle', {
+          percent: i18n.int(percent),
+          count: i18n.int(category?.items.length ?? 0),
+          category: category?.nameAr ?? '',
+        })}
+        body={i18n.t('pos.menu.bulkBody')}
+        confirmLabel={i18n.t('pos.menu.bulkConfirm', { percent: i18n.int(percent) })}
+        cancelLabel={i18n.t('common.back')}
+        pending={applying}
+        onCancel={() => setConfirmingBulk(false)}
+        onConfirm={() => {
+          if (!activeCategoryId) return;
+          setApplying(true);
+          pos
+            .bulkPriceChange(activeCategoryId, percent)
+            .then(() => setToast(i18n.t('pos.menu.bulkDone', { count: i18n.int(category?.items.length ?? 0) })))
+            .finally(() => {
+              setApplying(false);
+              setConfirmingBulk(false);
+            });
+        }}
+      />
+      {toast ? <Toast message={toast} onDismiss={() => setToast(null)} /> : null}
     </div>
   );
 }

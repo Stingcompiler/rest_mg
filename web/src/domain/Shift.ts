@@ -31,6 +31,12 @@ export interface ShiftSnapshot {
   openedAt: string;
   closedAt: string | null;
   openingFloatMinor: Money;
+  /**
+   * When the cashier said what the drawer held at the start. Null until they
+   * have: the till asks before the first sale, because a float nobody entered
+   * reads as a surplus at every close.
+   */
+  openingFloatConfirmedAt: string | null;
   varianceReason: string;
   counts: CashCountSnapshot[];
 }
@@ -65,6 +71,7 @@ export class Shift {
         openedAt: input.openedAt ?? new Date().toISOString(),
         closedAt: null,
         openingFloatMinor: input.openingFloatMinor ?? ZERO,
+        openingFloatConfirmedAt: input.openingFloatMinor === undefined ? null : (input.openedAt ?? new Date().toISOString()),
         varianceReason: '',
       },
       input.toleranceBps ?? DEFAULT_TOLERANCE_BPS,
@@ -73,7 +80,10 @@ export class Shift {
 
   static fromSnapshot(snapshot: ShiftSnapshot, toleranceBps: bigint = DEFAULT_TOLERANCE_BPS): Shift {
     const { counts, ...rest } = snapshot;
-    const shift = new Shift({ ...rest }, toleranceBps);
+    // A shift saved before the float was asked for is already under way:
+    // asking now would only interrupt it.
+    const confirmedAt = rest.openingFloatConfirmedAt === undefined ? rest.openedAt : rest.openingFloatConfirmedAt;
+    const shift = new Shift({ ...rest, openingFloatConfirmedAt: confirmedAt }, toleranceBps);
     // Closed orders are re-attached by the caller so expected cash is correct
     // after a reload; the snapshot carries only the counted rows.
     shift.counts = counts.map((count) => CashCount.fromSnapshot(count));
@@ -91,6 +101,22 @@ export class Shift {
 
   get status(): ShiftStatus {
     return this.state.status;
+  }
+
+  /** The till still has to ask what the drawer held at the start. */
+  needsOpeningFloat(): boolean {
+    return this.state.status === 'open' && this.state.openingFloatConfirmedAt === null;
+  }
+
+  get openingFloatMinor(): Money {
+    return this.state.openingFloatMinor;
+  }
+
+  setOpeningFloat(amountMinor: Money, at: string = new Date().toISOString()): void {
+    assert(this.state.status === 'open', 'shift_already_closed', 'A closed shift cannot change its float.');
+    assert(amountMinor >= 0n, 'invalid_float', 'An opening float may not be negative.');
+    this.state.openingFloatMinor = amountMinor;
+    this.state.openingFloatConfirmedAt = at;
   }
 
   addOrder(order: Order): void {

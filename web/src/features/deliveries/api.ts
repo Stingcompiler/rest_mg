@@ -59,9 +59,10 @@ export const deliveriesApi = {
     const qs = params.toString();
     return request<Page<DeliveryOrder>>(`orders/deliveries${qs ? `?${qs}` : ''}`);
   },
-  setStatus: (id: string, delivery_status: DeliveryStatus) =>
+  /** `reason` is required by the server when cancelling. */
+  setStatus: (id: string, delivery_status: DeliveryStatus, reason?: string) =>
     request<DeliveryOrder>(`orders/${id}/delivery-status`, {
       method: 'POST',
-      body: JSON.stringify({ delivery_status }),
+      body: JSON.stringify(reason ? { delivery_status, reason } : { delivery_status }),
     }),
 };

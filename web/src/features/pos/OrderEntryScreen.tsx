@@ -27,6 +27,7 @@ import {
   CartLine,
   CartTabs,
   CategoryTab,
+  ConfirmDialog,
   EmptyState,
   IconButton,
   LoadingList,
@@ -38,11 +39,14 @@ import {
   SettingsMenu,
   StatusChip,
   TextField,
+  Toast,
   TotalsBlock,
 } from '@/components';
 import { formatTime, useI18n } from '@/i18n';
 import { getPrintService } from '@/print';
 import { DomainError, type OrderType } from '@/domain';
+import { takeFlash } from '@/lib/flash';
+import { OpeningFloatDialog } from './OpeningFloatDialog';
 import { usePos } from './PosProvider';
 import { PosRail } from './PosRail';
 
@@ -72,6 +76,31 @@ export function OrderEntryScreen() {
   const hasLines = liveLines.length > 0;
   const [discountOpen, setDiscountOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  // A line the kitchen has, waiting for the reason it is being taken off.
+  const [voiding, setVoiding] = useState<{ id: string; name: string } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  // "Bill closed", carried over from the payment screen that just closed it.
+  useEffect(() => {
+    const message = takeFlash();
+    if (message) setToast(message);
+  }, []);
+
+  // The send button says where the order stands: not sent, sent with changes
+  // since, or already in the kitchen. It used to look the same after a send,
+  // so a second tap printed the whole ticket again.
+  const kitchenChanges = order?.kitchenChanges().length ?? 0;
+  const sentBefore = Boolean(orderSnapshot?.sentAt);
+  const sendLabel = !sentBefore
+    ? i18n.t('pos.cart.sendToKitchen')
+    : kitchenChanges > 0
+      ? i18n.t('pos.cart.sendChanges')
+      : i18n.t('pos.cart.inKitchen');
+  const send = () => {
+    const sent = pos.sendToKitchen();
+    if (!sent) return;
+    setCartOpen(false);
+    setToast(i18n.t(sent.amendment ? 'pos.cart.sentChangesToast' : 'pos.cart.sentToast'));
+  };
   const orderTypes: { value: OrderType; label: string }[] = [
     { value: 'dine_in', label: i18n.t('pos.orderType.dineIn') },
     { value: 'takeaway', label: i18n.t('pos.orderType.takeaway') },
@@ -102,7 +131,7 @@ export function OrderEntryScreen() {
           activeId={order?.id ?? ''}
           onSelect={pos.switchCart}
           onAdd={() => void pos.newCart()}
-          addLabel={i18n.t('pos.title')}
+          addLabel={i18n.t('pos.cart.newOrder')}
         />
       </div>
 
@@ -135,7 +164,11 @@ export function OrderEntryScreen() {
                     qty={i18n.int(line.qty)}
                     decrementLabel={i18n.t('pos.cart.qtyLess', { name: line.nameAr })}
                     incrementLabel={i18n.t('pos.cart.qtyMore', { name: line.nameAr })}
-                    onDecrement={() => pos.changeQty(line.id, -1)}
+                    onDecrement={() =>
+                      line.qty === 1 && order?.lineSentToKitchen(line.id)
+                        ? setVoiding({ id: line.id, name: line.nameAr })
+                        : pos.changeQty(line.id, -1)
+                    }
                     onIncrement={() => pos.changeQty(line.id, +1)}
                   />
                 }
@@ -181,15 +214,12 @@ export function OrderEntryScreen() {
                 the difference between a tap that registered and one that missed. */}
             <button
               type="button"
-              disabled={!hasLines}
+              disabled={!hasLines || kitchenChanges === 0}
               title={hasLines ? undefined : i18n.t('pos.cart.nothingToSend')}
-              onClick={() => {
-                pos.sendToKitchen();
-                setCartOpen(false);
-              }}
+              onClick={send}
               className="inline-flex min-h-control-2xl items-center justify-center rounded-lg border border-strong text-ar-lg font-medium text-text outline-none transition-colors hover:bg-surface-2 active:bg-surface-3 disabled:cursor-not-allowed disabled:border-line disabled:text-text-disabled disabled:hover:bg-transparent"
             >
-              {i18n.t('pos.cart.sendToKitchen')}
+              {sendLabel}
             </button>
             <button
               type="button"
@@ -370,6 +400,25 @@ export function OrderEntryScreen() {
           onClose={() => setNoteOpen(false)}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={voiding !== null}
+        title={i18n.t('pos.void.title', { name: voiding?.name ?? '' })}
+        body={i18n.t('pos.void.body')}
+        confirmLabel={i18n.t('pos.void.confirm')}
+        cancelLabel={i18n.t('common.back')}
+        reasons={[i18n.t('pos.void.customer'), i18n.t('pos.void.mistake'), i18n.t('pos.void.unavailable')]}
+        otherReason={{ label: i18n.t('pos.void.other'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
+        onCancel={() => setVoiding(null)}
+        onConfirm={(reason) => {
+          if (voiding && reason) pos.voidLine(voiding.id, reason);
+          setVoiding(null);
+        }}
+      />
+
+      {pos.ready && pos.shift.needsOpeningFloat() ? <OpeningFloatDialog onConfirm={pos.setOpeningFloat} /> : null}
+
+      {toast ? <Toast message={toast} onDismiss={() => setToast(null)} /> : null}
 
       {discountOpen && order ? (
         <DiscountSheet

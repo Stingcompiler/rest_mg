@@ -49,6 +49,20 @@ export interface OrderSnapshot {
   payments: PaymentSnapshot[];
 }
 
+/** One line of a kitchen ticket: how many more (positive) or fewer (negative). */
+export interface KitchenChange {
+  lineId: string;
+  nameAr: string;
+  modifiersText: string;
+  delta: number;
+}
+
+export interface KitchenSend {
+  /** The kitchen already had this order, so the ticket lists only the changes. */
+  amendment: boolean;
+  changes: KitchenChange[];
+}
+
 export interface NewOrderInput {
   id?: string;
   number: string;
@@ -94,9 +108,17 @@ export class Order {
 
   static fromSnapshot(snapshot: OrderSnapshot): Order {
     const { lines, payments, ...rest } = snapshot;
+    // Lines saved before the kitchen quantity was tracked: an order that had
+    // been sent was sent whole, so the kitchen has every live line as it is.
+    const sentBefore = rest.sentAt !== null;
+    const withKitchen = lines.map((line) =>
+      line.kitchenQty === undefined
+        ? { ...line, kitchenQty: sentBefore && !line.isVoid ? line.qty : 0 }
+        : line,
+    );
     return new Order(
       { ...rest },
-      lines.map(OrderLine.fromSnapshot),
+      withKitchen.map(OrderLine.fromSnapshot),
       payments.map(Payment.fromSnapshot),
     );
   }
@@ -152,18 +174,24 @@ export class Order {
   }
 
   /**
-   * Remove a line outright — only allowed before the kitchen has seen the order.
-   * Once sent, a line is voided (kept as an audit record), never deleted.
+   * Remove a line outright, only while the kitchen has never seen it. A line
+   * the kitchen was sent is voided (kept as an audit record), never deleted.
+   * A line added after the send has not reached the kitchen and can still go.
    */
   removeLine(lineId: string): void {
     this.assertMutable();
+    const line = this.findLine(lineId);
     assert(
-      this.state.status !== 'sent',
+      line.kitchenQty === 0,
       'line_sent_must_void',
-      'This order has been sent to the kitchen; void the line instead of removing it.',
+      'The kitchen has this line; void the line with a reason instead of removing it.',
     );
-    this.findLine(lineId);
-    this.lines = this.lines.filter((line) => line.id !== lineId);
+    this.lines = this.lines.filter((candidate) => candidate.id !== lineId);
+  }
+
+  /** Is this line on a ticket the kitchen already has? */
+  lineSentToKitchen(lineId: string): boolean {
+    return this.findLine(lineId).kitchenQty > 0;
   }
 
   voidLine(lineId: string, reason: string): void {
@@ -178,9 +206,9 @@ export class Order {
   noteLine(lineId: string, note: string): void {
     this.assertMutable();
     assert(
-      this.state.status !== 'sent',
+      !this.lineSentToKitchen(lineId),
       'line_note_after_send',
-      'The kitchen already has this ticket; a new note would not reach it.',
+      'The kitchen already has this line; a new note would not reach it.',
     );
     const text = note.trim();
     assert(text.length <= MAX_NOTE_LENGTH, 'line_note_too_long', `A note is at most ${MAX_NOTE_LENGTH} characters.`);
@@ -225,6 +253,21 @@ export class Order {
     const payment = Payment.create(input);
     this.payments.push(payment);
     return payment;
+  }
+
+  /**
+   * Take a payment off an open bill: the wrong method, the wrong amount. Until
+   * the bill closes the record can still be corrected, and the corrected one
+   * is the honest one. A closed bill is history, as everywhere else.
+   */
+  removePayment(paymentId: string): void {
+    this.assertMutable();
+    assert(
+      this.payments.some((payment) => payment.id === paymentId),
+      'payment_not_found',
+      `No payment ${paymentId} on order ${this.state.number}.`,
+    );
+    this.payments = this.payments.filter((payment) => payment.id !== paymentId);
   }
 
   // --- money ----------------------------------------------------------------
@@ -289,11 +332,34 @@ export class Order {
     this.state.status = 'open';
   }
 
-  send(at: string = new Date().toISOString()): void {
+  /** What the kitchen has not been told yet, line by line. */
+  kitchenChanges(): KitchenChange[] {
+    return this.lines
+      .filter((line) => line.kitchenDelta() !== 0)
+      .map((line) => ({
+        lineId: line.id,
+        nameAr: line.nameAr,
+        modifiersText: line.modifiersText,
+        delta: line.kitchenDelta(),
+      }));
+  }
+
+  /**
+   * Hand the kitchen what it does not have yet. The first send is the whole
+   * order. A later one carries only the changes, and a send with nothing new
+   * is refused: each tap used to print the full ticket again, and the kitchen
+   * cooks what it is handed. The ticket's age runs from the first send.
+   */
+  send(at: string = new Date().toISOString()): KitchenSend {
     this.assertMutable();
     assert(this.lines.some((line) => line.isLive), 'empty_order', 'There is nothing to send.');
+    const changes = this.kitchenChanges();
+    assert(changes.length > 0, 'nothing_to_send', 'The kitchen already has everything on this order.');
+    const amendment = this.state.sentAt !== null;
+    for (const line of this.lines) line.markSentToKitchen();
     this.state.status = 'sent';
-    this.state.sentAt = at;
+    this.state.sentAt = this.state.sentAt ?? at;
+    return { amendment, changes };
   }
 
   canClose(): boolean {
@@ -319,6 +385,12 @@ export class Order {
       'A closed order is history; reverse it with a new order rather than voiding it.',
     );
     this.assertMutable();
+    // Money on a voided bill is money the drawer holds and no sale explains.
+    assert(
+      this.payments.length === 0,
+      'order_has_payments',
+      'Take the payments off this bill before cancelling it.',
+    );
     this.state.status = 'void';
     this.state.voidReason = reason;
     this.state.closedAt = at;

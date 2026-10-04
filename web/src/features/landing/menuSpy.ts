@@ -21,3 +21,14 @@ export function activeSection(sections: readonly SectionTop[], line: number): st
   }
   return active;
 }
+
+/**
+ * Where "being read" is measured from (batch 20). On a phone the categories
+ * are a bar under the top bar, so the line is the bar's bottom edge. From
+ * 1024px they are a column beside the dishes, whose bottom edge is far down
+ * the page, so the line is the top bar's bottom edge plus the gap the titles
+ * stop at.
+ */
+export function readingLine({ wide, headerBottom, barBottom }: { wide: boolean; headerBottom: number; barBottom: number }): number {
+  return wide ? headerBottom + 24 : barBottom + 8;
+}

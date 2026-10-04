@@ -175,6 +175,8 @@ const config: Config = {
         header: 'var(--header-height)',
         // The public menu's category titles stop under both sticky bars (batch 19).
         menu: 'calc(var(--header-height) + var(--dim-menu-bar))',
+        // From 1024px, where the categories are a column (batch 20).
+        'header-gap': 'calc(var(--header-height) + var(--space-24))',
         rail: 'var(--rail-width)',
         'mobile-nav': 'var(--mobile-nav-height)',
         cart: 'var(--cart-width)',
@@ -201,6 +203,7 @@ const config: Config = {
         'cancel-btn': 'var(--dim-cancel-btn)',
         'menu-sidebar': 'var(--dim-menu-sidebar)',
         'row-image': 'var(--dim-row-image)',
+        'dish-photo': 'var(--dim-dish-photo)',
         'price-field': 'var(--dim-price-field)',
         'thumb-w': 'var(--dim-thumb-w)',
         'thumb-h': 'var(--dim-thumb-h)',
@@ -225,6 +228,8 @@ const config: Config = {
       gridTemplateColumns: {
         menu: 'repeat(auto-fill, minmax(max(var(--item-card-min-width), calc((100% - 5 * var(--space-12)) / 6)), 1fr))',
         tickets: 'repeat(auto-fill, minmax(min(100%, max(var(--ticket-min-width), calc((100% - 3 * var(--space-14)) / 4))), 1fr))',
+        // The public menu from 1024px: the categories, then the dishes (batch 20).
+        'menu-page': 'var(--dim-menu-sidebar) minmax(0, 1fr)',
       },
 
       borderRadius: {

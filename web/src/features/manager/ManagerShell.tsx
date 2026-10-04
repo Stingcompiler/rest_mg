@@ -12,11 +12,12 @@
  * start edge, so it comes from the right in Arabic and the left in English
  * without either being hardcoded.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { BarChart3, History, LayoutDashboard, Menu, MonitorSmartphone, Store, Users, Utensils, Wallet, LogOut } from 'lucide-react';
 
 import { IconButton, SettingsMenu } from '@/components';
+import { useModalDialog } from '@/lib/useModalDialog';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
 
@@ -58,13 +59,6 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
     setDrawerOpen(false); // a chosen destination closes the drawer on mobile
   };
 
-  // Escape closes the drawer, matching the settings menu and every other overlay.
-  useEffect(() => {
-    if (!drawerOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setDrawerOpen(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [drawerOpen]);
 
   const nav = (
     <nav className="flex h-full flex-col gap-8">
@@ -114,17 +108,9 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
 
       {/* The drawer — below lg. Backdrop plus an off-canvas panel from the start edge. */}
       {drawerOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label={i18n.t('manager.nav.close')}
-            onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 bg-black/50"
-          />
-          <aside className="absolute inset-y-0 start-0 w-manager-sidebar max-w-[80vw] bg-ink p-14 shadow-overlay">
-            {nav}
-          </aside>
-        </div>
+        <Drawer label={i18n.t('manager.nav.open')} closeLabel={i18n.t('manager.nav.close')} onClose={() => setDrawerOpen(false)}>
+          {nav}
+        </Drawer>
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -148,6 +134,39 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
           <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The navigation drawer below lg. It is a modal while open: focus moves in,
+ * Tab stays inside, Escape closes it (batch 15).
+ */
+function Drawer({
+  label,
+  closeLabel,
+  onClose,
+  children,
+}: {
+  label: string;
+  closeLabel: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const panel = useRef<HTMLElement>(null);
+  useModalDialog(panel, onClose);
+  return (
+    <div className="fixed inset-0 z-40 lg:hidden">
+      <button type="button" tabIndex={-1} aria-label={closeLabel} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <aside
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        className="absolute inset-y-0 start-0 w-manager-sidebar max-w-[80vw] bg-ink p-14 shadow-overlay"
+      >
+        {children}
+      </aside>
     </div>
   );
 }

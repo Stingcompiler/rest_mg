@@ -107,7 +107,7 @@ function Dashboard({ data }: { data: import('./api').RevenueReport }) {
           sub={
             data.pending_delivery_count > 0
               ? i18n.t('manager.money.pendingDelivery', { count: i18n.int(data.pending_delivery_count) })
-              : i18n.t('manager.money.ordersCount', { count: i18n.int(data.unpaid_order_count) })
+              : i18n.plural('manager.money.ordersCount', data.unpaid_order_count)
           }
           tone="credit"
         />
@@ -118,7 +118,7 @@ function Dashboard({ data }: { data: import('./api').RevenueReport }) {
         <KpiCard
           label={i18n.t('manager.money.void')}
           value={i18n.money(BigInt(data.void_minor))}
-          sub={i18n.t('manager.money.ordersCount', { count: i18n.int(data.void_order_count) })}
+          sub={i18n.plural('manager.money.ordersCount', data.void_order_count)}
         />
       </div>
 

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { direction, type Direction, type Locale, type Numerals } from './config';
-import { translate, type MessageKey, type TranslateParams } from './catalog';
+import { plural, translate, type MessageKey, type TranslateParams } from './catalog';
 import { formatInteger, formatMoney } from './format';
 import {
   readLocale,
@@ -17,6 +17,12 @@ interface I18nContextValue {
   numerals: Numerals;
   dir: Direction;
   t(key: MessageKey, params?: TranslateParams): string;
+  /**
+   * A counted message in the form the count takes in this language: "قبل
+   * دقيقتين", "قبل ٥ دقائق", "قبل ١١ دقيقة". `{count}` is filled in with the
+   * reader's numerals.
+   */
+  plural(key: MessageKey, count: number, params?: TranslateParams): string;
   /** Money in minor units → display string, honouring the numeral setting. */
   money(minor: bigint): string;
   /** An integer count → display string (e.g. item counts, order numbers). */
@@ -64,6 +70,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       numerals,
       dir: direction(locale),
       t: (key, params) => translate(locale, key, params),
+      plural: (key, count, params) =>
+        plural(locale, key, count, { count: formatInteger(count, numerals), ...params }),
       money: (minor) => formatMoney(minor, numerals),
       int: (n) => formatInteger(n, numerals),
       setLocale,

@@ -15,7 +15,7 @@
  * the running total visible the whole time, which is the one thing the cashier
  * must never lose on a small screen.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Wallet, Search, ShoppingCart, X } from 'lucide-react';
 
@@ -43,6 +43,7 @@ import {
   Toast,
   TotalsBlock,
 } from '@/components';
+import { useModalDialog } from '@/lib/useModalDialog';
 import { formatTime, useI18n } from '@/i18n';
 import { getPrintService } from '@/print';
 import { DomainError, type OrderType } from '@/domain';
@@ -114,13 +115,6 @@ export function OrderEntryScreen() {
     total: i18n.money(cartOrder.total()),
   }));
 
-  // Escape closes the mobile cart sheet, matching every other overlay.
-  useEffect(() => {
-    if (!cartOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setCartOpen(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [cartOpen]);
 
   // The cart's contents, shared verbatim by the desktop panel and the mobile
   // sheet — one source of truth so the two geometries never drift apart.
@@ -391,23 +385,14 @@ export function OrderEntryScreen() {
 
       {/* Mobile cart sheet — the full cart as a bottom overlay. */}
       {cartOpen ? (
-        <div className="fixed inset-0 z-40 md:hidden" dir={i18n.dir}>
-          <button
-            type="button"
-            aria-label={i18n.t('pos.cart.close')}
-            onClick={() => setCartOpen(false)}
-            className="absolute inset-0 bg-black/50"
-          />
-          <div className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-xl border-t border-line bg-surface">
-            <div className="flex flex-none items-center justify-between px-14 pt-12">
-              <span className="text-ar-lg font-semibold">{i18n.t('pos.cart.review')}</span>
-              <IconButton variant="quiet" label={i18n.t('pos.cart.close')} onClick={() => setCartOpen(false)}>
-                <X size={24} />
-              </IconButton>
-            </div>
-            {cartContents}
-          </div>
-        </div>
+        <CartSheet
+          title={i18n.t('pos.cart.review')}
+          closeLabel={i18n.t('pos.cart.close')}
+          dir={i18n.dir}
+          onClose={() => setCartOpen(false)}
+        >
+          {cartContents}
+        </CartSheet>
       ) : null}
 
       {noteOpen && order ? (
@@ -425,7 +410,7 @@ export function OrderEntryScreen() {
         confirmLabel={i18n.t('pos.void.confirm')}
         cancelLabel={i18n.t('common.back')}
         reasons={[i18n.t('pos.void.customer'), i18n.t('pos.void.mistake'), i18n.t('pos.void.unavailable')]}
-        otherReason={{ label: i18n.t('pos.void.other'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
+        otherReason={{ label: i18n.t('pos.void.otherReason'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
         onCancel={() => setVoiding(null)}
         onConfirm={(reason) => {
           if (voiding && reason) pos.voidLine(voiding.id, reason);
@@ -483,10 +468,20 @@ function DiscountSheet({
     }
   };
 
+  // Focus in, Tab kept inside, Escape out (batch 15).
+  const panel = useRef<HTMLDivElement>(null);
+  useModalDialog(panel, onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
-      <button type="button" aria-label={i18n.t('common.back')} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex w-full max-w-md flex-col gap-14 rounded-t-xl border border-line bg-surface p-18 sm:rounded-xl">
+      <button type="button" tabIndex={-1} aria-label={i18n.t('common.back')} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={i18n.t('pos.discount.title')}
+        className="relative flex w-full max-w-md flex-col gap-14 rounded-t-xl border border-line bg-surface p-18 sm:rounded-xl"
+      >
         <span className="text-ar-lg font-semibold">{i18n.t('pos.discount.title')}</span>
 
         <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
@@ -559,10 +554,15 @@ function NoteSheet({
     }
   };
 
+  // Focus in, Tab kept inside, Escape out (batch 15).
+  const panel = useRef<HTMLDivElement>(null);
+  useModalDialog(panel, onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
-      <button type="button" aria-label={i18n.t('common.back')} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <button type="button" tabIndex={-1} aria-label={i18n.t('common.back')} onClick={onClose} className="absolute inset-0 bg-black/50" />
       <div
+        ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={i18n.t('pos.note.title')}
@@ -609,6 +609,47 @@ function NoteSheet({
             {i18n.t('pos.note.save')}
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The phone's cart: the full cart as a bottom sheet. A modal while open:
+ * focus moves in, Tab stays inside, Escape closes it (batch 15).
+ */
+function CartSheet({
+  title,
+  closeLabel,
+  dir,
+  onClose,
+  children,
+}: {
+  title: string;
+  closeLabel: string;
+  dir: 'rtl' | 'ltr';
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const panel = useRef<HTMLDivElement>(null);
+  useModalDialog(panel, onClose);
+  return (
+    <div className="fixed inset-0 z-40 md:hidden" dir={dir}>
+      <button type="button" tabIndex={-1} aria-label={closeLabel} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-xl border-t border-line bg-surface"
+      >
+        <div className="flex flex-none items-center justify-between px-14 pt-12">
+          <span className="text-ar-lg font-semibold">{title}</span>
+          <IconButton variant="quiet" label={closeLabel} onClick={onClose}>
+            <X size={24} />
+          </IconButton>
+        </div>
+        {children}
       </div>
     </div>
   );

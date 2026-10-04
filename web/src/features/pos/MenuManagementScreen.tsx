@@ -108,7 +108,7 @@ export function MenuManagementScreen() {
                   disabled={!category || category.items.length === 0}
                   onClick={() => setConfirmingBulk(true)}
                 >
-                  {i18n.t('pos.menu.applyToItems', { count: i18n.int(category?.items.length ?? 0) })}
+                  {i18n.plural('pos.menu.applyToItems', category?.items.length ?? 0)}
                 </Button>
               </div>
             </div>
@@ -156,9 +156,8 @@ export function MenuManagementScreen() {
       <ConfirmDialog
         open={confirmingBulk}
         tone="accent"
-        title={i18n.t('pos.menu.bulkTitle', {
+        title={i18n.plural('pos.menu.bulkTitle', category?.items.length ?? 0, {
           percent: i18n.int(percent),
-          count: i18n.int(category?.items.length ?? 0),
           category: category?.nameAr ?? '',
         })}
         body={i18n.t('pos.menu.bulkBody')}
@@ -171,7 +170,7 @@ export function MenuManagementScreen() {
           setApplying(true);
           pos
             .bulkPriceChange(activeCategoryId, percent)
-            .then(() => setToast(i18n.t('pos.menu.bulkDone', { count: i18n.int(category?.items.length ?? 0) })))
+            .then(() => setToast(i18n.plural('pos.menu.bulkDone', category?.items.length ?? 0)))
             .finally(() => {
               setApplying(false);
               setConfirmingBulk(false);

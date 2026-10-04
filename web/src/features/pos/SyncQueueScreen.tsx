@@ -221,7 +221,7 @@ export function SyncQueueScreen() {
                         <div className="ms-auto flex items-center gap-8">
                           {entry.attempts > 0 ? (
                             <span className="text-ar-xs text-text-muted">
-                              {i18n.t('pos.sync.attempts', { count: i18n.int(entry.attempts) })}
+                              {i18n.plural('pos.sync.attempts', entry.attempts)}
                             </span>
                           ) : null}
                           <Button variant="secondary" onClick={() => void retry([entry.id])} disabled={busy}>

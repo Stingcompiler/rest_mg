@@ -64,7 +64,7 @@ export function PosRail({ active }: { active: RailTarget }) {
     // every order already on the board.
     ready: waiting !== null,
     noticeTitle: i18n.t('alerts.newDeliveryTitle'),
-    noticeBody: (count) => i18n.t('alerts.newDeliveryBody', { count: i18n.int(count) }),
+    noticeBody: (count) => i18n.plural('alerts.newDeliveryBody', count),
   });
 
   // Orders the kitchen has finished. The board knew and the till did not

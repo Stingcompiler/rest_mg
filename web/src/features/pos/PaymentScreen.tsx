@@ -11,7 +11,7 @@
  * one (review finding F08). Recording stays manual: nothing here checks with a
  * bank, and the dialog says so.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, ArrowRight, Banknote, CheckCircle2, Landmark, Printer, Smartphone, Clock3, Trash2 } from 'lucide-react';
 
@@ -28,6 +28,7 @@ import {
   QuickCashButton,
   StatusChip,
 } from '@/components';
+import { useModalDialog } from '@/lib/useModalDialog';
 import { AppHeader } from '@/components/layout/layout';
 import { Divider } from '@/components/primitives/indicators';
 import { customerRepository, type CustomerRecord } from '@/db';
@@ -93,6 +94,7 @@ export function PaymentScreen() {
         label:
           value === 'back' ? '⌫' : value === '000' ? `${i18n.int(0)}${i18n.int(0)}${i18n.int(0)}` : i18n.int(Number(value)),
         value,
+        ariaLabel: value === 'back' ? i18n.t('pos.payment.deleteDigit') : undefined,
       })),
     [i18n],
   );
@@ -445,6 +447,9 @@ function CustomerPicker({
 }) {
   const i18n = useI18n();
   const [query, setQuery] = useState('');
+  // Focus in, Tab kept inside, Escape out (batch 15).
+  const panel = useRef<HTMLDivElement>(null);
+  useModalDialog(panel, onCancel);
   const term = query.trim();
   const shown = term
     ? customers.filter((c) => c.name.includes(term) || c.phone.includes(term))
@@ -452,14 +457,25 @@ function CustomerPicker({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
-      <button type="button" aria-label={i18n.t('pos.payment.cancel')} onClick={onCancel} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl">
+      <button type="button" tabIndex={-1} aria-label={i18n.t('pos.payment.cancel')} onClick={onCancel} className="absolute inset-0 bg-black/50" />
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={i18n.t('pos.payment.pickCustomer')}
+        className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl"
+      >
         <div className="flex flex-none flex-col gap-10 border-b border-line p-16">
           <div className="flex items-baseline justify-between gap-12">
             <span className="text-ar-lg font-bold">{i18n.t('pos.payment.pickCustomer')}</span>
             <Numeric className="text-num-lg font-bold text-credit">{amount}</Numeric>
           </div>
-          <TextField value={query} onChange={(event) => setQuery(event.target.value)} placeholder={i18n.t('pos.payment.searchCustomer')} />
+          <TextField
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={i18n.t('pos.payment.searchCustomer')}
+            aria-label={i18n.t('pos.payment.searchCustomer')}
+          />
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-12">
@@ -518,11 +534,15 @@ function ReferenceDialog({
   const i18n = useI18n();
   const [reference, setReference] = useState('');
   const usable = isUsableReference(reference);
+  // Focus in, Tab kept inside, Escape out (batch 15).
+  const panel = useRef<HTMLFormElement>(null);
+  useModalDialog(panel, onCancel);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
-      <button type="button" aria-label={i18n.t('pos.payment.cancel')} onClick={onCancel} className="absolute inset-0 bg-black/50" />
+      <button type="button" tabIndex={-1} aria-label={i18n.t('pos.payment.cancel')} onClick={onCancel} className="absolute inset-0 bg-black/50" />
       <form
+        ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={i18n.t('pos.payment.referenceTitle')}

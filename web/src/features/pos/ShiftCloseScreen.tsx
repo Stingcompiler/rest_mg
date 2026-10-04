@@ -198,6 +198,7 @@ export function ShiftCloseScreen() {
             >
               {blocking.includes('unexplained_variance') ? (
                 <TextField
+                  aria-label={i18n.t('pos.shift.reasonPlaceholder')}
                   placeholder={i18n.t('pos.shift.reasonPlaceholder')}
                   value={shift.varianceReason}
                   onChange={(event) => pos.setVarianceReason(event.target.value)}

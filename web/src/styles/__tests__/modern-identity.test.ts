@@ -47,9 +47,18 @@ describe('the display face', () => {
     expect(layout).toMatch(/Readex_Pro\(\{/);
   });
 
+  it('sets every title at the one weight it downloads', () => {
+    // Readex Pro is loaded at 600 alone. Any other weight on a title would be
+    // faked by the browser from that face, and smeared.
+    expect(layout).toMatch(/Readex_Pro\(\{[\s\S]*?weight:\s*\['600'\]/);
+    const others = hits(/\bfont-display\b[^"`]*/g).filter((hit) => /\bfont-(?!display|semibold)[a-z]+\b/.test(hit));
+    expect(others).toEqual([]);
+  });
+
   it('no longer loads El Messiri', () => {
     expect(layout).not.toMatch(/El_Messiri/);
-    expect(tokens).not.toMatch(/messiri/i);
+    // A comment may still name it; no font stack may.
+    expect(tokens).not.toMatch(/var\(--font-el-messiri\)|'El Messiri'/);
   });
 });
 

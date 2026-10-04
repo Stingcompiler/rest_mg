@@ -241,15 +241,17 @@
   /* Cairo behind Plex Sans: menu names stay Arabic in the English interface,
      and Plex Sans has no Arabic glyphs to draw them with. */
   --font-latin: var(--font-plex-sans), 'IBM Plex Sans', var(--font-cairo), 'Cairo', system-ui, sans-serif;
-  /* Titles only: the restaurant's name, section and page titles (batch 13).
-     Cairo stands behind it while it loads, and for anything it lacks. */
-  --font-display: var(--font-el-messiri), 'El Messiri', var(--font-cairo), 'Cairo', serif;
+  /* Titles only: the restaurant's name, section and page titles. Readex Pro
+     is geometric and modern in both scripts; it replaced the calligraphic
+     El Messiri of batch 13 in batch 18. Cairo stands behind it while it
+     loads, and for anything it lacks. */
+  --font-display: var(--font-readex-pro), 'Readex Pro', var(--font-cairo), 'Cairo', sans-serif;
   /* Plex Mono carries no Arabic-Indic glyphs; Cairo is the working fallback
      for ٠١٢٣, so tabular alignment comes from --numeric-tabular, not the font. */
   --font-numeric: var(--font-plex-mono), var(--font-cairo), 'IBM Plex Mono', 'Cairo', monospace;
   --numeric-tabular: tabular-nums lining-nums;
 
-  /* Display — El Messiri, for the restaurant's name on the public page only */
+  /* Display — Readex Pro, for the restaurant's name on the public page only */
   --text-display-xl: 56px;
 
   /* Latin scale — IBM Plex Sans (one rank smaller than Arabic) */
@@ -439,4 +441,20 @@
   --dim-popover: 320px;      /* settings menu */
   --dim-bar: 20px;           /* stacked share bar in reports */
   --dim-field-min: 160px;    /* a filter field before the row wraps */
+}
+
+/* -----------------------------------------------------------------------------
+ * 6. Motion (batch 18)
+ *
+ * Short and purposeful: a press answers at once, a hover settles quickly, and
+ * only a photograph drifts. globals.css stops all of it under
+ * prefers-reduced-motion, and lib/motion.ts does the same for scrolling.
+ * -------------------------------------------------------------------------- */
+
+:root {
+  --motion-instant: 80ms;   /* a key press on the payment keypad */
+  --motion-fast: 120ms;     /* colour and border on hover: the default */
+  --motion-base: 200ms;     /* a panel or a sheet arriving */
+  --motion-slow: 400ms;     /* a dish photo easing in on hover */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
 }

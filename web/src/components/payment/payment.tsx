@@ -93,7 +93,7 @@ export function Keypad({ keys, onPress }: KeypadProps) {
           // A till key must answer the finger: without a pressed state the pad
           // looked inert, and a cashier could not tell a registered tap from a
           // missed one.
-          className="inline-flex min-h-control-2xl items-center justify-center rounded-lg border border-line bg-surface-2 text-num-3xl font-medium text-text shadow-card outline-none transition-transform duration-75 hover:border-strong active:scale-95 active:border-accent active:bg-accent-tint active:text-accent"
+          className="inline-flex min-h-control-2xl items-center justify-center rounded-lg border border-line bg-surface-2 text-num-3xl font-medium text-text shadow-card outline-none transition-transform duration-instant hover:border-strong active:scale-95 active:border-accent active:bg-accent-tint active:text-accent"
         >
           <Numeric>{key.label}</Numeric>
         </button>

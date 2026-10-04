@@ -37,3 +37,19 @@
     box-shadow: var(--focus-ring);
   }
 }
+
+/* Less motion for anyone who asked the system for it (batch 18). Transitions
+   and animations finish at once — the end state still shows, so a hover
+   still changes colour — and anchored scrolling jumps. Scripted scrolling
+   asks lib/motion.ts, because an explicit `behavior: 'smooth'` would win
+   over this rule. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

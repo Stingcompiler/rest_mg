@@ -238,6 +238,20 @@ const config: Config = {
         strong: 'var(--border-width-strong)',
       },
 
+      // Motion is tokens only (batch 18): the bare `transition` takes the fast
+      // duration and the house easing.
+      transitionDuration: {
+        DEFAULT: 'var(--motion-fast)',
+        instant: 'var(--motion-instant)',
+        fast: 'var(--motion-fast)',
+        base: 'var(--motion-base)',
+        slow: 'var(--motion-slow)',
+      },
+      transitionTimingFunction: {
+        DEFAULT: 'var(--ease-out)',
+        out: 'var(--ease-out)',
+      },
+
       boxShadow: {
         card: 'var(--shadow-card)',
         raised: 'var(--shadow-raised)',

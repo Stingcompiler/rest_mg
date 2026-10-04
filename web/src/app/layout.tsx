@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Cairo, El_Messiri, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Cairo, IBM_Plex_Mono, IBM_Plex_Sans, Readex_Pro } from 'next/font/google';
 
 import { DEFAULT_LOCALE, direction, t } from '@/i18n';
 
@@ -21,12 +21,14 @@ const cairo = Cairo({
   display: 'swap',
 });
 
-// The display face for titles: the restaurant's name, section and page titles
-// (batch 13). The till never draws it, so it is not preloaded.
-const elMessiri = El_Messiri({
+// The display face for titles: the restaurant's name, section and page titles.
+// Readex Pro, modern and geometric, replaced El Messiri in batch 18. The till
+// never draws it, so it is not preloaded. Every title is set at 600, so that
+// is the one weight it downloads.
+const readexPro = Readex_Pro({
   subsets: ['arabic', 'latin'],
-  weight: ['500', '600', '700'],
-  variable: '--font-el-messiri',
+  weight: ['600'],
+  variable: '--font-readex-pro',
   display: 'swap',
   preload: false,
 });
@@ -90,7 +92,7 @@ const BOOTSTRAP = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = DEFAULT_LOCALE;
-  const fontVariables = `${cairo.variable} ${elMessiri.variable} ${plexSans.variable} ${plexMono.variable}`;
+  const fontVariables = `${cairo.variable} ${readexPro.variable} ${plexSans.variable} ${plexMono.variable}`;
 
   return (
     <html

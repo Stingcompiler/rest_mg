@@ -15,6 +15,9 @@ export type DeliveryStatus =
   | 'preparing'
   | 'out_for_delivery'
   | 'delivered'
+  // Pickup from the restaurant (batch 16).
+  | 'ready_for_pickup'
+  | 'collected'
   | 'cancelled';
 
 export interface DeliveryLine {
@@ -36,6 +39,8 @@ export interface DeliveryOrder {
   delivery_status: DeliveryStatus | '';
   /** The kitchen's own progress, shown read-only on the delivery board. */
   kitchen_status: string;
+  /** When the kitchen last moved the ticket: how long a pickup has waited. */
+  kitchen_updated_at?: string | null;
   total_minor: string;
   /** What is still to be collected; zero once a till has settled it. */
   amount_due_minor?: string;

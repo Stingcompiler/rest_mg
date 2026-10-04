@@ -34,38 +34,13 @@ import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
 import { orderRepository, shiftRepository } from '@/db';
 import { useDeliveries, useSetDeliveryStatus } from './hooks';
+import { isOverdue, isPickup, nextStep, waitingOnKitchen } from './fulfilment';
 import { canCollect, collectableRecord } from './collect';
 import type { DeliveryOrder, DeliveryStatus } from './api';
-
-// The next step front-of-house may take. Note there is no button that sets
-// "preparing": that is the kitchen saying it started cooking, and it arrives on
-// its own once the kitchen advances its ticket. From either "confirmed" or
-// "preparing" the move front-of-house can make is to send the food out.
-//
-// Whether that move is *available yet* is a separate question, answered by
-// KITCHEN_READY below. The two roles take turns, and the turn only comes back
-// to front-of-house once there is food to send.
-const NEXT: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
-  pending: 'confirmed',
-  confirmed: 'out_for_delivery',
-  preparing: 'out_for_delivery',
-  out_for_delivery: 'delivered',
-};
-
-// Sending a rider out is a claim that food exists, and only the kitchen can
-// make it. Until the ticket reads ready (or served, which is further along, not
-// less), it is the kitchen's turn and the dispatch button stays away.
-const KITCHEN_READY = new Set(['ready', 'served']);
 
 // The refusals this screen can actually receive, each with a sentence in the
 // reader's language. Server error codes are an open set, so anything not listed
 // is reported generically rather than leaking "error.some_code" onto the card.
-/** Whether this order is sitting with the kitchen rather than with the reader. */
-function waitingOnKitchen(order: DeliveryOrder): boolean {
-  const ds = (order.delivery_status || 'pending') as DeliveryStatus;
-  return NEXT[ds] === 'out_for_delivery' && !KITCHEN_READY.has(order.kitchen_status ?? '');
-}
-
 const REFUSAL_KEY = {
   kitchen_not_ready: 'error.kitchen_not_ready',
   kitchen_owned_status: 'error.kitchen_owned_status',
@@ -80,6 +55,8 @@ const STATUS_KEY = {
   preparing: 'deliveries.status.preparing',
   out_for_delivery: 'deliveries.status.outForDelivery',
   delivered: 'deliveries.status.delivered',
+  ready_for_pickup: 'deliveries.status.readyForPickup',
+  collected: 'deliveries.status.collected',
   cancelled: 'deliveries.status.cancelled',
 } as const;
 
@@ -97,6 +74,8 @@ const TONE: Record<DeliveryStatus, 'neutral' | 'warning' | 'success' | 'danger'>
   preparing: 'neutral',
   out_for_delivery: 'warning',
   delivered: 'success',
+  ready_for_pickup: 'warning',
+  collected: 'success',
   cancelled: 'danger',
 };
 
@@ -117,7 +96,8 @@ export function DeliveriesScreen() {
   // Active orders first, each group newest first. Delivered is not done while
   // the money is still to be collected — it stays in front of the reader.
   const isDone = (o: DeliveryOrder) =>
-    o.delivery_status === 'cancelled' || (o.delivery_status === 'delivered' && !canCollect(o));
+    o.delivery_status === 'cancelled' ||
+    ((o.delivery_status === 'delivered' || o.delivery_status === 'collected') && !canCollect(o));
   const active = orders.filter((o) => !isDone(o));
   const done = orders.filter(isDone);
 
@@ -267,8 +247,11 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
   // this screen used to force Arabic-Indic and ignore the toggle.
   const money = (minor: string) => i18n.money(BigInt(minor));
   const ds = (order.delivery_status || 'pending') as DeliveryStatus;
-  const next = NEXT[ds];
-  const terminal = ds === 'delivered' || ds === 'cancelled';
+  const next = nextStep(order);
+  const terminal = ds === 'delivered' || ds === 'collected' || ds === 'cancelled';
+  // Pickup (batch 16): no address to show, and an hour at the counter is flagged.
+  const pickup = isPickup(order);
+  const overdue = isOverdue(order);
   // The only step that waits on somebody else.
   const waiting = waitingOnKitchen(order);
   const refusal = !setStatus.error
@@ -291,6 +274,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
             </span>
           ) : null}
           {order.status === 'closed' ? <StatusChip label={i18n.t('deliveries.paid')} tone="success" /> : null}
+          <StatusChip label={i18n.t(pickup ? 'deliveries.kind.pickup' : 'deliveries.kind.delivery')} tone="neutral" />
           <StatusChip label={i18n.t(STATUS_KEY[ds])} tone={TONE[ds]} dot />
         </div>
       </div>
@@ -302,13 +286,21 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
           <Phone size={14} />
           <span className="numeric" dir="ltr">{order.customer_phone}</span>
         </a>
-        <span className="flex items-start gap-6 text-text-muted">
-          <MapPin size={14} className="mt-2 flex-none" />
-          <span>
-            {order.customer_address}
-            {order.customer_area ? ` · ${order.customer_area}` : ''}
+        {pickup ? null : (
+          <span className="flex items-start gap-6 text-text-muted">
+            <MapPin size={14} className="mt-2 flex-none" />
+            <span>
+              {order.customer_address}
+              {order.customer_area ? ` · ${order.customer_area}` : ''}
+            </span>
           </span>
-        </span>
+        )}
+        {overdue ? (
+          <span role="status" className="flex items-center gap-6 font-semibold text-danger">
+            <Clock size={14} />
+            {i18n.t('deliveries.overdue')}
+          </span>
+        ) : null}
         {order.customer_notes ? (
           <span className="flex items-start gap-6 text-warning">
             <StickyNote size={14} className="mt-2 flex-none" />
@@ -361,7 +353,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
                turn, said plainly so nobody stands there clicking. */
             <span className="flex items-center gap-6 rounded-md bg-surface-2 px-12 py-8 text-ar-sm text-text-muted">
               <Clock size={16} />
-              {i18n.t('deliveries.awaitingKitchen')}
+              {i18n.t(pickup ? 'deliveries.awaitingKitchenPickup' : 'deliveries.awaitingKitchen')}
             </span>
           ) : null}
           <Button variant="secondary" onClick={() => setConfirmingCancel(true)} disabled={setStatus.isPending}>
@@ -387,6 +379,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
             confirmLabel={i18n.t('deliveries.cancel')}
             cancelLabel={i18n.t('common.back')}
             reasons={[
+              ...(pickup ? [i18n.t('deliveries.reason.noShow')] : []),
               i18n.t('deliveries.reason.noAnswer'),
               i18n.t('deliveries.reason.customerCancelled'),
               i18n.t('deliveries.reason.outOfArea'),

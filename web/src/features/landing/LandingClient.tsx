@@ -37,6 +37,7 @@ import { browserStorage } from './browserStorage';
 import { forgetOrder, recallOrder, type PlacedOrder } from './lastOrder';
 import { CartProvider, ORDER_PLACED_EVENT, useCart } from './OrderFlow';
 import { pageLoadFailure, type PageLoadFailure } from './pageLoad';
+import { FINISHED_STATUSES, customerStatusKey } from './statusText';
 
 const LOCALE = 'ar' as const;
 const NUMERALS = 'arabic-indic' as const;
@@ -169,7 +170,12 @@ function Landing({ data }: { data: Landing }) {
   }, [data.name_ar, data.description_ar]);
 
   return (
-    <CartProvider ordering={data.online_ordering_enabled === true} slug={data.slug} menu={allItems}>
+    <CartProvider
+      ordering={data.online_ordering_enabled === true}
+      slug={data.slug}
+      menu={allItems}
+      pickupAddress={data.address_ar || undefined}
+    >
       <main dir="rtl" lang="ar" className="min-h-screen bg-bg text-text">
       {/* Sticky top bar */}
       <header className="sticky top-0 z-40 border-b border-gold-soft bg-surface/90 backdrop-blur">
@@ -586,16 +592,7 @@ function LandingSkeleton() {
   );
 }
 
-const STATUS_KEYS = {
-  pending: 'landing.status.pending',
-  confirmed: 'landing.status.confirmed',
-  preparing: 'landing.status.preparing',
-  out_for_delivery: 'landing.status.out_for_delivery',
-  delivered: 'landing.status.delivered',
-  cancelled: 'landing.status.cancelled',
-} as const;
 
-const FINISHED = new Set(['delivered', 'cancelled']);
 
 /**
  * How the customer's last order stands, at the top of the page, for twelve
@@ -624,7 +621,7 @@ function OrderStatus({ slug }: { slug: string }) {
         const next = typeof body?.delivery_status === 'string' ? body.delivery_status : 'unknown';
         if (stopped) return;
         setStatus(next);
-        if (FINISHED.has(next)) return;
+        if (FINISHED_STATUSES.has(next)) return;
       } catch {
         if (!stopped) setStatus('unknown');
       }
@@ -638,7 +635,7 @@ function OrderStatus({ slug }: { slug: string }) {
   }, [order]);
 
   if (!order) return null;
-  const key = status && status in STATUS_KEYS ? STATUS_KEYS[status as keyof typeof STATUS_KEYS] : status ? 'landing.status.unknown' : null;
+  const key = status ? customerStatusKey(status) : null;
   return (
     <div role="status" aria-live="polite" className="border-b border-gold-soft bg-ink text-on-ink">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-12 px-16 py-10 sm:px-24">

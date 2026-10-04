@@ -13,11 +13,19 @@ export interface FieldProblem {
   key: MessageKey;
 }
 
-export function validateOrderForm(values: { name: string; phone: string; address: string }): FieldProblem[] {
+export type Fulfilment = 'delivery' | 'pickup';
+
+/** A pickup needs no address (batch 16). */
+export function validateOrderForm(
+  values: { name: string; phone: string; address: string },
+  fulfilment: Fulfilment = 'delivery',
+): FieldProblem[] {
   const problems: FieldProblem[] = [];
   if (!values.name.trim()) problems.push({ field: 'name', key: 'landing.form.nameRequired' });
   if (!values.phone.trim()) problems.push({ field: 'phone', key: 'landing.form.phoneRequired' });
   else if (!normalizeSudanPhone(values.phone)) problems.push({ field: 'phone', key: 'landing.form.phoneInvalid' });
-  if (!values.address.trim()) problems.push({ field: 'address', key: 'landing.form.addressRequired' });
+  if (fulfilment === 'delivery' && !values.address.trim()) {
+    problems.push({ field: 'address', key: 'landing.form.addressRequired' });
+  }
   return problems;
 }

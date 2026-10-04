@@ -17,8 +17,15 @@ import type { OrderRecord } from '@/db';
 import { Order } from '@/domain';
 import type { DeliveryOrder } from './api';
 
-/** Delivery steps after the floor has confirmed the order. */
-const CONFIRMED_STEPS = new Set(['confirmed', 'preparing', 'out_for_delivery', 'delivered']);
+/** Steps after the floor has confirmed the order: delivery's, and pickup's (batch 16). */
+const CONFIRMED_STEPS = new Set([
+  'confirmed',
+  'preparing',
+  'out_for_delivery',
+  'delivered',
+  'ready_for_pickup',
+  'collected',
+]);
 
 /** Whether this order can be taken to the till to collect its payment. */
 export function canCollect(order: DeliveryOrder): boolean {
@@ -36,7 +43,8 @@ export function collectableRecord(
   const bill = Order.create({
     id: order.id,
     number: order.number,
-    type: 'delivery',
+    // A pickup is a takeaway on the till and in the reports.
+    type: order.type === 'takeaway' ? 'takeaway' : 'delivery',
     cashierId: till.cashierId,
     cashierName: till.cashierName,
     shiftRef: till.shiftRef,

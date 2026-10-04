@@ -88,6 +88,8 @@ class OrderReadSerializer(serializers.Serializer):
     # public delivery order so the dashboard can process it.
     channel = serializers.CharField(read_only=True)
     kitchen_status = serializers.CharField(read_only=True)
+    # When the kitchen last moved the ticket: how long a pickup has waited (batch 16).
+    kitchen_updated_at = serializers.DateTimeField(read_only=True, allow_null=True)
     delivery_status = serializers.CharField(read_only=True)
     customer_name = serializers.CharField(read_only=True)
     customer_phone = serializers.CharField(read_only=True)

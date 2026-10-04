@@ -60,6 +60,35 @@ DELIVERY_TRANSITIONS = {
     Order.DeliveryStatus.CANCELLED: set(),
 }
 
+# A pickup (batch 16) waits at the counter: the kitchen's "ready" makes it ready
+# for pickup, and front-of-house hands it over. It never goes out with a rider,
+# and a delivery never waits at the counter.
+PICKUP_TRANSITIONS = {
+    Order.DeliveryStatus.PENDING: {Order.DeliveryStatus.CONFIRMED, Order.DeliveryStatus.CANCELLED},
+    Order.DeliveryStatus.CONFIRMED: {
+        Order.DeliveryStatus.READY_FOR_PICKUP,
+        Order.DeliveryStatus.CANCELLED,
+    },
+    Order.DeliveryStatus.PREPARING: {
+        Order.DeliveryStatus.READY_FOR_PICKUP,
+        Order.DeliveryStatus.CANCELLED,
+    },
+    Order.DeliveryStatus.READY_FOR_PICKUP: {
+        Order.DeliveryStatus.COLLECTED,
+        Order.DeliveryStatus.CANCELLED,
+    },
+    Order.DeliveryStatus.COLLECTED: set(),
+    Order.DeliveryStatus.CANCELLED: set(),
+}
+
+# The steps that claim there is food to hand over, which only the kitchen can
+# know: sending a rider out, or calling the customer in to collect.
+NEEDS_KITCHEN_READY = {Order.DeliveryStatus.OUT_FOR_DELIVERY, Order.DeliveryStatus.READY_FOR_PICKUP}
+
+
+def transitions_for(order: Order) -> dict:
+    return PICKUP_TRANSITIONS if order.type == Order.Type.TAKEAWAY else DELIVERY_TRANSITIONS
+
 # Statuses front-of-house may never set by hand, because they are statements
 # about the kitchen rather than about the delivery.
 KITCHEN_OWNED_DELIVERY_STATUSES = {Order.DeliveryStatus.PREPARING}
@@ -135,26 +164,24 @@ class OrderViewSet(viewsets.ViewSet):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
-        if (
-            target == Order.DeliveryStatus.OUT_FOR_DELIVERY
-            and order.kitchen_status not in KITCHEN_READY_STATUSES
-        ):
+        transitions = transitions_for(order)
+        if target != order.delivery_status and target not in transitions.get(order.delivery_status, set()):
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_transition",
+                        "message": f"Cannot move from {order.delivery_status} to {target}.",
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        if target in NEEDS_KITCHEN_READY and order.kitchen_status not in KITCHEN_READY_STATUSES:
             return Response(
                 {
                     "error": {
                         "code": "kitchen_not_ready",
                         "message": "The kitchen has not marked this order ready.",
                         "detail": {"kitchen_status": order.kitchen_status},
-                    }
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-        if target != order.delivery_status and target not in DELIVERY_TRANSITIONS[order.delivery_status]:
-            return Response(
-                {
-                    "error": {
-                        "code": "invalid_transition",
-                        "message": f"Cannot move from {order.delivery_status} to {target}.",
                     }
                 },
                 status=status.HTTP_409_CONFLICT,

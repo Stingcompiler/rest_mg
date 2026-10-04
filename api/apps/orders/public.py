@@ -58,7 +58,9 @@ class PublicOrderSerializer(serializers.Serializer):
 
     customer_name = serializers.CharField(max_length=120)
     customer_phone = serializers.CharField(max_length=32)
-    customer_address = serializers.CharField(max_length=300)
+    customer_address = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
+    # Delivery to an address, or pickup from the restaurant (batch 16).
+    fulfilment = serializers.ChoiceField(choices=["delivery", "pickup"], required=False, default="delivery")
     customer_area = serializers.CharField(max_length=120, required=False, allow_blank=True)
     customer_notes = serializers.CharField(max_length=400, required=False, allow_blank=True)
     # Which restaurant's page the order came from (/r/<slug>). Required only
@@ -123,6 +125,13 @@ class PublicOrderView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         data["customer_phone"] = phone
+
+        # Only a delivery needs somewhere to go.
+        if data["fulfilment"] == "delivery" and not data["customer_address"].strip():
+            return Response(
+                {"error": {"code": "address_required", "message": "A delivery needs an address."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Orders are only accepted while the page is actually published — and go
         # to the restaurant whose page it is. With several published, an order
@@ -235,7 +244,7 @@ class PublicOrderView(APIView):
             branch=profile.branch,
             number=next_online_number(),
             client_request_id=key,
-            type=Order.Type.DELIVERY,
+            type=Order.Type.TAKEAWAY if data["fulfilment"] == "pickup" else Order.Type.DELIVERY,
             status=Order.Status.SENT,
             kitchen_status=Order.KitchenStatus.QUEUED,
             channel=Order.Channel.ONLINE,

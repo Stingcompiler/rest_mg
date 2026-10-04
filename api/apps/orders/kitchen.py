@@ -150,6 +150,17 @@ class KitchenViewSet(viewsets.ViewSet):
         ):
             order.delivery_status = Order.DeliveryStatus.PREPARING
             written.append("delivery_status")
+        # A pickup is ready for the customer the moment the kitchen says so
+        # (batch 16): that is what the customer's page is waiting to show.
+        if (
+            order.channel == Order.Channel.ONLINE
+            and order.type == Order.Type.TAKEAWAY
+            and new_status == Order.KitchenStatus.READY
+            and order.delivery_status in {Order.DeliveryStatus.CONFIRMED, Order.DeliveryStatus.PREPARING}
+        ):
+            order.delivery_status = Order.DeliveryStatus.READY_FOR_PICKUP
+            if "delivery_status" not in written:
+                written.append("delivery_status")
 
         # Only the kitchen's own columns are written — the bill is untouched.
         order.save(update_fields=written)

@@ -22,7 +22,7 @@ import { normalizeSudanPhone } from '@/lib/phone';
 import { browserStorage } from './browserStorage';
 import { loadCart, saveCart } from './cartStore';
 import { rememberOrder } from './lastOrder';
-import { validateOrderForm, type OrderField } from './orderForm';
+import { validateOrderForm, type Fulfilment, type OrderField } from './orderForm';
 import { uuid4 } from '@/lib/uuid';
 import { useModalDialog } from '@/lib/useModalDialog';
 
@@ -52,6 +52,8 @@ interface CartApi {
   ordering: boolean;
   /** The restaurant the order is for, when the page knows it. */
   slug?: string;
+  /** Where a pickup is collected from: the restaurant's address. */
+  pickupAddress?: string;
   lines: CartLine[];
   count: number;
   subtotalMinor: bigint;
@@ -78,10 +80,12 @@ export function CartProvider({
   ordering,
   slug,
   menu,
+  pickupAddress,
 }: {
   children: React.ReactNode;
   ordering: boolean;
   slug?: string;
+  pickupAddress?: string;
   /** Every dish on the page, to rebuild a saved cart from (batch 14). */
   menu?: OrderableItem[];
 }) {
@@ -101,6 +105,7 @@ export function CartProvider({
     return {
       ordering,
       slug,
+      pickupAddress,
       lines,
       count,
       subtotalMinor,
@@ -128,7 +133,7 @@ export function CartProvider({
         setSheetOpen(true);
       },
     };
-  }, [lines, ordering, slug]);
+  }, [lines, ordering, slug, pickupAddress]);
 
   return (
     <CartContext.Provider value={api}>
@@ -297,6 +302,8 @@ const inputClass =
   'min-h-control-lg rounded-md border border-line bg-bg px-14 text-ar-base text-text outline-none focus-visible:border-accent';
 
 interface Draft {
+  /** Delivered to an address, or collected at the counter (batch 16). */
+  fulfilment: Fulfilment;
   name: string;
   phone: string;
   address: string;
@@ -304,12 +311,13 @@ interface Draft {
   notes: string;
 }
 
-const EMPTY_DRAFT: Draft = { name: '', phone: '', address: '', area: '', notes: '' };
+const EMPTY_DRAFT: Draft = { fulfilment: 'delivery', name: '', phone: '', address: '', area: '', notes: '' };
 
 interface PlacedSummary {
   number: string;
   totalMinor: bigint;
   phone: string;
+  fulfilment: Fulfilment;
 }
 
 function FormStep({
@@ -338,7 +346,7 @@ function FormStep({
 
   const submit = async () => {
     setError(null);
-    const found = validateOrderForm(draft);
+    const found = validateOrderForm(draft, draft.fulfilment);
     setProblems(Object.fromEntries(found.map((problem) => [problem.field, label(problem.key)])));
     if (found.length > 0) {
       fields[found[0]!.field].current?.focus();
@@ -355,8 +363,9 @@ function FormStep({
         body: JSON.stringify({
           customer_name: draft.name.trim(),
           customer_phone: dialable,
-          customer_address: draft.address.trim(),
-          customer_area: draft.area.trim(),
+          fulfilment: draft.fulfilment,
+          customer_address: draft.fulfilment === 'pickup' ? '' : draft.address.trim(),
+          customer_area: draft.fulfilment === 'pickup' ? '' : draft.area.trim(),
           customer_notes: draft.notes.trim(),
           ...(cart.slug ? { slug: cart.slug } : {}),
           items: cart.lines.map((l) => ({ item_id: l.item.id, qty: l.qty })),
@@ -390,7 +399,12 @@ function FormStep({
         placedAt: Date.now(),
       });
       window.dispatchEvent(new Event(ORDER_PLACED_EVENT));
-      onDone({ number: String(body.number), totalMinor: BigInt(body.total_minor ?? cart.subtotalMinor), phone: dialable });
+      onDone({
+        number: String(body.number),
+        totalMinor: BigInt(body.total_minor ?? cart.subtotalMinor),
+        phone: dialable,
+        fulfilment: draft.fulfilment,
+      });
     } catch {
       setError(label('landing.order.error'));
       setSending(false);
@@ -411,6 +425,24 @@ function FormStep({
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-16">
       <div className="flex flex-col gap-12">
+        <div role="radiogroup" aria-label={label('landing.form.fulfilment')} className="grid grid-cols-2 gap-8">
+          {(['delivery', 'pickup'] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={draft.fulfilment === option}
+              onClick={() => onDraft({ ...draft, fulfilment: option })}
+              className={
+                draft.fulfilment === option
+                  ? 'min-h-control-lg rounded-md bg-ink text-ar-base font-semibold text-on-ink'
+                  : 'min-h-control-lg rounded-md border border-line text-ar-base text-text-muted hover:border-gold-soft'
+              }
+            >
+              {label(option === 'pickup' ? 'landing.form.pickup' : 'landing.form.delivery')}
+            </button>
+          ))}
+        </div>
         <Field label={label('landing.form.name')}>
           <input
             ref={fields.name}
@@ -441,6 +473,8 @@ function FormStep({
             {label('landing.form.phoneHint')}
           </span>
         </Field>
+        {draft.fulfilment === 'delivery' ? (
+          <>
         <Field label={label('landing.form.address')}>
           <input
             ref={fields.address}
@@ -460,6 +494,12 @@ function FormStep({
             autoComplete="address-level2"
           />
         </Field>
+          </>
+        ) : cart.pickupAddress ? (
+          <p className="rounded-md border border-line p-12 text-ar-sm text-text-muted">
+            {label('landing.confirm.pickupAt', { address: cart.pickupAddress })}
+          </p>
+        ) : null}
         <Field label={label('landing.form.notes')}>
           <textarea className={`${inputClass} py-10`} value={draft.notes} onChange={(e) => set('notes')(e.target.value)} rows={2} />
         </Field>
@@ -469,7 +509,9 @@ function FormStep({
             <span>{label('landing.cart.total')}</span>
             <span className="numeric text-gold">{money(cart.subtotalMinor)}</span>
           </div>
-          <span className="text-ar-sm text-text-muted">{label('landing.form.payOnDelivery')}</span>
+          <span className="text-ar-sm text-text-muted">
+            {label(draft.fulfilment === 'pickup' ? 'landing.form.payAtCounter' : 'landing.form.payOnDelivery')}
+          </span>
         </div>
 
         {error ? (
@@ -503,6 +545,7 @@ function FormStep({
  * lost the number (batch 14).
  */
 function DoneStep({ placed, onClose }: { placed: PlacedSummary | null; onClose: () => void }) {
+  const cart = useCart();
   return (
     <div className="flex flex-col items-center gap-16 p-32 text-center">
       <CheckCircle2 size={56} strokeWidth={1.5} className="text-success" />
@@ -522,6 +565,9 @@ function DoneStep({ placed, onClose }: { placed: PlacedSummary | null; onClose: 
       <p className="text-ar-base text-text-muted">
         {placed ? label('landing.confirm.callYou', { phone: placed.phone }) : label('landing.confirm.message')}
       </p>
+      {placed?.fulfilment === 'pickup' && cart.pickupAddress ? (
+        <p className="text-ar-base font-medium">{label('landing.confirm.pickupAt', { address: cart.pickupAddress })}</p>
+      ) : null}
       <p className="text-ar-sm text-text-muted">{label('landing.confirm.track')}</p>
       <button
         type="button"

@@ -726,5 +726,21 @@
   "pos.sync.attempts.few": "{count} attempts",
   "pos.sync.attempts.many": "{count} attempts",
   "pos.sync.attempts.other": "{count} attempts",
-  "pos.payment.deleteDigit": "Delete the last digit"
+  "pos.payment.deleteDigit": "Delete the last digit",
+  "landing.status.ready_for_pickup": "Your order is ready. Come and collect it",
+  "landing.status.collected": "Collected. Enjoy your meal!",
+  "landing.form.fulfilment": "How you get it",
+  "landing.form.delivery": "Delivery",
+  "landing.form.pickup": "Pickup",
+  "landing.form.payAtCounter": "Pay at the counter when you collect. The restaurant will call to confirm, and this page shows the moment it is ready.",
+  "landing.confirm.pickupAt": "Collect from: {address}",
+  "deliveries.status.readyForPickup": "Ready for pickup",
+  "deliveries.status.collected": "Collected",
+  "deliveries.advance.ready_for_pickup": "Ready for pickup",
+  "deliveries.advance.collected": "Collected by the customer",
+  "deliveries.kind.pickup": "Pickup",
+  "deliveries.kind.delivery": "Delivery",
+  "deliveries.overdue": "Waiting over an hour",
+  "deliveries.reason.noShow": "The customer did not come",
+  "deliveries.awaitingKitchenPickup": "Waiting on the kitchen — it becomes ready for pickup when the kitchen finishes it"
 }

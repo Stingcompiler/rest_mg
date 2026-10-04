@@ -64,6 +64,10 @@ class Order(BaseModel):
         PREPARING = "preparing", "Preparing"
         OUT_FOR_DELIVERY = "out_for_delivery", "Out for delivery"
         DELIVERED = "delivered", "Delivered"
+        # Pickup from the restaurant (batch 16): a takeaway the customer comes
+        # to collect, waiting at the counter instead of going out.
+        READY_FOR_PICKUP = "ready_for_pickup", "Ready for pickup"
+        COLLECTED = "collected", "Collected"
         CANCELLED = "cancelled", "Cancelled"
 
     number = models.CharField(max_length=32, db_index=True)

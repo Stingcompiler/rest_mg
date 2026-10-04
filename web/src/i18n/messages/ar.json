@@ -726,5 +726,21 @@
   "pos.sync.attempts.few": "{count} محاولات",
   "pos.sync.attempts.many": "{count} محاولة",
   "pos.sync.attempts.other": "{count} محاولة",
-  "pos.payment.deleteDigit": "حذف آخر رقم"
+  "pos.payment.deleteDigit": "حذف آخر رقم",
+  "landing.status.ready_for_pickup": "طلبك جاهز، تفضّل للاستلام",
+  "landing.status.collected": "استلمت طلبك. بالهناء والشفاء!",
+  "landing.form.fulfilment": "طريقة الاستلام",
+  "landing.form.delivery": "توصيل",
+  "landing.form.pickup": "استلام من المطعم",
+  "landing.form.payAtCounter": "الدفع عند الاستلام في المطعم. سيتصل بك المطعم لتأكيد الطلب، وتظهر لك هنا لحظة جاهزيته.",
+  "landing.confirm.pickupAt": "الاستلام من: {address}",
+  "deliveries.status.readyForPickup": "جاهز للاستلام",
+  "deliveries.status.collected": "استُلم",
+  "deliveries.advance.ready_for_pickup": "جاهز للاستلام",
+  "deliveries.advance.collected": "استلمه الزبون",
+  "deliveries.kind.pickup": "استلام من المطعم",
+  "deliveries.kind.delivery": "توصيل",
+  "deliveries.overdue": "ينتظر منذ أكثر من ساعة",
+  "deliveries.reason.noShow": "لم يحضر الزبون",
+  "deliveries.awaitingKitchenPickup": "بانتظار المطبخ — يصير جاهزًا للاستلام عندما يُنهيه المطبخ"
 }

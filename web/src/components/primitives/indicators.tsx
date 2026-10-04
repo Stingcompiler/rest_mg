@@ -110,3 +110,21 @@ export function ProgressBar({ percent, tone = 'accent', size = 'thick' }: Progre
 export function Divider({ className }: { className?: string }) {
   return <div className={cn('h-px w-full bg-line', className)} />;
 }
+
+/**
+ * The gold rule: a hairline, a small diamond, a hairline. It marks a title on
+ * the public page, the login and the manager's sections (luxury identity,
+ * batch 13). Ornament only, so it is hidden from assistive technology.
+ */
+export function Ornament({ align = 'center', className }: { align?: 'center' | 'start'; className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn('flex items-center gap-8', align === 'center' ? 'justify-center' : 'justify-start', className)}
+    >
+      <span className="h-px w-thumb-sm bg-gold-soft" />
+      <span className="size-6 rotate-45 border border-gold-soft" />
+      <span className="h-px w-thumb-sm bg-gold-soft" />
+    </span>
+  );
+}

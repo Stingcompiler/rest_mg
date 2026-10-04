@@ -50,6 +50,11 @@ lookup — with the collisions that implies ([Q4](#q4--light-mode-has-no-hover-o
 
 ## 1. Colour
 
+> **Batch 13 — luxury identity.** The build has since moved to an ivory-and-ink palette with a deeper
+> emerald for actions, brass gold for prices and ornaments, and El Messiri for titles. The values below
+> are the original extraction; the live tokens and the reasoning are in
+> [LUXURY-DESIGN.ar.md](LUXURY-DESIGN.ar.md) and `web/src/styles/design-tokens.css`.
+
 ### 1.1 Tokens declared by the design itself
 
 Section `1a` ships its own token table (lines 1839–1864), including contrast ratios. These are the

@@ -73,6 +73,19 @@ const config: Config = {
           3: 'var(--color-chart-3)',
           4: 'var(--color-chart-4)',
         },
+        // The luxury identity (batch 13).
+        gold: {
+          DEFAULT: 'var(--color-gold)',
+          soft: 'var(--color-gold-soft)',
+        },
+        ink: {
+          DEFAULT: 'rgb(var(--color-ink-rgb) / <alpha-value>)',
+          2: 'var(--color-ink-2)',
+        },
+        'on-ink': {
+          DEFAULT: 'var(--color-on-ink)',
+          muted: 'var(--color-on-ink-muted)',
+        },
         'toggle-knob': 'var(--toggle-knob)',
       },
 
@@ -80,6 +93,7 @@ const config: Config = {
         ar: 'var(--font-arabic)',
         la: 'var(--font-latin)',
         num: 'var(--font-numeric)',
+        display: 'var(--font-display)',
       },
 
       fontSize: {
@@ -92,6 +106,8 @@ const config: Config = {
         'ar-2xl': ['var(--text-ar-2xl)', { lineHeight: 'var(--leading-normal)' }],
         'ar-3xl': ['var(--text-ar-3xl)', { lineHeight: 'var(--leading-normal)' }],
         'ar-4xl': ['var(--text-ar-4xl)', { lineHeight: 'var(--leading-normal)' }],
+
+        'display-xl': ['var(--text-display-xl)', { lineHeight: 'var(--leading-normal)' }],
 
         'la-xs': ['var(--text-la-xs)', { lineHeight: 'var(--leading-normal)' }],
         'la-sm': ['var(--text-la-sm)', { lineHeight: 'var(--leading-normal)' }],

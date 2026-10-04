@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-import { Button, TextField } from '@/components';
+import { Button, Ornament, TextField } from '@/components';
 import { useI18n } from '@/i18n';
 import { ApiError, destinationAfterLogin } from '@/lib/http';
 import { useAuth } from './AuthProvider';
@@ -69,7 +69,10 @@ export function LoginScreen() {
       className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-16 p-24"
       dir={i18n.dir}
     >
-      <h1 className="text-ar-xl font-semibold">{i18n.t('auth.signInTitle')}</h1>
+      <div className="flex flex-col items-center gap-12 text-center">
+        <h1 className="font-display text-ar-2xl font-semibold">{i18n.t('auth.signInTitle')}</h1>
+        <Ornament />
+      </div>
       <form onSubmit={submit} className="flex flex-col gap-12">
         <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
           {i18n.t('manager.login.username')}

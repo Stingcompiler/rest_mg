@@ -52,9 +52,14 @@ export function NavRailItem({ icon, label, active, onClick, badge, className, ex
       aria-expanded={expanded}
       className={cn(
         // Mobile: share the bottom bar's width evenly. Desktop: the fixed rail cell.
-        'flex min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-lg outline-none',
+        'flex min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-sm outline-none',
         'md:h-rail-item-h md:w-rail-item-w md:flex-none md:gap-6',
-        active ? 'bg-accent-tint text-accent' : 'text-text-muted hover:bg-surface-2',
+        // The rail sits on ink (batch 13): ivory labels, and the current
+        // screen lifted with a gold edge.
+        'border-b-strong md:border-b-0 md:border-e-strong',
+        active
+          ? 'border-gold-soft bg-ink-2 text-on-ink'
+          : 'border-transparent text-on-ink-muted hover:bg-ink-2 hover:text-on-ink',
         className,
       )}
     >
@@ -86,7 +91,7 @@ export function NavRail({ children, footer }: NavRailProps) {
       className={cn(
         // Mobile: a fixed bottom bar — thumb-reachable, the phone convention.
         'fixed inset-x-0 bottom-0 z-30 flex h-mobile-nav w-full flex-none flex-row items-stretch',
-        'gap-2 border-t border-line bg-bg-rail px-8',
+        'gap-2 border-t border-ink-2 bg-bg-rail px-8',
         // Desktop: the vertical rail on the start edge, as before.
         'md:static md:h-auto md:w-rail md:flex-col md:items-center md:gap-6 md:border-s md:border-t-0 md:px-0 md:py-12',
       )}
@@ -104,7 +109,7 @@ export function RailStatus({ label, tone = 'warning' }: { label: string; tone?: 
   return (
     <div className="flex flex-col items-center gap-4">
       <ConnectionDot tone={tone} />
-      <span className={cn('text-center text-ar-xs', tone === 'warning' ? 'text-warning' : 'text-success')}>
+      <span className="text-center text-ar-xs text-on-ink-muted">
         {label}
       </span>
     </div>

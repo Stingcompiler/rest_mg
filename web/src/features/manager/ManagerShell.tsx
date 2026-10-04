@@ -68,18 +68,25 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
 
   const nav = (
     <nav className="flex h-full flex-col gap-8">
-      <div className="px-10 pb-12 pt-6 text-ar-lg font-bold">{i18n.t('manager.title')}</div>
+      <div className="flex flex-col gap-10 px-10 pb-14 pt-6">
+        <span className="font-display text-ar-xl font-semibold text-on-ink">{i18n.t('manager.title')}</span>
+        <span aria-hidden="true" className="h-px w-thumb-sm bg-gold-soft" />
+      </div>
       {NAV.map((entry) => {
-        const active = pathname === entry.href;
+        // The export serves every page with a trailing slash ("/manager/"), so
+        // a plain comparison never matched and no page was ever marked current.
+        const active = (pathname.replace(/\/+$/, '') || '/') === entry.href;
         return (
           <button
             key={entry.href}
             type="button"
             onClick={() => go(entry.href)}
             className={
+              // On ink (batch 13): ivory labels, the current page lifted with a
+              // gold edge on its start side.
               active
-                ? 'flex min-h-control-lg items-center gap-10 rounded-md bg-surface-2 px-14 text-ar-base font-medium text-accent'
-                : 'flex min-h-control-lg items-center gap-10 rounded-md px-14 text-ar-base text-text-muted'
+                ? 'flex min-h-control-lg items-center gap-10 rounded-sm border-s-strong border-gold-soft bg-ink-2 px-14 text-ar-base font-medium text-on-ink'
+                : 'flex min-h-control-lg items-center gap-10 rounded-sm border-s-strong border-transparent px-14 text-ar-base text-on-ink-muted hover:bg-ink-2 hover:text-on-ink'
             }
           >
             {entry.icon}
@@ -90,7 +97,7 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
       <button
         type="button"
         onClick={signOut}
-        className="mt-auto flex min-h-control-lg items-center gap-10 rounded-md px-14 text-ar-base text-text-muted"
+        className="mt-auto flex min-h-control-lg items-center gap-10 rounded-sm px-14 text-ar-base text-on-ink-muted hover:bg-ink-2 hover:text-on-ink"
       >
         <LogOut size={20} />
         {i18n.t('manager.logout')}
@@ -101,7 +108,7 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
   return (
     <div className="flex min-h-screen bg-bg text-text" dir={i18n.dir}>
       {/* The rail — from lg up only. */}
-      <aside className="hidden w-manager-sidebar flex-none border-e border-line bg-surface p-14 lg:block">
+      <aside className="hidden w-manager-sidebar flex-none bg-ink p-14 lg:block">
         {nav}
       </aside>
 
@@ -114,7 +121,7 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 bg-black/50"
           />
-          <aside className="absolute inset-y-0 start-0 w-manager-sidebar max-w-[80vw] border-e border-line bg-surface p-14 shadow-overlay">
+          <aside className="absolute inset-y-0 start-0 w-manager-sidebar max-w-[80vw] bg-ink p-14 shadow-overlay">
             {nav}
           </aside>
         </div>
@@ -131,7 +138,7 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
             >
               <Menu size={24} />
             </IconButton>
-            <h1 className="truncate text-ar-xl font-semibold sm:text-ar-2xl">{title}</h1>
+            <h1 className="truncate font-display text-ar-xl font-semibold sm:text-ar-2xl">{title}</h1>
           </div>
           <SettingsMenu />
         </header>

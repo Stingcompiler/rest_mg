@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, BellRing, Banknote, Clock, MapPin, Phone, StickyNote, Truck, X } from 'lucide-react';
 
 import { Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
+import { describeError } from '@/lib/describeError';
 import { formatTime, useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { ApiError, homeForRole } from '@/lib/http';
@@ -160,7 +161,12 @@ export function DeliveriesScreen() {
         {deliveries.isLoading ? (
           <LoadingList rows={4} rowClassName="h-item-card" />
         ) : deliveries.isError ? (
-          <ErrorState title={i18n.t('common.retry')} onRetry={() => void deliveries.refetch()} retryLabel={i18n.t('common.retry')} />
+          <ErrorState
+                title={i18n.t('common.loadFailed')}
+                detail={i18n.t(describeError(deliveries.error))}
+                onRetry={() => void deliveries.refetch()}
+                retryLabel={i18n.t('common.retry')}
+              />
         ) : orders.length === 0 ? (
           <EmptyState title={i18n.t('deliveries.empty')} icon={<Truck size={30} />} />
         ) : (

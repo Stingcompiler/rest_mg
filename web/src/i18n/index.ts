@@ -19,7 +19,7 @@ export {
   type Direction,
 } from './config';
 
-export { translate, type MessageKey, type TranslateParams } from './catalog';
+export { hasMessage, translate, type MessageKey, type TranslateParams } from './catalog';
 export { formatInteger, formatMoney, formatTime, formatDate } from './format';
 export { I18nProvider, useI18n } from './I18nProvider';
 

@@ -87,6 +87,20 @@ interface PosContextValue {
    * already happening, which is the only way the till is allowed to know.
    */
   pendingDeliveries: string[] | null;
+  /**
+   * The till's orders the kitchen has marked ready, from the sync loop. The
+   * kitchen board knew and the cashier did not (batch 12). Null until the
+   * first answer.
+   */
+  kitchenReady: { id: string; number: string }[] | null;
+  /**
+   * The server refused the session. Sales go on and are kept on the device,
+   * but nothing syncs until someone signs in again, and the screen says so
+   * instead of "offline".
+   */
+  sessionExpired: boolean;
+  /** The device's own storage could not be opened. The till cannot start. */
+  loadFailed: boolean;
   /** Force a sync now. Background sync makes this never *required*. */
   syncNow(): void;
   /**
@@ -192,6 +206,9 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
   // null until a sync run has actually answered. Starting at [] would make
   // the first successful run look like three orders arriving at once.
   const [pendingDeliveries, setPendingDeliveries] = useState<string[] | null>(null);
+  const [kitchenReady, setKitchenReady] = useState<{ id: string; number: string }[] | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
   const bump = useCallback(() => setVersion((value) => value + 1), []);
@@ -259,7 +276,11 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       setCategories(menu.categories);
       setReady(true);
       void refreshPending();
-    })().catch((error) => console.error('[pos] load failed', error));
+    })().catch((error) => {
+      // The skeleton used to stay up for ever, with the reason in the console.
+      console.error('[pos] load failed', error);
+      if (!cancelled) setLoadFailed(true);
+    });
 
     return () => {
       cancelled = true;
@@ -281,6 +302,8 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       // list rather than clearing it, so a dropped connection does not read
       // as "nobody is waiting" — the rail's offline dot says the rest.
       if (result.pendingDeliveries) setPendingDeliveries(result.pendingDeliveries);
+      if (result.kitchenReady) setKitchenReady(result.kitchenReady);
+      if (!result.skipped) setSessionExpired(Boolean(result.sessionExpired));
       // A run that fails says why. This was silent, so a till that had stopped
       // syncing looked exactly like one with nothing to send — and the only
       // clue was an "offline" badge nobody could explain.
@@ -731,6 +754,9 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
       online,
       pendingCount: pending,
       pendingDeliveries,
+      kitchenReady,
+      sessionExpired,
+      loadFailed,
       syncNow,
       saveFailed,
       dismissSaveFailure,
@@ -761,7 +787,20 @@ export function PosProvider({ children }: { children: React.ReactNode }) {
     // `version` changes on every mutation, giving the context value a new
     // identity so consumers re-render and read the mutated entities. The action
     // callbacks are stable, so these are the real deps.
-    [ready, version, categories, online, pending, pendingDeliveries, syncNow, saveFailed, dismissSaveFailure],
+    [
+      ready,
+      version,
+      categories,
+      online,
+      pending,
+      pendingDeliveries,
+      kitchenReady,
+      sessionExpired,
+      loadFailed,
+      syncNow,
+      saveFailed,
+      dismissSaveFailure,
+    ],
   );
 
   return <PosContext.Provider value={value}>{children}</PosContext.Provider>;

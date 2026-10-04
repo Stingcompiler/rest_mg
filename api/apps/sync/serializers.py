@@ -4,7 +4,7 @@ from __future__ import annotations
 from django.conf import settings
 from rest_framework import serializers
 
-from apps.catalog.serializers import PriceChangeSerializer
+from apps.catalog.serializers import AvailabilityChangeSerializer, PriceChangeSerializer
 from apps.core.fields import MoneyField
 from apps.orders.models import Order
 from apps.orders.serializers import OrderLineSerializer, PaymentSerializer
@@ -140,6 +140,7 @@ RECORD_SERIALIZERS = {
     "order": OrderPushSerializer,
     "shift": ShiftPushSerializer,
     "price_change": PriceChangeSerializer,
+    "availability": AvailabilityChangeSerializer,
 }
 
 

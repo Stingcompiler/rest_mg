@@ -8,6 +8,24 @@ import { fetchWithSession } from '@/lib/http';
  * engine codes against this interface so it can be tested against a fake server
  * that simulates idempotency and a dropped connection.
  */
+/**
+ * The server answered, with a refusal. A 401 or 403 here is the session, not
+ * the line: the till must say "sign in again", not "offline".
+ */
+export class SyncHttpError extends Error {
+  constructor(
+    readonly step: 'push' | 'pull',
+    readonly status: number,
+  ) {
+    super(`${step} failed: ${status}`);
+    this.name = 'SyncHttpError';
+  }
+
+  get sessionExpired(): boolean {
+    return this.status === 401 || this.status === 403;
+  }
+}
+
 export interface PushRecord {
   type: string;
   id: string;
@@ -40,6 +58,8 @@ export interface PullResponse {
   /** Optional so an older server that does not send them still works. */
   customers?: unknown[];
   pending_deliveries?: unknown[];
+  /** Till orders the kitchen has marked ready. Optional for an older server. */
+  kitchen_ready?: unknown[];
   profile: unknown;
 }
 
@@ -81,7 +101,7 @@ export class HttpSyncTransport implements SyncTransport {
       headers: this.headers(token),
       body: JSON.stringify(envelope),
     });
-    if (!response.ok) throw new Error(`push failed: ${response.status}`);
+    if (!response.ok) throw new SyncHttpError('push', response.status);
     return response.json();
   }
 
@@ -98,7 +118,7 @@ export class HttpSyncTransport implements SyncTransport {
       method: 'GET',
       headers: this.headers(token),
     });
-    if (!response.ok) throw new Error(`pull failed: ${response.status}`);
+    if (!response.ok) throw new SyncHttpError('pull', response.status);
     return response.json();
   }
 }

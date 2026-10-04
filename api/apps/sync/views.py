@@ -148,6 +148,18 @@ class SyncViewSet(viewsets.ViewSet):
         # that somebody is waiting.
         pending_deliveries = pending_deliveries[:50]
 
+        # The till's own orders the kitchen has finished. The kitchen board knew
+        # and the cashier did not (user-experience review, batch 12). Website
+        # orders are the deliveries screen's to follow, so they are left out.
+        kitchen_ready = Order.objects.filter(
+            channel=Order.Channel.POS,
+            kitchen_status=Order.KitchenStatus.READY,
+            status__in=[Order.Status.SENT, Order.Status.CLOSED],
+        ).order_by("kitchen_updated_at", "opened_at")
+        if branch_id:
+            kitchen_ready = kitchen_ready.filter(branch_id=branch_id)
+        kitchen_ready = kitchen_ready[:50]
+
         payload = {
             "cursor": cursor,
             "full_snapshot": since is None,
@@ -189,6 +201,10 @@ class SyncViewSet(viewsets.ViewSet):
             "pending_deliveries": [
                 {"id": str(order.id), "number": order.number}
                 for order in pending_deliveries
+            ],
+            # Current state, like pending_deliveries: what is waiting at the pass.
+            "kitchen_ready": [
+                {"id": str(order.id), "number": order.number} for order in kitchen_ready
             ],
         }
         device, _ = self._principal(request)

@@ -46,7 +46,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  * already applied to a local-only item.
  */
 function isUnsendable(entry: OutboxRecord): boolean {
-  if (entry.type !== 'price_change') return false;
+  if (entry.type !== 'price_change' && entry.type !== 'availability') return false;
   const { itemId } = entry.payload as PriceChangeRecord;
   return !itemId || !UUID_PATTERN.test(itemId);
 }

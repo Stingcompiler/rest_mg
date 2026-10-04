@@ -2,6 +2,8 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { INLINE_ERROR } from '@/lib/mutationMeta';
+
 import {
   auditApi,
   customersApi,
@@ -44,7 +46,7 @@ export function useProfile() {
 
 export function useUpdateProfile() {
   const client = useQueryClient();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: ({ id, patch }: { id: string; patch: Partial<RestaurantProfile> }) =>
       profileApi.update(id, patch),
     onSuccess: () => client.invalidateQueries({ queryKey: ['profile'] }),
@@ -54,7 +56,7 @@ export function useUpdateProfile() {
 /** The landing page's logo and hero. Its own mutation, its own pending state. */
 export function useBranding() {
   const client = useQueryClient();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: ({ id, change }: { id: string; change: BrandingChange }) =>
       profileApi.branding(id, change),
     onSuccess: () => client.invalidateQueries({ queryKey: ['profile'] }),
@@ -92,7 +94,7 @@ export function useStaff() {
 
 export function useCreateStaff() {
   const client = useQueryClient();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: (body: NewStaffAccount) => staffApi.create(body),
     onSuccess: () => {
       client.invalidateQueries({ queryKey: ['staff'] });
@@ -103,7 +105,7 @@ export function useCreateStaff() {
 
 export function useEditStaff() {
   const client = useQueryClient();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: ({ id, patch }: { id: string; patch: StaffEdit }) => staffApi.update(id, patch),
     onSuccess: () => {
       // An edit both changes the roster and writes a log entry, so refresh both.
@@ -163,7 +165,7 @@ function useCustomerInvalidator() {
 
 export function useCreateCustomer() {
   const invalidate = useCustomerInvalidator();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: (body: { name: string; phone?: string; note?: string }) => customersApi.create(body),
     onSuccess: invalidate,
   });
@@ -176,7 +178,7 @@ export function useRetireCustomer() {
 
 export function useSettleCustomer() {
   const invalidate = useCustomerInvalidator();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: ({ id, body }: { id: string; body: NewSettlement }) => customersApi.settle(id, body),
     onSuccess: invalidate,
   });

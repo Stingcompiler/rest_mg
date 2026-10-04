@@ -9,6 +9,7 @@
  */
 import { WALK_IN_CUSTOMER_ID } from '@/domain';
 import type {
+  AvailabilityChangeRecord,
   CategoryRecord,
   MenuItemRecord,
   OrderLineRecord,
@@ -149,10 +150,22 @@ function priceChangeToServer(change: PriceChangeRecord) {
   };
 }
 
+function availabilityToServer(change: AvailabilityChangeRecord) {
+  return {
+    id: change.id,
+    item_id: change.itemId,
+    is_available: change.isAvailable,
+    changed_at: change.changedAt,
+    created_at: change.createdAt,
+    updated_at: change.updatedAt,
+  };
+}
+
 const SERIALIZERS = {
   order: orderToServer,
   shift: shiftToServer,
   price_change: priceChangeToServer,
+  availability: availabilityToServer,
 } as const;
 
 export function recordToServerPayload(type: SyncableType, payload: unknown): Record<string, unknown> {

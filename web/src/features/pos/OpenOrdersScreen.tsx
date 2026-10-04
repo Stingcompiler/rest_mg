@@ -34,6 +34,7 @@ export function OpenOrdersScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [pendingCancel, setPendingCancel] = useState<string | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const readyIds = new Set((pos.kitchenReady ?? []).map((ready) => ready.id));
 
   // The age bar is the point of these cards — it escalates from green through
   // amber to red as an order sits — so the clock has to move on its own. Read
@@ -149,7 +150,9 @@ export function OpenOrdersScreen() {
                        kitchen was already cooking. What actually matters here
                        is whether the kitchen has the order. */
                     synced={snapshot.status === 'sent'}
-                    syncedLabel={i18n.t('pos.orders.sentToKitchen')}
+                    syncedLabel={i18n.t(
+                      readyIds.has(order.id) ? 'pos.orders.readyInKitchen' : 'pos.orders.sentToKitchen',
+                    )}
                     unsyncedLabel={i18n.t('pos.orders.notSentYet')}
                     resumeLabel={i18n.t('pos.orders.resume')}
                     cancelLabel={i18n.t('pos.orders.cancel')}

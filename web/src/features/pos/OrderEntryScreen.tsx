@@ -29,6 +29,7 @@ import {
   CategoryTab,
   ConfirmDialog,
   EmptyState,
+  ErrorState,
   IconButton,
   LoadingList,
   MenuItemCard,
@@ -285,18 +286,34 @@ export function OrderEntryScreen() {
           </div>
         ) : null}
 
-        {!pos.ready ? (
+        {pos.loadFailed ? (
+          <div className="p-18">
+            <ErrorState
+              title={i18n.t('pos.loadFailed.title')}
+              detail={i18n.t('pos.loadFailed.detail')}
+              retryLabel={i18n.t('common.retry')}
+              onRetry={() => window.location.reload()}
+            />
+          </div>
+        ) : !pos.ready ? (
           <div className="p-18">
             <LoadingList rows={6} rowClassName="h-item-card" />
           </div>
         ) : pos.categories.length === 0 ? (
           /* A fresh till has no menu until the first sync brings the server's.
-             It used to fill the gap with a demo menu nobody could sell from. */
+             It used to fill the gap with a demo menu nobody could sell from,
+             and then said only "waiting" with a button that gave no answer. */
           <div className="flex flex-1 flex-col items-center justify-center gap-12 p-24 text-center">
             <span className="text-ar-lg text-text-muted">{i18n.t('pos.menu.waiting')}</span>
+            <span className="max-w-md text-ar-base text-text-muted">
+              {i18n.t(pos.online ? 'pos.menu.waitingHintOnline' : 'pos.menu.waitingHintOffline')}
+            </span>
             <button
               type="button"
-              onClick={pos.syncNow}
+              onClick={() => {
+                pos.syncNow();
+                setToast(i18n.t('pos.menu.syncing'));
+              }}
               className="min-h-control-md rounded-md border border-line bg-surface-2 px-16 text-ar-base"
             >
               {i18n.t('pos.menu.syncNow')}

@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { INLINE_ERROR } from '@/lib/mutationMeta';
+
 import {
   categoriesApi,
   itemsApi,
@@ -29,12 +31,12 @@ function useCatalogInvalidator() {
 
 export function useCreateCategory() {
   const invalidate = useCatalogInvalidator();
-  return useMutation({ mutationFn: (b: CategoryInput) => categoriesApi.create(b), onSuccess: invalidate });
+  return useMutation({ meta: INLINE_ERROR, mutationFn: (b: CategoryInput) => categoriesApi.create(b), onSuccess: invalidate });
 }
 
 export function useUpdateCategory() {
   const invalidate = useCatalogInvalidator();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: ({ id, body }: { id: string; body: CategoryInput & { is_active?: boolean } }) =>
       categoriesApi.update(id, body),
     onSuccess: invalidate,
@@ -48,12 +50,17 @@ export function useDeactivateCategory() {
 
 export function useCreateItem() {
   const invalidate = useCatalogInvalidator();
-  return useMutation({ mutationFn: (b: MenuItemInput) => itemsApi.create(b), onSuccess: invalidate });
+  return useMutation({ meta: INLINE_ERROR, mutationFn: (b: MenuItemInput) => itemsApi.create(b), onSuccess: invalidate });
 }
 
-export function useUpdateItem() {
+/**
+ * The editor shows its own error; the quick toggles on a card do not, and
+ * leave theirs to the notice.
+ */
+export function useUpdateItem(options: { inlineError?: boolean } = {}) {
   const invalidate = useCatalogInvalidator();
   return useMutation({
+    meta: options.inlineError ? INLINE_ERROR : undefined,
     mutationFn: ({ id, body }: { id: string; body: MenuItemInput }) => itemsApi.update(id, body),
     onSuccess: invalidate,
   });
@@ -66,7 +73,7 @@ export function useRetireItem() {
 
 export function useUploadItemImage() {
   const invalidate = useCatalogInvalidator();
-  return useMutation({
+  return useMutation({ meta: INLINE_ERROR,
     mutationFn: ({ id, file }: { id: string; file: File }) => itemsApi.uploadImage(id, file),
     onSuccess: invalidate,
   });

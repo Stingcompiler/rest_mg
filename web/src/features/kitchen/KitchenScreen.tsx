@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BellRing } from 'lucide-react';
 
-import { Button, EmptyState, Numeric, SettingsMenu, StatusChip, Toast } from '@/components';
+import { Button, EmptyState, ErrorState, Numeric, SettingsMenu, StatusChip, Toast } from '@/components';
 import { AlertBell } from '@/features/alerts/AlertBell';
 import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
@@ -196,7 +196,16 @@ export function KitchenScreen() {
             <span className="text-ar-sm font-normal text-text-muted">{i18n.t('alerts.dismiss')}</span>
           </button>
         ) : null}
-        {tickets === null ? null : tickets.length === 0 ? (
+        {tickets === null && !online ? (
+          // The first load failed: say so, rather than a blank board that
+          // looks like a quiet night.
+          <ErrorState
+            title={i18n.t('kitchen.loadFailed')}
+            detail={i18n.t('error.network')}
+            retryLabel={i18n.t('common.retry')}
+            onRetry={() => void load()}
+          />
+        ) : tickets === null ? null : tickets.length === 0 ? (
           <EmptyState title={i18n.t('kitchen.empty')} />
         ) : (
           <div className="grid grid-cols-tickets content-start gap-14">

@@ -31,3 +31,8 @@ export function translate(locale: Locale, key: MessageKey, params?: TranslatePar
     name in params ? String(params[name]) : whole,
   );
 }
+
+/** Does the catalogue have this key? For codes that arrive at runtime. */
+export function hasMessage(key: string): key is MessageKey {
+  return Object.prototype.hasOwnProperty.call(ar, key);
+}

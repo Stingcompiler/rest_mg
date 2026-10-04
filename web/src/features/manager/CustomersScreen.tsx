@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Receipt, UserPlus, Wallet, X } from 'lucide-react';
 
-import { Button, EmptyState, IconButton, LoadingList, Pager, TextField } from '@/components';
+import { Button, EmptyState, ErrorState, IconButton, LoadingList, Pager, TextField } from '@/components';
 import { formatDate, formatTime, useI18n } from '@/i18n';
 import { pageWindow } from '@/lib/paging';
 import { ManagerShell } from './ManagerShell';
@@ -25,7 +25,8 @@ import {
   useSettleCustomer,
   useStatement,
 } from './hooks';
-import { ApiError, type Customer } from './api';
+import type { Customer } from './api';
+import { describeError } from '@/lib/describeError';
 
 /** Receivables are worked from the top; a screenful at a time is enough. */
 const PAGE_SIZE = 25;
@@ -83,7 +84,13 @@ export function CustomersScreen() {
         {customers.isLoading ? (
           <LoadingList rows={4} rowClassName="h-control-xl" />
         ) : customers.isError ? (
-          <EmptyState title={i18n.t('common.retry')} icon={<AlertTriangle size={30} />} />
+          <ErrorState
+          title={i18n.t('common.loadFailed')}
+          detail={i18n.t(describeError(customers.error))}
+          retryLabel={i18n.t('common.retry')}
+          onRetry={() => void customers.refetch()}
+          icon={<AlertTriangle size={30} />}
+        />
         ) : rows.length === 0 ? (
           <EmptyState title={i18n.t(owingOnly ? 'customers.noneOwing' : 'customers.empty')} icon={<Wallet size={30} />} />
         ) : (
@@ -128,7 +135,7 @@ function AddCustomerForm() {
           setName('');
           setPhone('');
         },
-        onError: (caught) => setError(caught instanceof ApiError ? caught.message : String(caught)),
+        onError: (caught) => setError(i18n.t(describeError(caught))),
       },
     );
   };
@@ -221,7 +228,7 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
           setAmount('');
           setDone(true);
         },
-        onError: (caught) => setError(caught instanceof ApiError ? caught.message : String(caught)),
+        onError: (caught) => setError(i18n.t(describeError(caught))),
       },
     );
   };

@@ -81,3 +81,25 @@ class PriceChange(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.item.name_ar}: {self.old_price_minor} → {self.new_price_minor}"
+
+
+class AvailabilityChange(BaseModel):
+    """A dish marked available or sold out on a till, as it travelled up.
+
+    "Unavailable" set on the till used to stay on the till, and the website
+    kept selling the dish (user-experience review, batch 12). Like a price
+    change, it is append-only history; the item carries the current value.
+    """
+
+    item = models.ForeignKey(MenuItem, on_delete=models.PROTECT, related_name="availability_changes")
+    is_available = models.BooleanField()
+    source_device = models.ForeignKey(
+        "accounts.Device", null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    changed_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-changed_at"]
+
+    def __str__(self) -> str:
+        return f"{self.item.name_ar}: {'available' if self.is_available else 'unavailable'}"

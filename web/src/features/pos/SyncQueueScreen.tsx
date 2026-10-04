@@ -23,6 +23,7 @@ import {
   toMinor,
   type OutboxRecord,
   type OrderRecord,
+  type AvailabilityChangeRecord,
   type PriceChangeRecord,
   type ShiftRecord,
 } from '@/db';
@@ -30,7 +31,7 @@ import { formatTime, useI18n } from '@/i18n';
 import { clampOffset, pageLocal } from '@/lib/paging';
 import { usePos } from './PosProvider';
 import { PosRail } from './PosRail';
-import { refusalKey } from './syncRefusal';
+import { refusalKey, refusalMessageKey } from './syncRefusal';
 
 /**
  * The queue is rendered a page at a time.
@@ -46,10 +47,18 @@ const TYPE_KEY = {
   order: 'pos.sync.type.order',
   shift: 'pos.sync.type.shift',
   price_change: 'pos.sync.type.price_change',
+  availability: 'pos.sync.type.availability',
 } as const;
 
-/** A one-line description of what the queued record actually is. */
-function describe(entry: OutboxRecord, money: (minor: bigint) => string): { label: string; amount?: string } {
+/**
+ * A one-line description of what the queued record actually is. A price or
+ * availability change names the dish: it used to show the item's id, a UUID.
+ */
+function describe(
+  entry: OutboxRecord,
+  money: (minor: bigint) => string,
+  itemName: (id: string) => string,
+): { label: string; amount?: string } {
   if (entry.type === 'order') {
     const order = entry.payload as OrderRecord;
     return { label: order.number, amount: money(toMinor(order.totalMinor)) };
@@ -57,8 +66,11 @@ function describe(entry: OutboxRecord, money: (minor: bigint) => string): { labe
   if (entry.type === 'shift') {
     return { label: (entry.payload as ShiftRecord).name };
   }
+  if (entry.type === 'availability') {
+    return { label: itemName((entry.payload as AvailabilityChangeRecord).itemId) };
+  }
   const change = entry.payload as PriceChangeRecord;
-  return { label: change.itemId ?? '', amount: money(toMinor(change.newPriceMinor)) };
+  return { label: itemName(change.itemId ?? ''), amount: money(toMinor(change.newPriceMinor)) };
 }
 
 export function SyncQueueScreen() {
@@ -177,7 +189,11 @@ export function SyncQueueScreen() {
             ) : (
               <div className="flex flex-col gap-8">
                 {pageLocal(entries, PAGE_SIZE, offset).results.map((entry) => {
-                  const { label, amount } = describe(entry, i18n.money);
+                  const { label, amount } = describe(
+                    entry,
+                    i18n.money,
+                    (id) => pos.itemById.get(id)?.toSnapshot().nameAr ?? i18n.t('pos.sync.unknownItem'),
+                  );
                   const isRefused = entry.lastError !== null;
                   return (
                     <div
@@ -217,12 +233,18 @@ export function SyncQueueScreen() {
                       {isRefused ? (
                         <div className="flex items-start gap-8 rounded-md bg-danger-tint px-12 py-8 text-ar-sm text-danger">
                           <AlertTriangle size={15} className="mt-2 flex-none" />
-                          <span className="min-w-0 break-words">
-                            {i18n.t('pos.sync.reason')}:{' '}
-                            {(() => {
-                              const known = refusalKey(entry.lastError ?? '');
-                              return known ? i18n.t(known) : entry.lastError;
-                            })()}
+                          <span className="flex min-w-0 flex-col gap-4 break-words">
+                            <span>
+                              {i18n.t('pos.sync.reason')}: {i18n.t(refusalMessageKey(entry.lastError ?? ''))}
+                            </span>
+                            {refusalKey(entry.lastError ?? '') === null && entry.lastError ? (
+                              <details className="text-ar-xs text-text-muted">
+                                <summary className="cursor-pointer">{i18n.t('pos.sync.refusal.details')}</summary>
+                                <code dir="ltr" className="block whitespace-pre-wrap break-all">
+                                  {entry.lastError}
+                                </code>
+                              </details>
+                            ) : null}
                           </span>
                         </div>
                       ) : null}

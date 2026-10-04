@@ -20,6 +20,7 @@
 import { newId } from '@/domain';
 import { STORES } from './schema';
 import type {
+  AvailabilityChangeRecord,
   OrderRecord,
   OutboxRecord,
   PriceChangeRecord,
@@ -28,7 +29,7 @@ import type {
 } from './records';
 import { getAll, request, txDone } from './idb';
 
-type SyncablePayload = OrderRecord | ShiftRecord | PriceChangeRecord;
+type SyncablePayload = OrderRecord | ShiftRecord | PriceChangeRecord | AvailabilityChangeRecord;
 
 export function outboxId(type: SyncableType, recordId: string): string {
   return `${type}:${recordId}`;

@@ -47,6 +47,15 @@ class MenuItemSerializer(serializers.Serializer):
         return value
 
 
+class AvailabilityChangeSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    item_id = serializers.UUIDField()
+    is_available = serializers.BooleanField()
+    changed_at = serializers.DateTimeField()
+    created_at = serializers.DateTimeField(required=False)
+    updated_at = serializers.DateTimeField(required=False)
+
+
 class PriceChangeSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     item_id = serializers.UUIDField()

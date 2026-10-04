@@ -34,6 +34,8 @@ export interface PullOutcome {
    * for an hour would keep insisting somebody is waiting.
    */
   pendingDeliveries: string[];
+  /** Till orders the kitchen has marked ready, with their numbers. */
+  kitchenReady: { id: string; number: string }[];
 }
 
 export async function pullMenu(
@@ -83,9 +85,14 @@ export async function pullMenu(
     .map((row) => (typeof row?.id === 'string' ? row.id : null))
     .filter((id): id is string => id !== null);
 
+  const kitchenReady = ((response.kitchen_ready ?? []) as { id?: unknown; number?: unknown }[])
+    .filter((row) => typeof row?.id === 'string' && typeof row?.number === 'string')
+    .map((row) => ({ id: row.id as string, number: row.number as string }));
+
   return {
     applied: categories.length + items.length + customers.length,
     fullSnapshot: response.full_snapshot,
     pendingDeliveries,
+    kitchenReady,
   };
 }

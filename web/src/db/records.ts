@@ -28,7 +28,7 @@ export type OrderStatus = 'open' | 'parked' | 'sent' | 'closed' | 'void';
 export type OrderType = 'dine_in' | 'takeaway' | 'delivery';
 export type PaymentMethod = 'cash' | 'bank' | 'wallet' | 'credit';
 export type ShiftStatus = 'open' | 'closed';
-export type SyncableType = 'order' | 'shift' | 'price_change';
+export type SyncableType = 'order' | 'shift' | 'price_change' | 'availability';
 
 export interface OrderLineRecord {
   id: string;
@@ -125,6 +125,19 @@ export interface PriceChangeRecord {
   syncedAt: IsoTimestamp | null;
 }
 
+/**
+ * A dish marked available or sold out on the till, queued for the server.
+ * It lives only in the outbox: the item itself carries the current value.
+ */
+export interface AvailabilityChangeRecord {
+  id: string;
+  itemId: string;
+  isAvailable: boolean;
+  changedAt: IsoTimestamp;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
 export interface CashCountRecord {
   id: string;
   denominationMinor: MoneyString | null;
@@ -204,7 +217,7 @@ export interface OutboxRecord {
   id: string;
   type: SyncableType;
   recordId: string;
-  payload: OrderRecord | ShiftRecord | PriceChangeRecord;
+  payload: OrderRecord | ShiftRecord | PriceChangeRecord | AvailabilityChangeRecord;
   /** Fresh on every enqueue, so an answer from the server can be matched to
    *  the snapshot it was for. Rows queued before it existed have none, and
    *  still match themselves. */

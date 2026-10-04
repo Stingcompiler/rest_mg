@@ -39,7 +39,10 @@ export function RequireRole({
   if (loading || !permitted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg text-text">
-        <span className="text-ar-base text-text-muted">{i18n.t('common.retry')}</span>
+        {/* Checking who is signed in. This said "retry" while it waited. */}
+        <span className="text-ar-base text-text-muted" role="status">
+          {i18n.t('common.loading')}
+        </span>
       </div>
     );
   }

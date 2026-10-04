@@ -8,7 +8,8 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-import { Button, EmptyState, LoadingList, Numeric, TextField } from '@/components';
+import { Button, EmptyState, ErrorState, LoadingList, Numeric, TextField } from '@/components';
+import { describeError } from '@/lib/describeError';
 import { formatDate, useI18n } from '@/i18n';
 import { ManagerShell } from './ManagerShell';
 import { useDevices, useEnrolDevice, useRevokeDevice } from './hooks';
@@ -60,7 +61,13 @@ export function DevicesScreen() {
         {devices.isLoading ? (
           <LoadingList rows={3} rowClassName="h-control-xl" />
         ) : devices.isError ? (
-          <EmptyState title={i18n.t('common.retry')} icon={<AlertTriangle size={30} />} />
+          <ErrorState
+          title={i18n.t('common.loadFailed')}
+          detail={i18n.t(describeError(devices.error))}
+          retryLabel={i18n.t('common.retry')}
+          onRetry={() => void devices.refetch()}
+          icon={<AlertTriangle size={30} />}
+        />
         ) : (
           <div className="flex flex-col gap-8">
             {(devices.data ?? []).map((device) => {

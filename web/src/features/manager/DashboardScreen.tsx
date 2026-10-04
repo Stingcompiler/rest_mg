@@ -8,7 +8,8 @@
  */
 import { useState } from 'react';
 
-import { KpiCard, SegmentedControl, StackedShareBar, EmptyState, LoadingList } from '@/components';
+import { EmptyState, ErrorState, KpiCard, LoadingList, SegmentedControl, StackedShareBar } from '@/components';
+import { describeError } from '@/lib/describeError';
 import { AlertTriangle } from 'lucide-react';
 
 import { useI18n } from '@/i18n';
@@ -53,7 +54,13 @@ export function DashboardScreen() {
       {revenue.isLoading ? (
         <LoadingList rows={4} rowClassName="h-control-2xl" />
       ) : revenue.isError || !revenue.data ? (
-        <EmptyState title={i18n.t('common.retry')} icon={<AlertTriangle size={30} />} />
+        <ErrorState
+          title={i18n.t('common.loadFailed')}
+          detail={i18n.t(describeError(revenue.error))}
+          retryLabel={i18n.t('common.retry')}
+          onRetry={() => void revenue.refetch()}
+          icon={<AlertTriangle size={30} />}
+        />
       ) : (
         <Dashboard data={revenue.data} />
       )}

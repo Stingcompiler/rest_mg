@@ -26,7 +26,7 @@ from typing import Any
 from django.db import transaction
 from django.utils import timezone
 
-from apps.catalog.models import MenuItem, PriceChange
+from apps.catalog.models import AvailabilityChange, MenuItem, PriceChange
 from apps.orders.models import Order, OrderLine, Payment
 from apps.shifts.models import CashCount, Shift
 from apps.sync.serializers import RECORD_SERIALIZERS
@@ -49,7 +49,21 @@ class RecordResult:
         return body
 
 
-MODELS_BY_TYPE = {"order": Order, "shift": Shift, "price_change": PriceChange}
+MODELS_BY_TYPE = {
+    "order": Order,
+    "shift": Shift,
+    "price_change": PriceChange,
+    "availability": AvailabilityChange,
+}
+
+
+class RecordRefused(Exception):
+    """A writer's refusal with a code the till can name. A plain exception
+    reaches the till as {"detail": "..."}, which it can only show as it came."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
 
 
 TERMINAL_ORDER_STATUSES = {Order.Status.CLOSED, Order.Status.VOID}
@@ -102,16 +116,57 @@ def apply_record(record: dict, device, branch=None) -> RecordResult:
             return RecordResult(record_id, REJECTED, {"detail": str(exc)})
         return RecordResult(record_id, ACCEPTED)
 
-    writer = {"order": _write_order, "shift": _write_shift, "price_change": _write_price_change}[
-        record_type
-    ]
+    writer = {
+        "order": _write_order,
+        "shift": _write_shift,
+        "price_change": _write_price_change,
+        "availability": _write_availability,
+    }[record_type]
     try:
         with transaction.atomic():
             writer(serializer.validated_data, device, branch, existing=existing)
+    except RecordRefused as refusal:
+        return RecordResult(record_id, REJECTED, _refusal(refusal.code, str(refusal)))
     except Exception as exc:  # noqa: BLE001 - reported per record, never fatal to the batch
         return RecordResult(record_id, REJECTED, {"detail": str(exc)})
 
     return RecordResult(record_id, ACCEPTED)
+
+
+def _assert_branch_may_change(item: MenuItem, branch) -> None:
+    """A branch's till changes its own branch's dishes; a shared dish is the owner's."""
+    if branch is None:
+        return
+    if item.branch_id is None:
+        raise RecordRefused("shared_record", "This dish is shared by every branch; only the owner can change it.")
+    if item.branch_id != branch.id:
+        raise RecordRefused("other_branch", "This menu item belongs to another branch.")
+
+
+def _write_availability(
+    data: dict, device, branch=None, existing: AvailabilityChange | None = None
+) -> AvailabilityChange:
+    item = MenuItem.objects.filter(id=data["item_id"]).first()
+    if item is None:
+        raise RecordRefused("item_not_found", "Unknown menu item.")
+    _assert_branch_may_change(item, branch)
+
+    change = AvailabilityChange.objects.create(
+        id=data["id"],
+        branch=item.branch,
+        item=item,
+        is_available=data["is_available"],
+        source_device=device,
+        changed_at=data["changed_at"],
+        **_timestamps(data, data["changed_at"]),
+    )
+    # Last writer wins, as for prices: a stale change is kept as history but
+    # does not undo a newer one.
+    if item.updated_at is None or change.changed_at >= item.updated_at:
+        item.is_available = change.is_available
+        item.updated_at = change.changed_at
+        item.save(update_fields=["is_available", "updated_at", "server_updated_at"])
+    return change
 
 
 def _same_branch(record, branch) -> bool:
@@ -326,8 +381,7 @@ def _write_price_change(data: dict, device, branch=None, existing: PriceChange |
     item = MenuItem.objects.get(id=data["item_id"])
     # A tablet reprices its own branch's dishes only: not another branch's, and
     # not a dish shared by every branch, which only the owner may change.
-    if branch is not None and item.branch_id != branch.id:
-        raise ValueError("other_branch: this menu item belongs to another branch.")
+    _assert_branch_may_change(item, branch)
 
     change = PriceChange.objects.create(
         id=data["id"],

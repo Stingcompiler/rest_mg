@@ -9,7 +9,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ImagePlus, Trash2 } from 'lucide-react';
 
-import { Button, EmptyState, ImageSlot, LoadingList, TextField, Toggle } from '@/components';
+import { Button, EmptyState, ErrorState, ImageSlot, LoadingList, TextField, Toggle } from '@/components';
+import { describeError } from '@/lib/describeError';
 import { useI18n } from '@/i18n';
 import { IMAGE_ACCEPT, checkImageFile, imageProblemKey, isRefusedImage } from '@/lib/images';
 import { ManagerShell } from './ManagerShell';
@@ -26,7 +27,13 @@ export function ProfileScreen() {
       {profile.isLoading ? (
         <LoadingList rows={5} rowClassName="h-control-xl" />
       ) : profile.isError || !first ? (
-        <EmptyState title={i18n.t('common.retry')} icon={<AlertTriangle size={30} />} />
+        <ErrorState
+          title={i18n.t('common.loadFailed')}
+          detail={i18n.t(describeError(profile.error))}
+          retryLabel={i18n.t('common.retry')}
+          onRetry={() => void profile.refetch()}
+          icon={<AlertTriangle size={30} />}
+        />
       ) : (
         <ProfileForm profile={first} />
       )}

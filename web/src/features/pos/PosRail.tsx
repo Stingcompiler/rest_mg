@@ -5,7 +5,7 @@
  * open orders, menu, reports, shift close). Extracted so every destination
  * carries the same rail and highlights its own entry.
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   LayoutGrid,
@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 
-import { ConfirmDialog, IconButton, NavRail, NavRailItem, RailStatus } from '@/components';
+import { Button, ConfirmDialog, IconButton, NavRail, NavRailItem, RailStatus, Toast } from '@/components';
 import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
 import { useI18n } from '@/i18n';
@@ -67,9 +67,32 @@ export function PosRail({ active }: { active: RailTarget }) {
     noticeBody: (count) => i18n.t('alerts.newDeliveryBody', { count: i18n.int(count) }),
   });
 
+  // Orders the kitchen has finished. The board knew and the till did not
+  // (batch 12): now the open-orders cell carries the count of this till's open
+  // bills that are ready, and a note says so as each one becomes ready.
+  const ready = pos.kitchenReady ?? [];
+  const openIds = new Set(pos.cart.list().map((order) => order.id));
+  const readyOpen = ready.filter((order) => openIds.has(order.id)).length;
+  const announced = useRef<Set<string> | null>(null);
+  const [readyNote, setReadyNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (pos.kitchenReady === null) return;
+    const seen = announced.current ?? new Set<string>();
+    const fresh = pos.kitchenReady.filter((order) => !seen.has(order.id));
+    for (const order of pos.kitchenReady) seen.add(order.id);
+    announced.current = seen;
+    if (fresh.length > 0) {
+      setReadyNote(i18n.t('pos.orders.readyNotice', { numbers: fresh.map((order) => order.number).join('، ') }));
+    }
+  }, [pos.kitchenReady, i18n]);
+
   const items: Record<RailTarget, { icon: React.ReactNode; label: string; badge?: string }> = {
     order: { icon: <LayoutGrid size={24} />, label: i18n.t('pos.title') },
-    orders: { icon: <ListOrdered size={24} />, label: i18n.t('pos.orders.title') },
+    orders: {
+      icon: <ListOrdered size={24} />,
+      label: i18n.t('pos.orders.title'),
+      badge: readyOpen > 0 ? i18n.int(readyOpen) : undefined,
+    },
     // Customer delivery orders are the till's to confirm and send out.
     deliveries: {
       icon: <Truck size={24} />,
@@ -131,6 +154,27 @@ export function PosRail({ active }: { active: RailTarget }) {
           className="md:hidden"
         />
       </NavRail>
+
+      {/* Sales go on and stay on the device; nothing syncs until someone
+          signs in again. This used to show as "offline", which it was not. */}
+      {pos.sessionExpired ? (
+        <div
+          role="alert"
+          className="fixed inset-x-0 top-8 z-40 mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-12 rounded-lg border border-danger bg-danger-tint px-14 py-8 text-ar-base text-danger-text shadow-overlay"
+        >
+          <span>{i18n.t('pos.session.expired')}</span>
+          <Button
+            variant="danger"
+            onClick={() =>
+              window.location.assign(`/login/?next=${encodeURIComponent(window.location.pathname)}`)
+            }
+          >
+            {i18n.t('pos.session.signIn')}
+          </Button>
+        </div>
+      ) : null}
+
+      {readyNote ? <Toast message={readyNote} onDismiss={() => setReadyNote(null)} durationMs={10_000} /> : null}
 
       <ConfirmDialog
         open={confirmingSignOut}

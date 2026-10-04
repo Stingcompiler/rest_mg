@@ -13,12 +13,13 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-import { Button, EmptyState, LoadingList, TextField } from '@/components';
+import { Button, EmptyState, ErrorState, LoadingList, TextField } from '@/components';
 import { useI18n } from '@/i18n';
 import { ManagerShell } from './ManagerShell';
 import { ActivityLog } from './ActivityLog';
 import { useCreateStaff, useDeactivateStaff, useEditStaff, useStaff } from './hooks';
-import { ApiError, type StaffAccount } from './api';
+import type { StaffAccount } from './api';
+import { describeError } from '@/lib/describeError';
 
 const ROLES = ['cashier', 'kitchen', 'manager'] as const;
 
@@ -58,7 +59,13 @@ export function StaffScreen() {
         {staff.isLoading ? (
           <LoadingList rows={4} rowClassName="h-control-xl" />
         ) : staff.isError ? (
-          <EmptyState title={i18n.t('common.retry')} icon={<AlertTriangle size={30} />} />
+          <ErrorState
+          title={i18n.t('common.loadFailed')}
+          detail={i18n.t(describeError(staff.error))}
+          retryLabel={i18n.t('common.retry')}
+          onRetry={() => void staff.refetch()}
+          icon={<AlertTriangle size={30} />}
+        />
         ) : (
           <div className="flex flex-col gap-8">
             {(staff.data ?? []).map((person) => (
@@ -98,7 +105,7 @@ function AddStaffForm() {
           setDisplayName('');
           setPassword('');
         },
-        onError: (caught) => setError(caught instanceof ApiError ? caught.message : String(caught)),
+        onError: (caught) => setError(i18n.t(describeError(caught))),
       },
     );
   };
@@ -210,7 +217,7 @@ function EditStaffRow({ person, onDone }: { person: StaffAccount; onDone: () => 
       { id: person.id, patch },
       {
         onSuccess: onDone,
-        onError: (caught) => setError(caught instanceof ApiError ? caught.message : String(caught)),
+        onError: (caught) => setError(i18n.t(describeError(caught))),
       },
     );
   };

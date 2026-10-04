@@ -9,7 +9,8 @@
  * path as orders, in one transaction.
  */
 import { STORES } from '../schema';
-import type { CategoryRecord, MenuItemRecord, PriceChangeRecord } from '../records';
+import { newId } from '@/domain/ids';
+import type { AvailabilityChangeRecord, CategoryRecord, MenuItemRecord, PriceChangeRecord } from '../records';
 import { getAll, request, txDone } from '../idb';
 import { enqueue } from '../outbox';
 import { openDatabase } from '../open';
@@ -121,13 +122,25 @@ export class MenuRepository {
    */
   async setAvailability(itemId: string, isAvailable: boolean): Promise<void> {
     const db = await this.db();
-    const tx = db.transaction(STORES.menuItems, 'readwrite');
+    const tx = db.transaction([STORES.menuItems, STORES.outbox], 'readwrite');
     const store = tx.objectStore(STORES.menuItems);
     const item = (await request(store.get(itemId))) as MenuItemRecord | undefined;
     if (item) {
+      const now = new Date().toISOString();
       item.isAvailable = isAvailable;
-      item.updatedAt = new Date().toISOString();
+      item.updatedAt = now;
       store.put(item);
+      // Queued in the same transaction, so the website hears about it. It used
+      // to stay on the till, and the website kept selling a sold-out dish.
+      const change: AvailabilityChangeRecord = {
+        id: newId(),
+        itemId,
+        isAvailable,
+        changedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+      enqueue(tx, 'availability', change);
     }
     await txDone(tx);
   }

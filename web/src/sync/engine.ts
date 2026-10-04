@@ -13,7 +13,7 @@
 import { DB_NAME, SettingsRepository, SETTINGS_KEYS, openDatabase, pendingCount } from '@/db';
 import { pushOutbox } from './push';
 import { pullMenu } from './pull';
-import { HttpSyncTransport, type SyncTransport } from './transport';
+import { HttpSyncTransport, SyncHttpError, type SyncTransport } from './transport';
 
 export interface SyncResult {
   online: boolean;
@@ -30,6 +30,13 @@ export interface SyncResult {
    * do not know", and show the second as silence rather than as good news.
    */
   pendingDeliveries?: string[];
+  /** Till orders the kitchen has ready. Undefined when the run did not reach the server. */
+  kitchenReady?: { id: string; number: string }[];
+  /**
+   * The server refused the session. The till is not offline: someone has to
+   * sign in again before anything syncs, and the screen has to say so.
+   */
+  sessionExpired?: boolean;
   error?: string;
 }
 
@@ -110,6 +117,7 @@ async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
   let failed = 0;
   let pulled = 0;
   let pendingDeliveries: string[] | undefined;
+  let kitchenReady: { id: string; number: string }[] | undefined;
   try {
     const pushOutcome = await pushOutbox(transport, token ?? '', dbName);
     pushed = pushOutcome.pushed;
@@ -118,6 +126,7 @@ async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
     const pullOutcome = await pullMenu(transport, token ?? '', dbName);
     pulled = pullOutcome.applied;
     pendingDeliveries = pullOutcome.pendingDeliveries;
+    kitchenReady = pullOutcome.kitchenReady;
   } catch (error) {
     return {
       online: false,
@@ -126,6 +135,7 @@ async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
       failed,
       pulled,
       pending: await pendingCount(db),
+      sessionExpired: error instanceof SyncHttpError && error.sessionExpired,
       error: error instanceof Error ? error.message : String(error),
     };
   }
@@ -138,6 +148,7 @@ async function syncOnce(deps: SyncDeps): Promise<SyncResult> {
     pulled,
     pending: await pendingCount(db),
     pendingDeliveries,
+    kitchenReady,
   };
 }
 

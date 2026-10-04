@@ -35,6 +35,7 @@ import {
   useUploadItemImage,
 } from './hooks';
 import type { Category, MenuItem } from './api';
+import { describeError } from '@/lib/describeError';
 
 export function CatalogScreen() {
   const i18n = useI18n();
@@ -117,7 +118,12 @@ export function CatalogScreen() {
             {items.isLoading ? (
               <LoadingList rows={5} rowClassName="h-item-card" />
             ) : items.isError ? (
-              <ErrorState title={i18n.t('common.retry')} onRetry={() => void items.refetch()} retryLabel={i18n.t('common.retry')} />
+              <ErrorState
+                title={i18n.t('common.loadFailed')}
+                detail={i18n.t(describeError(items.error))}
+                onRetry={() => void items.refetch()}
+                retryLabel={i18n.t('common.retry')}
+              />
             ) : (items.data ?? []).length === 0 ? (
               <EmptyState title={i18n.t('catalog.empty')} />
             ) : (
@@ -269,7 +275,7 @@ function ItemEditor({
 }) {
   const i18n = useI18n();
   const create = useCreateItem();
-  const update = useUpdateItem();
+  const update = useUpdateItem({ inlineError: true });
   const upload = useUploadItemImage();
 
   const [nameAr, setNameAr] = useState(item?.name_ar ?? '');
@@ -318,7 +324,7 @@ function ItemEditor({
       onClose();
     } catch (caught) {
       if (isRefusedImage(caught)) setError(i18n.t('common.imageRefused'));
-      else setError(caught instanceof Error ? caught.message : String(caught));
+      else setError(i18n.t(describeError(caught)));
     }
   };
 
@@ -408,7 +414,7 @@ function CategoryEditor({ category, onClose }: { category: Category | null; onCl
       else await create.mutateAsync(body);
       onClose();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(i18n.t(describeError(caught)));
     }
   };
 

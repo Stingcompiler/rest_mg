@@ -7,7 +7,8 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-import { EmptyState, LoadingList, Numeric, Pager } from '@/components';
+import { EmptyState, ErrorState, LoadingList, Numeric, Pager } from '@/components';
+import { describeError } from '@/lib/describeError';
 import { formatDate, useI18n } from '@/i18n';
 import { pageWindow } from '@/lib/paging';
 import { ManagerShell } from './ManagerShell';
@@ -33,7 +34,13 @@ export function ReportsScreen() {
       {orders.isLoading ? (
         <LoadingList rows={6} rowClassName="h-control-xl" />
       ) : orders.isError ? (
-        <EmptyState title={i18n.t('common.retry')} icon={<AlertTriangle size={30} />} />
+        <ErrorState
+          title={i18n.t('common.loadFailed')}
+          detail={i18n.t(describeError(orders.error))}
+          retryLabel={i18n.t('common.retry')}
+          onRetry={() => void orders.refetch()}
+          icon={<AlertTriangle size={30} />}
+        />
       ) : rows.length === 0 ? (
         <EmptyState title={i18n.t('manager.reports.empty')} />
       ) : (

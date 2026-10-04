@@ -12,12 +12,16 @@
  * so the log reads in the viewer's language, not in the database's codes.
  */
 import {
+  AlertTriangle,
   UserPlus, UserCog, UserMinus, UserCheck,
   UtensilsCrossed, Pencil, Trash2, Image as ImageIcon,
   FolderPlus, FolderMinus, Tag, Truck,
 } from 'lucide-react';
 
-import { EmptyState, LoadingList } from '@/components';
+import { auditValueKey } from './auditValues';
+
+import { EmptyState, ErrorState, LoadingList } from '@/components';
+import { describeError } from '@/lib/describeError';
 import { formatDate, formatTime, useI18n } from '@/i18n';
 import { useAuditLog } from './hooks';
 import type { AuditAction, AuditEntry, AuditQuery } from './api';
@@ -38,19 +42,18 @@ const ICON: Record<AuditAction, React.ReactNode> = {
   'delivery.status': <Truck size={18} className="text-accent" />,
 };
 
-const ROLE_KEY = {
-  owner: 'role.owner',
-  manager: 'role.manager',
-  cashier: 'role.cashier',
-  kitchen: 'role.kitchen',
-} as const;
-
 export function ActivityLog({ query = {} }: { query?: AuditQuery }) {
   const i18n = useI18n();
   const log = useAuditLog(query);
 
   if (log.isLoading) return <LoadingList rows={4} rowClassName="h-control-xl" />;
-  if (log.isError) return <EmptyState title={i18n.t('common.retry')} />;
+  if (log.isError) return <ErrorState
+          title={i18n.t('common.loadFailed')}
+          detail={i18n.t(describeError(log.error))}
+          retryLabel={i18n.t('common.retry')}
+          onRetry={() => void log.refetch()}
+          icon={<AlertTriangle size={30} />}
+        />;
   if (!log.data?.results.length) return <EmptyState title={i18n.t('manager.audit.empty')} />;
 
   return (
@@ -93,18 +96,25 @@ function Changes({ entry }: { entry: AuditEntry }) {
   // Any action may carry a before/after diff; staff edits are no longer the
   // only ones that do.
 
+  // Statuses and roles in words: a cancelled delivery read "pending →
+  // cancelled", in the database's codes (batch 12).
   const readValue = (field: string, value: unknown): string => {
-    if (field === 'role' && typeof value === 'string' && value in ROLE_KEY) {
-      return i18n.t(ROLE_KEY[value as keyof typeof ROLE_KEY]);
-    }
-    return String(value);
+    const key = auditValueKey(field, value);
+    return key ? i18n.t(key) : String(value);
   };
 
   const rows = Object.entries(entry.metadata).filter(([, v]) => Array.isArray(v));
-  if (!rows.length) return null;
+  // Why it happened, when the action carries a reason (a cancelled order).
+  const reason = typeof entry.metadata.reason === 'string' ? entry.metadata.reason : null;
+  if (!rows.length && !reason) return null;
 
   return (
     <ul className="flex flex-col gap-2">
+      {reason ? (
+        <li className="text-ar-sm text-text-muted">
+          {i18n.t('manager.audit.reason')}: <span className="text-text">{reason}</span>
+        </li>
+      ) : null}
       {rows.map(([field, pair]) => {
         const [before, after] = pair as [unknown, unknown];
         if (field === 'password') {

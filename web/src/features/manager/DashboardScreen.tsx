@@ -46,7 +46,7 @@ export function DashboardScreen() {
   const before = useRevenue(previous ?? undefined, { enabled: previous !== null });
 
   return (
-    <ManagerShell title={i18n.t('manager.dashboard.title')} description={i18n.t('manager.dashboard.description')}>
+    <ManagerShell title={i18n.t('manager.dashboard.title')} description={i18n.t('manager.dashboard.pageDescription')}>
       <div className="mb-16 flex flex-wrap items-center justify-between gap-12">
         <SegmentedControl<PeriodKey>
           ariaLabel={i18n.t('manager.period.label')}

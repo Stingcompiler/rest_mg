@@ -23,7 +23,7 @@ export function ProfileScreen() {
   const first = profile.data?.[0];
 
   return (
-    <ManagerShell title={i18n.t('manager.profile.title')} description={i18n.t('manager.profile.description')}>
+    <ManagerShell title={i18n.t('manager.profile.title')} description={i18n.t('manager.profile.pageDescription')}>
       {profile.isLoading ? (
         <LoadingList rows={5} rowClassName="h-control-xl" />
       ) : profile.isError || !first ? (

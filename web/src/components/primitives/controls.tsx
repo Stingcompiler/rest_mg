@@ -55,13 +55,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   );
 });
 
-type IconButtonVariant = 'framed' | 'quiet';
+type IconButtonVariant = 'framed' | 'quiet' | 'solid' | 'accent';
 
 const ICON_BUTTON_VARIANTS: Record<IconButtonVariant, string> = {
   framed: 'size-control-lg border border-line bg-surface-2 text-text hover:bg-surface-3', // 48
   // No frame, the same floor: a back arrow or a row's edit pencil is still a
   // thumb's target, however quiet it looks.
   quiet: 'size-control-stepper text-text-muted hover:bg-surface-2', // 44
+  // The public page's "+" on a dish, and the counter it turns into (batch 19).
+  // Their own variants, because `cn` joins classes rather than merging them:
+  // a caller's bg-accent would race the framed variant's background.
+  solid: 'size-control-stepper bg-accent text-text-on-accent hover:bg-accent-hover disabled:opacity-40', // 44
+  accent: 'size-control-stepper text-accent hover:bg-accent-tint', // 44
 };
 
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

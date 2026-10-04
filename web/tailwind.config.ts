@@ -173,6 +173,8 @@ const config: Config = {
         'control-2xl': 'var(--control-2xl)',
 
         header: 'var(--header-height)',
+        // The public menu's category titles stop under both sticky bars (batch 19).
+        menu: 'calc(var(--header-height) + var(--dim-menu-bar))',
         rail: 'var(--rail-width)',
         'mobile-nav': 'var(--mobile-nav-height)',
         cart: 'var(--cart-width)',
@@ -198,6 +200,7 @@ const config: Config = {
         'rail-item-h': 'var(--dim-rail-item-h)',
         'cancel-btn': 'var(--dim-cancel-btn)',
         'menu-sidebar': 'var(--dim-menu-sidebar)',
+        'row-image': 'var(--dim-row-image)',
         'price-field': 'var(--dim-price-field)',
         'thumb-w': 'var(--dim-thumb-w)',
         'thumb-h': 'var(--dim-thumb-h)',

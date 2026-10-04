@@ -110,6 +110,14 @@ describe('the category bar', () => {
     expect(menu).toMatch(/id=\{sectionId\(category\.id\)\}/);
     expect(menu).toMatch(/aria-current=/);
   });
+
+  it('keeps the marked chip in view by scrolling the bar alone, never the page', () => {
+    // scrollIntoView on the chip scrolled the page too, and pulled it down to
+    // the menu on load (found while verifying batch 19).
+    const menu = fn('MenuSection');
+    expect(menu).toMatch(/nav\.scrollBy\(/);
+    expect(menu).not.toMatch(/inline:/);
+  });
 });
 
 describe('activeSection', () => {

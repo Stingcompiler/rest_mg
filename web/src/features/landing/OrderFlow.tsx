@@ -116,7 +116,9 @@ export function CartProvider({
           if (found) return cur.map((l) => (l.item.id === item.id ? { ...l, qty: l.qty + 1 } : l));
           return [...cur, { item, qty: 1 }];
         });
-        setSheetOpen(true);
+        // The cart stays closed: the dish's own counter and the bar at the
+        // bottom show it was added. Opening the whole sheet on every tap hid
+        // the menu the visitor was still choosing from (batch 19).
       },
       setQty(id, qty) {
         setLines((cur) =>
@@ -233,9 +235,13 @@ function CartStep({ onCheckout }: { onCheckout: () => void }) {
         <div className="flex flex-col gap-10">
           {cart.lines.map(({ item, qty }) => (
             <div key={item.id} className="flex items-center gap-12 rounded-lg border border-line bg-bg p-10">
-              <div className="h-[3.25rem] w-[3.25rem] flex-none overflow-hidden rounded-md bg-surface-2">
-                {item.image_url ? <img src={item.image_url} alt={item.name_ar} className="h-full w-full object-cover" /> : null}
-              </div>
+              {/* A photo when there is one, and no empty box when there is not
+                  (batch 19). */}
+              {item.image_url ? (
+                <div className="h-[3.25rem] w-[3.25rem] flex-none overflow-hidden rounded-md bg-surface-2">
+                  <img src={item.image_url} alt={item.name_ar} className="h-full w-full object-cover" />
+                </div>
+              ) : null}
               <div className="flex min-w-0 flex-1 flex-col">
                 {/* Two lines, not an ellipsis: the steppers are thumb-sized now and
                     leave a phone little width for the name. */}

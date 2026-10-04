@@ -69,7 +69,7 @@ export function ActivityScreen() {
   };
 
   return (
-    <ManagerShell title={i18n.t('manager.audit.pageTitle')}>
+    <ManagerShell title={i18n.t('manager.audit.pageTitle')} description={i18n.t('manager.audit.description')}>
       <div className="flex flex-col gap-16">
         <div className="flex flex-col gap-12 rounded-lg border border-line bg-surface p-16">
           <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">

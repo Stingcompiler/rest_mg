@@ -43,7 +43,16 @@ const NAV: NavEntry[] = [
   { href: '/manager/devices', labelKey: 'manager.nav.devices', icon: <MonitorSmartphone size={20} /> },
 ];
 
-export function ManagerShell({ title, children }: { title: string; children: React.ReactNode }) {
+export function ManagerShell({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  /** One line under the title saying what the page is for (batch 22). */
+  description?: string;
+  children: React.ReactNode;
+}) {
   const i18n = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -131,7 +140,10 @@ export function ManagerShell({ title, children }: { title: string; children: Rea
         <main className="min-h-0 flex-1 overflow-y-auto p-16 sm:p-24">
           {/* A measure for wide screens: at 1920 the pages ran 1684px across,
               and a row of four figures or a chart that wide is hard to read. */}
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
+          <div className="mx-auto w-full max-w-7xl">
+            {description ? <p className="mb-16 text-ar-sm text-text-muted">{description}</p> : null}
+            {children}
+          </div>
         </main>
       </div>
     </div>

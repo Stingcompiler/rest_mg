@@ -30,7 +30,7 @@ export function ReportsScreen() {
   const rows = orders.data?.results ?? [];
 
   return (
-    <ManagerShell title={i18n.t('manager.reports.title')}>
+    <ManagerShell title={i18n.t('manager.reports.title')} description={i18n.t('manager.reports.description')}>
       {orders.isLoading ? (
         <LoadingList rows={6} rowClassName="h-control-xl" />
       ) : orders.isError ? (

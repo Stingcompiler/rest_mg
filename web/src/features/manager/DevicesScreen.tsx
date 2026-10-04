@@ -39,7 +39,7 @@ export function DevicesScreen() {
   };
 
   return (
-    <ManagerShell title={i18n.t('manager.devices.title')}>
+    <ManagerShell title={i18n.t('manager.devices.title')} description={i18n.t('manager.devices.description')}>
       <div className="flex max-w-2xl flex-col gap-16">
         <div className="flex items-end gap-12 rounded-lg border border-line bg-surface p-16">
           <label className="flex flex-1 flex-col gap-6">

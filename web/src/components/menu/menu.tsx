@@ -110,8 +110,10 @@ export function MenuItemCard({
         // A floor, not a fixed height: a long name or description used to push
         // the price out of the card on a tablet (review, 1024×768). The text is
         // clamped so cards in a row stay close in size.
-        'relative flex min-h-item-card flex-col justify-between gap-8 rounded-lg border bg-surface p-14 text-start shadow-card outline-none',
-        inCart ? 'border-accent-pressed' : 'border-line',
+        'relative flex min-h-item-card flex-col justify-between gap-8 rounded-lg border p-14 text-start shadow-card outline-none',
+        // A dish already in the order is tinted, not only outlined: the corner
+        // badge alone was easy to miss across a full menu (batch 21).
+        inCart ? 'border-accent-pressed bg-accent-tint' : 'border-line bg-surface',
         !available && 'cursor-not-allowed',
       )}
     >
@@ -126,7 +128,7 @@ export function MenuItemCard({
         ) : null}
       </div>
       <div className="flex items-center justify-between">
-        <Numeric className={cn('text-num-md', available ? 'text-text' : 'text-text-disabled')}>
+        <Numeric className={cn('text-num-md font-semibold', available ? 'text-text' : 'text-text-disabled')}>
           {price}
         </Numeric>
         {flag ? <span className="text-ar-sm text-warning">{flag}</span> : null}
@@ -163,7 +165,7 @@ export function MenuManagementRow({
         {name}
       </span>
       <div className="flex min-h-control-lg w-price-field items-center justify-end rounded-md border border-line bg-surface-2 px-14">
-        <Numeric className={cn('text-num-md', available ? 'text-text' : 'text-text-disabled')}>
+        <Numeric className={cn('text-num-md font-semibold', available ? 'text-text' : 'text-text-disabled')}>
           {price}
         </Numeric>
       </div>

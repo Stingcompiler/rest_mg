@@ -461,3 +461,11 @@
   --motion-slow: 400ms;     /* a dish photo easing in on hover */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
 }
+
+/* The till's dish tiles grow on a large screen (batch 21): at 1280px and up
+   a thumb has the room, and 132px tiles left it hitting small targets. */
+@media (min-width: 1280px) {
+  :root {
+    --item-card-min-width: 152px;
+  }
+}

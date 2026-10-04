@@ -33,6 +33,13 @@ import { nextKitchenStatus, previousKitchenStatus } from './steps';
 // somebody pressing "send" and the kitchen hearing about it.
 const POLL_MS = 5_000;
 
+/** The bar along a ticket's edge, in the colour of its age (batch 21). */
+const AGE_BAR: Record<'success' | 'warning' | 'danger', string> = {
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+};
+
 /** How long a ticket has been waiting, and how alarmed to be about it. */
 function age(sentAt: string, now: number) {
   const minutes = Math.max(0, Math.floor((now - Date.parse(sentAt)) / 60_000));
@@ -150,7 +157,9 @@ export function KitchenScreen() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir} data-screen="kitchen">
+    // Dark whatever the rest of the app is set to: less glare in a lit kitchen,
+    // and the age colours stand out on it (batch 21).
+    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir} data-screen="kitchen" data-theme="dark">
       <header className="flex h-header flex-none items-center justify-between gap-10 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex items-baseline gap-12">
           <h1 className="text-ar-lg font-semibold sm:text-ar-xl">{i18n.t('kitchen.title')}</h1>
@@ -215,8 +224,11 @@ export function KitchenScreen() {
               return (
                 <article
                   key={ticket.id}
-                  className="flex flex-col gap-12 rounded-lg border border-line bg-surface p-16"
+                  data-age={tone}
+                  className="relative flex flex-col gap-12 overflow-hidden rounded-lg border border-line bg-surface p-16 ps-20"
                 >
+                  {/* Readable from across the kitchen, where the minutes are not. */}
+                  <span aria-hidden="true" className={`absolute inset-y-0 start-0 w-4 ${AGE_BAR[tone]}`} />
                   <div className="flex items-center justify-between">
                     <Numeric className="text-num-xl font-bold">{ticket.number}</Numeric>
                     <StatusChip

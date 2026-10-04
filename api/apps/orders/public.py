@@ -41,7 +41,7 @@ from apps.core.scoping import in_branch_or_shared
 from apps.orders.models import Order, OrderLine
 from apps.orders.numbers import next_online_number
 from apps.orders.phone import normalize_sudan_phone
-from apps.orders.throttles import PUBLIC_ORDER_THROTTLES
+from apps.orders.throttles import PUBLIC_ORDER_THROTTLES, PublicOrderStatusThrottle
 from apps.profiles.models import RestaurantProfile
 
 MAX_LINES = 50
@@ -268,3 +268,34 @@ class PublicOrderView(APIView):
                 updated_at=now,
             )
         return order
+
+
+class PublicOrderStatusView(APIView):
+    """How a website order stands, for the customer who placed it.
+
+    After ordering, the page showed the number and "we'll contact you", and
+    closing it lost the number (user-experience review, batch 14). The page
+    now keeps the order's id and asks here. The id is a UUID nobody can guess,
+    and the answer is the status alone: nothing about the customer or what
+    they ordered.
+    """
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+    throttle_classes = [PublicOrderStatusThrottle]
+
+    def get(self, request, order_id):
+        order = Order.objects.filter(id=order_id, channel=Order.Channel.ONLINE).first()
+        if order is None:
+            return Response(
+                {"error": {"code": "not_found", "message": "Unknown order."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(
+            {
+                "number": order.number,
+                "delivery_status": order.delivery_status,
+                "total_minor": str(order.total_minor),
+                "placed_at": order.created_at,
+            }
+        )

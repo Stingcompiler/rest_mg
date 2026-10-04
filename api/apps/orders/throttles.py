@@ -46,3 +46,15 @@ class PublicOrderPhoneThrottle(SimpleRateThrottle):
 
 
 PUBLIC_ORDER_THROTTLES = [PublicOrderAddressThrottle, PublicOrderPhoneThrottle]
+
+
+class PublicOrderStatusThrottle(SimpleRateThrottle):
+    """Per address, loose enough for a page that checks every half minute."""
+
+    scope = "public_order_status"
+
+    def get_rate(self):
+        return settings.PUBLIC_ORDER_THROTTLE_RATES["status"]
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}

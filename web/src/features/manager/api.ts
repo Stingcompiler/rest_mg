@@ -10,6 +10,7 @@
  * and displayed; only the field names are snake_case here, matching Django.
  */
 
+import type { HoursRow } from '@/lib/hours';
 import { ApiError, authApi, request, type StaffUser } from '@/lib/http';
 import type { Page } from '@/lib/paging';
 
@@ -92,7 +93,8 @@ export interface RestaurantProfile {
   phone: string;
   whatsapp: string;
   map_url: string;
-  hours: { day_ar?: string; day_en?: string; open?: string; close?: string }[];
+  /** Opening hours; `days` since batch 23 (0 = Sunday … 6 = Saturday). */
+  hours: HoursRow[];
   photos: unknown[];
   delivery_links: unknown[];
   landing_page_enabled: boolean;

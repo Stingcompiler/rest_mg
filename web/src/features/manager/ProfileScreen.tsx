@@ -7,15 +7,18 @@
  * accepting orders from the page is a separate toggle, `online_ordering_enabled`.
  */
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ImagePlus, Trash2 } from 'lucide-react';
+import { AlertTriangle, ImagePlus, Plus, Trash2 } from 'lucide-react';
 
 import { Button, EmptyState, ErrorState, ImageSlot, LoadingList, TextField, Toggle } from '@/components';
 import { describeError } from '@/lib/describeError';
 import { useI18n } from '@/i18n';
+import { cn } from '@/lib/cn';
+import { WEEK_ORDER, dayName, type HoursRow } from '@/lib/hours';
 import { IMAGE_ACCEPT, checkImageFile, imageProblemKey, isRefusedImage } from '@/lib/images';
 import { ManagerShell } from './ManagerShell';
 import { useBranding, useProfile, useUpdateProfile } from './hooks';
 import type { RestaurantProfile } from './api';
+import { hoursProblem, toSavedHours } from './hoursForm';
 
 export function ProfileScreen() {
   const i18n = useI18n();
@@ -23,7 +26,7 @@ export function ProfileScreen() {
   const first = profile.data?.[0];
 
   return (
-    <ManagerShell title={i18n.t('manager.profile.title')} description={i18n.t('manager.profile.description')}>
+    <ManagerShell title={i18n.t('manager.profile.title')} description={i18n.t('manager.profile.pageDescription')}>
       {profile.isLoading ? (
         <LoadingList rows={5} rowClassName="h-control-xl" />
       ) : profile.isError || !first ? (
@@ -50,6 +53,8 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
 
   const field = <K extends keyof RestaurantProfile>(key: K, value: RestaurantProfile[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
+  // A row the page could not read stops the save, and says why (batch 23).
+  const hoursError = hoursProblem(form.hours);
 
   const save = () => {
     update.mutate({
@@ -65,6 +70,7 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
         address_ar: form.address_ar,
         phone: form.phone,
         whatsapp: form.whatsapp,
+        hours: toSavedHours(form.hours),
         landing_page_enabled: form.landing_page_enabled,
         // Always sent: the server treats a missing flag as off.
         online_ordering_enabled: form.online_ordering_enabled,
@@ -93,6 +99,8 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
           <TextField value={form.whatsapp} onChange={(event) => field('whatsapp', event.target.value)} />
         </Labelled>
       </div>
+
+      <HoursEditor rows={form.hours} onChange={(rows) => field('hours', rows)} error={hoursError} />
 
       <div className="flex items-center justify-between rounded-lg border border-line bg-surface p-16">
         <span className="text-ar-base font-medium">{i18n.t('manager.profile.landingEnabled')}</span>
@@ -125,7 +133,7 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
       </div>
 
       <div className="flex items-center gap-14">
-        <Button variant="primary" onClick={save} disabled={update.isPending}>
+        <Button variant="primary" onClick={save} disabled={update.isPending || hoursError !== null}>
           {i18n.t('manager.profile.save')}
         </Button>
         {update.isSuccess ? <span className="text-ar-sm text-success">{i18n.t('manager.profile.saved')}</span> : null}
@@ -134,6 +142,93 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
         ) : null}
       </div>
     </div>
+  );
+}
+
+/**
+ * The opening hours, a row per span: the days it covers, when it opens and
+ * when it closes. No screen edited them before (batch 23). A late night closes
+ * after midnight (18:00 to 02:00); a split day is two rows on the same day.
+ */
+function HoursEditor({
+  rows,
+  onChange,
+  error,
+}: {
+  rows: HoursRow[];
+  onChange: (rows: HoursRow[]) => void;
+  error: ReturnType<typeof hoursProblem>;
+}) {
+  const i18n = useI18n();
+  const change = (index: number, patch: Partial<HoursRow>) =>
+    onChange(rows.map((row, at) => (at === index ? { ...row, ...patch } : row)));
+
+  return (
+    <section className="flex flex-col gap-12 rounded-lg border border-line bg-surface p-16">
+      <div className="flex flex-col gap-4">
+        <span className="text-ar-md font-medium">{i18n.t('manager.hours.title')}</span>
+        <span className="text-ar-sm text-text-muted">{i18n.t('manager.hours.hint')}</span>
+      </div>
+
+      {rows.map((row, index) => {
+        const days = row.days ?? [];
+        return (
+          <div key={index} className="flex flex-col gap-10 rounded-md border border-line p-12">
+            {Array.isArray(row.days) ? null : (
+              <span className="text-ar-sm text-warning">{i18n.t('manager.hours.legacy', { label: row.day_ar ?? '' })}</span>
+            )}
+            <div role="group" aria-label={i18n.t('manager.hours.days')} className="flex flex-wrap gap-6">
+              {WEEK_ORDER.map((day) => {
+                const on = days.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => change(index, { days: on ? days.filter((d) => d !== day) : [...days, day] })}
+                    className={cn(
+                      'min-h-control-sm rounded-md border px-10 text-ar-sm transition',
+                      on ? 'border-accent bg-accent text-text-on-accent' : 'border-line bg-surface-2 text-text-muted hover:text-text',
+                    )}
+                  >
+                    {dayName(day, i18n.locale)}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap items-end gap-12">
+              <Labelled label={i18n.t('manager.hours.open')}>
+                <TextField type="time" dir="ltr" value={row.open ?? ''} onChange={(event) => change(index, { open: event.target.value })} />
+              </Labelled>
+              <Labelled label={i18n.t('manager.hours.close')}>
+                <TextField type="time" dir="ltr" value={row.close ?? ''} onChange={(event) => change(index, { close: event.target.value })} />
+              </Labelled>
+              <Button variant="danger" onClick={() => onChange(rows.filter((_, at) => at !== index))}>
+                <span className="flex items-center gap-6">
+                  <Trash2 size={16} />
+                  {i18n.t('manager.hours.remove')}
+                </span>
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+
+      <div>
+        <Button variant="secondary" onClick={() => onChange([...rows, { days: [], open: '08:00', close: '23:00' }])}>
+          <span className="flex items-center gap-6">
+            <Plus size={16} />
+            {i18n.t('manager.hours.add')}
+          </span>
+        </Button>
+      </div>
+
+      {error ? (
+        <span role="status" aria-live="polite" className="text-ar-sm text-danger">
+          {i18n.t(error)}
+        </span>
+      ) : null}
+    </section>
   );
 }
 

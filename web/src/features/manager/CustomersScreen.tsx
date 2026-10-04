@@ -61,7 +61,7 @@ export function CustomersScreen() {
   const outstanding = BigInt(customers.data?.outstanding_minor ?? '0');
 
   return (
-    <ManagerShell title={i18n.t('customers.title')} description={i18n.t('customers.description')}>
+    <ManagerShell title={i18n.t('customers.title')} description={i18n.t('customers.pageDescription')}>
       <div className="flex flex-col gap-16">
         <div className="flex flex-wrap items-center justify-between gap-12 rounded-lg border border-line bg-surface p-16">
           <div className="flex flex-col gap-2">

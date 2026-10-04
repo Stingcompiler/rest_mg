@@ -128,8 +128,10 @@ class Command(BaseCommand):
                 "phone": "0912345678",
                 "whatsapp": "0912345678",
                 "hours": [
-                    {"day_ar": "السبت – الخميس", "day_en": "Sat – Thu", "open": "08:00", "close": "23:00"},
-                    {"day_ar": "الجمعة", "day_en": "Friday", "open": "13:00", "close": "23:00"},
+                    # days: 0 = Sunday … 6 = Saturday (batch 23).
+                    {"days": [6, 0, 1, 2, 3, 4], "day_ar": "السبت – الخميس", "day_en": "Saturday – Thursday",
+                     "open": "08:00", "close": "23:00"},
+                    {"days": [5], "day_ar": "الجمعة", "day_en": "Friday", "open": "13:00", "close": "23:00"},
                 ],
                 # Published by default in dev so the public landing page is
                 # viewable immediately after seeding.

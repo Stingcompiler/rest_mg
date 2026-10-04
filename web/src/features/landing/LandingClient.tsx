@@ -28,7 +28,8 @@ import {
   X,
 } from 'lucide-react';
 
-import { formatInteger, formatMoney, t } from '@/i18n';
+import { TIME_ZONE, formatInteger, formatMoney, t } from '@/i18n';
+import { dayName, openState, type HoursRow } from '@/lib/hours';
 import { Ornament } from '@/components/primitives/indicators';
 import { IconButton } from '@/components/primitives/controls';
 import { scrollBehavior } from '@/lib/motion';
@@ -68,7 +69,8 @@ interface Landing {
   phone: string;
   whatsapp: string;
   map_url: string;
-  hours: { day_ar?: string; open?: string; close?: string }[];
+  /** `days` since batch 23 (0 = Sunday … 6 = Saturday). */
+  hours: HoursRow[];
   photos: { url?: string }[];
   /** The manager's own branding. Either may be null; the page copes with both. */
   logo_url: string | null;
@@ -195,6 +197,7 @@ function Landing({ data }: { data: Landing }) {
           <div className="flex max-w-2xl flex-col gap-16 text-on-ink">
             <h1 className="font-display text-ar-4xl font-semibold leading-normal sm:text-display-xl">{data.name_ar}</h1>
             <Ornament align="start" />
+            <OpenBadge data={data} />
             {data.description_ar ? (
               <p className="max-w-xl text-ar-lg text-on-ink-muted">{data.description_ar}</p>
             ) : (
@@ -281,6 +284,35 @@ function Landing({ data }: { data: Landing }) {
         <Footer data={data} onNavigate={(id) => scrollTo(id === 'order' && ordering ? 'menu' : id)} />
       </main>
     </CartProvider>
+  );
+}
+
+/**
+ * "مفتوح الآن · يغلق 23:00", or when it next opens, on the restaurant's clock
+ * (batch 23). Nothing when the hours have no days to read. Checked again every
+ * minute, so a page left open turns over at closing time.
+ */
+function OpenBadge({ data }: { data: Landing }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  const state = openState(data.hours, now, TIME_ZONE);
+  if (!state) return null;
+  const detail = state.open
+    ? label('landing.open.closes', { time: state.closes })
+    : state.when === 'today'
+      ? label('landing.closed.opensToday', { time: state.opens })
+      : state.when === 'tomorrow'
+        ? label('landing.closed.opensTomorrow', { time: state.opens })
+        : label('landing.closed.opensOn', { day: dayName(state.when, 'ar'), time: state.opens });
+  return (
+    <span className="inline-flex w-fit items-center gap-8 rounded-full border border-gold-soft bg-ink/40 px-12 py-4 text-ar-sm text-on-ink backdrop-blur">
+      <span aria-hidden="true" className={`size-dot rounded-full ${state.open ? 'bg-success' : 'bg-warning'}`} />
+      <span className="font-semibold">{label(state.open ? 'landing.open.now' : 'landing.closed.now')}</span>
+      <span className="text-on-ink-muted">· {detail}</span>
+    </span>
   );
 }
 

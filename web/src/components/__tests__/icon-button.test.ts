@@ -30,6 +30,11 @@ describe('IconButton', () => {
     expect(classes).not.toMatch(/\bborder\b/);
   });
 
+  it.each(['solid', 'accent'])('is at least 44px %s', (variant) => {
+    // The public page's "+" and its counter (batch 19).
+    expect(classesOf({ variant })).toMatch(FLOOR);
+  });
+
   it('keeps the floor when a caller adds classes', () => {
     expect(classesOf({ variant: 'quiet', className: 'text-danger' })).toMatch(FLOOR);
   });

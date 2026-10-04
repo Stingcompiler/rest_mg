@@ -437,6 +437,8 @@
   --dim-preview: 160px;      /* profile logo and cover preview */
   --dim-logo: 40px;          /* the restaurant's logo in the page header */
   --dim-card-image: 176px;   /* a dish photo on the public page */
+  --dim-row-image: 96px;     /* the same photo beside a dish row on a phone */
+  --dim-menu-bar: 66px;      /* the public menu's sticky category bar */
   --dim-card-skeleton: 288px;
   --dim-popover: 320px;      /* settings menu */
   --dim-bar: 20px;           /* stacked share bar in reports */

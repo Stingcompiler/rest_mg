@@ -28,6 +28,7 @@ from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.permissions import IsManager, IsOrderProcessor
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.orders.pickups import maybe_expire_pickups
 from apps.core.query import page, parse_page, parse_window
 from apps.core.scoping import visible
 from apps.orders.models import Order
@@ -121,6 +122,9 @@ class OrderViewSet(viewsets.ViewSet):
         A separate action so widening access to the cashier never exposes the
         full order list. Scoped to the branch, newest first.
         """
+        # A pickup nobody came for is cancelled before the board is drawn
+        # (batch 17): this poll is the restaurant's clock.
+        maybe_expire_pickups()
         orders = OrderReadSerializer.queryset().filter(channel=Order.Channel.ONLINE)
         if request.user.branch_id:
             orders = orders.filter(branch_id=request.user.branch_id)

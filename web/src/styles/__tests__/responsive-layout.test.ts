@@ -48,7 +48,8 @@ describe('wide screens', () => {
   it("keep the manager's pages to a readable measure", () => {
     // The pages render inside a wrapper that carries a max width.
     expect(read('features/manager/ManagerShell.tsx')).toMatch(
-      /<main[^>]*>[\s\S]{0,400}?<div className="[^"]*\bmax-w-[^"]*">\{children\}<\/div>/,
+      // The page's one-line description sits inside it too (batch 22).
+      /<main[^>]*>[\s\S]{0,400}?<div className="[^"]*\bmax-w-[^"]*">[\s\S]{0,200}?\{children\}\s*<\/div>/,
     );
   });
 });

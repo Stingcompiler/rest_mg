@@ -16,7 +16,8 @@ import { useI18n } from '@/i18n';
 import { ManagerShell } from './ManagerShell';
 import { ActivityLog } from './ActivityLog';
 import { useRevenue } from './hooks';
-import { PERIOD_KEYS, periodRange, type PeriodKey } from './period';
+import { PERIOD_KEYS, change, periodRange, previousRange, type PeriodKey } from './period';
+import type { KpiDelta } from '@/components/report/report';
 
 const METHOD_TOKEN: Record<string, string> = {
   cash: 'bg-chart-1',
@@ -39,9 +40,13 @@ export function DashboardScreen() {
   // recorded, which is why the two screens disagreed.
   const [period, setPeriod] = useState<PeriodKey>('today');
   const revenue = useRevenue(periodRange(period));
+  // The same span of the period before, up to this minute, to read the
+  // figures against (batch 22). "All" has no period before it.
+  const previous = previousRange(period);
+  const before = useRevenue(previous ?? undefined, { enabled: previous !== null });
 
   return (
-    <ManagerShell title={i18n.t('manager.dashboard.title')}>
+    <ManagerShell title={i18n.t('manager.dashboard.title')} description={i18n.t('manager.dashboard.description')}>
       <div className="mb-16 flex flex-wrap items-center justify-between gap-12">
         <SegmentedControl<PeriodKey>
           ariaLabel={i18n.t('manager.period.label')}
@@ -62,14 +67,35 @@ export function DashboardScreen() {
           icon={<AlertTriangle size={30} />}
         />
       ) : (
-        <Dashboard data={revenue.data} />
+        <Dashboard data={revenue.data} before={previous ? before.data : undefined} period={period} />
       )}
     </ManagerShell>
   );
 }
 
-function Dashboard({ data }: { data: import('./api').RevenueReport }) {
+function Dashboard({
+  data,
+  before,
+  period,
+}: {
+  data: import('./api').RevenueReport;
+  before?: import('./api').RevenueReport;
+  period: PeriodKey;
+}) {
   const i18n = useI18n();
+
+  // "+١٢٪ عن الوقت نفسه أمس"; nothing until the period before has loaded, or
+  // when it had nothing to compare with.
+  const compare = (now: bigint | number, then: bigint | number | undefined): KpiDelta | undefined => {
+    if (then === undefined || period === 'all') return undefined;
+    const moved = change(BigInt(now), BigInt(then));
+    if (!moved) return undefined;
+    const sign = moved.direction === 'up' ? '+' : moved.direction === 'down' ? '−' : '';
+    return {
+      direction: moved.direction,
+      text: i18n.t(`manager.compare.${period}` as const, { change: `${sign}${i18n.int(moved.percent)}` }),
+    };
+  };
 
   const methodTotals = Object.entries(data.by_method);
   const totalPaid = methodTotals.reduce((sum, [, value]) => sum + BigInt(value), 0n);
@@ -83,9 +109,22 @@ function Dashboard({ data }: { data: import('./api').RevenueReport }) {
   return (
     <div className="flex flex-col gap-20">
       <div className="grid grid-cols-2 gap-16 lg:grid-cols-4">
-        <KpiCard label={i18n.t('pos.report.collected')} value={i18n.money(BigInt(data.collected_minor))} tone="success" />
-        <KpiCard label={i18n.t('pos.report.orderCount')} value={i18n.int(data.order_count)} />
-        <KpiCard label={i18n.t('pos.report.averageTicket')} value={i18n.money(BigInt(data.average_ticket_minor))} />
+        <KpiCard
+          label={i18n.t('pos.report.collected')}
+          value={i18n.money(BigInt(data.collected_minor))}
+          tone="success"
+          delta={compare(BigInt(data.collected_minor), before && BigInt(before.collected_minor))}
+        />
+        <KpiCard
+          label={i18n.t('pos.report.orderCount')}
+          value={i18n.int(data.order_count)}
+          delta={compare(data.order_count, before?.order_count)}
+        />
+        <KpiCard
+          label={i18n.t('pos.report.averageTicket')}
+          value={i18n.money(BigInt(data.average_ticket_minor))}
+          delta={compare(BigInt(data.average_ticket_minor), before && BigInt(before.average_ticket_minor))}
+        />
         <KpiCard
           label={i18n.t('pos.report.credit')}
           value={i18n.money(BigInt(data.credit_outstanding_minor))}

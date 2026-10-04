@@ -52,7 +52,7 @@ export function StaffScreen() {
   const staff = useStaff();
 
   return (
-    <ManagerShell title={i18n.t('manager.staff.title')}>
+    <ManagerShell title={i18n.t('manager.staff.title')} description={i18n.t('manager.staff.description')}>
       <div className="flex max-w-3xl flex-col gap-24">
         <AddStaffForm />
 

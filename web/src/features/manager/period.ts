@@ -82,3 +82,42 @@ export function periodRange(period: PeriodKey, now = new Date()): { from?: strin
     to: restaurantMidnight(addDays(today, 1)).toISOString(),
   };
 }
+
+const DAY_MS = 86_400_000;
+const SPAN_DAYS: Record<Exclude<PeriodKey, 'all'>, number> = { today: 1, week: 7, month: 30 };
+
+/**
+ * The same span of the period before, up to the same time of day (batch 22).
+ *
+ * A morning measured against the whole of yesterday always looks like a bad
+ * day, so "today" compares with yesterday from midnight up to this minute
+ * yesterday; the week and the month likewise. Cut to the minute, so the
+ * query key stays the same across renders within it. Khartoum keeps no
+ * daylight saving, so a day back is 24 hours back.
+ */
+export function previousRange(period: PeriodKey, now = new Date()): { from: string; to: string } | null {
+  if (period === 'all') return null;
+  const days = SPAN_DAYS[period];
+  const back = period === 'week' ? 6 : period === 'month' ? 29 : 0;
+  const minute = Math.floor(now.getTime() / 60_000) * 60_000;
+  return {
+    from: restaurantMidnight(addDays(localDate(now), -back - days)).toISOString(),
+    to: new Date(minute - days * DAY_MS).toISOString(),
+  };
+}
+
+export interface Change {
+  direction: 'up' | 'down' | 'flat';
+  /** Whole percent, always positive; the direction carries the sign. */
+  percent: number;
+}
+
+/** How a figure moved against the period before; nothing when that was zero. */
+export function change(current: bigint, previous: bigint): Change | null {
+  if (previous <= 0n) return null;
+  const diff = current - previous;
+  const magnitude = diff < 0n ? -diff : diff;
+  const percent = Number((magnitude * 100n + previous / 2n) / previous);
+  if (percent === 0) return { direction: 'flat', percent: 0 };
+  return { direction: diff > 0n ? 'up' : 'down', percent };
+}

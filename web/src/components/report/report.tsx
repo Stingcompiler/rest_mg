@@ -7,6 +7,8 @@
  * library, nothing to load offline. A bar chart's axis runs LTR even in Arabic
  * (time flows left-to-right on both), so its track is marked `dir="ltr"`.
  */
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+
 import { cn } from '@/lib/cn';
 import { Numeric } from '../primitives/indicators';
 
@@ -18,20 +20,37 @@ const KPI_TONES: Record<KpiTone, string> = {
   credit: 'text-credit',
 };
 
+export interface KpiDelta {
+  direction: 'up' | 'down' | 'flat';
+  /** Already worded, e.g. "+١٢٪ عن الوقت نفسه أمس". */
+  text: string;
+}
+
 export interface KpiCardProps {
   label: string;
   value: string;
   sub?: string;
   tone?: KpiTone;
+  /** How the figure moved against the period before (batch 22). */
+  delta?: KpiDelta;
 }
 
-export function KpiCard({ label, value, sub, tone = 'text' }: KpiCardProps) {
+const DELTA_TONE: Record<KpiDelta['direction'], string> = {
+  up: 'text-success',
+  down: 'text-danger',
+  flat: 'text-text-muted',
+};
+
+const DELTA_ICON = { up: TrendingUp, down: TrendingDown, flat: Minus } as const;
+
+export function KpiCard({ label, value, sub, tone = 'text', delta }: KpiCardProps) {
   return (
     // A gold hairline on top: the manager's figures carry the same mark as the
     // public page's titles (batch 13).
     <div className="flex flex-col gap-8 rounded-md border border-line border-t-strong border-t-gold-soft bg-surface p-18 shadow-card">
       <span className="text-ar-base text-text-muted">{label}</span>
       <Numeric className={cn('text-num-4xl font-semibold', KPI_TONES[tone])}>{value}</Numeric>
+      {delta ? <Delta delta={delta} /> : null}
       {sub ? <span className="text-ar-sm text-text-muted">{sub}</span> : null}
     </div>
   );
@@ -92,5 +111,15 @@ export function StackedShareBar({ segments }: { segments: ShareSegment[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function Delta({ delta }: { delta: KpiDelta }) {
+  const Icon = DELTA_ICON[delta.direction];
+  return (
+    <span className={cn('flex items-center gap-4 text-ar-sm font-medium', DELTA_TONE[delta.direction])}>
+      <Icon size={16} aria-hidden="true" />
+      {delta.text}
+    </span>
   );
 }

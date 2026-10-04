@@ -26,8 +26,8 @@ export function useMe() {
   return useQuery({ queryKey: ['me'], queryFn: authApi.me });
 }
 
-export function useRevenue(params?: { from?: string; to?: string }) {
-  return useQuery({ queryKey: ['revenue', params], queryFn: () => reportsApi.revenue(params) });
+export function useRevenue(params?: { from?: string; to?: string }, options: { enabled?: boolean } = {}) {
+  return useQuery({ queryKey: ['revenue', params], queryFn: () => reportsApi.revenue(params), enabled: options.enabled });
 }
 
 export function useOrders(query: PageQuery = {}) {

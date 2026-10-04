@@ -202,6 +202,9 @@ export interface ToastProps {
   onAction?(): void;
   onDismiss(): void;
   durationMs?: number;
+  /** Bottom by default. The till puts "ready in the kitchen" at the top, where
+   *  it does not cover the pay button (batch 21). */
+  placement?: 'bottom' | 'top';
 }
 
 /**
@@ -209,7 +212,7 @@ export interface ToastProps {
  * optional undo. It announces itself to screen readers and goes away on its
  * own.
  */
-export function Toast({ message, actionLabel, onAction, onDismiss, durationMs = 6_000 }: ToastProps) {
+export function Toast({ message, actionLabel, onAction, onDismiss, durationMs = 6_000, placement = 'bottom' }: ToastProps) {
   const dismiss = useRef(onDismiss);
   dismiss.current = onDismiss;
   useEffect(() => {
@@ -220,7 +223,10 @@ export function Toast({ message, actionLabel, onAction, onDismiss, durationMs = 
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-x-0 bottom-mobile-cart-clear z-50 mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-14 rounded-lg border border-line bg-text px-16 py-10 text-ar-base text-bg shadow-overlay md:bottom-24"
+      className={cn(
+        'fixed inset-x-0 z-50 mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-14 rounded-lg border border-line bg-text px-16 py-10 text-ar-base text-bg shadow-overlay',
+        placement === 'top' ? 'top-16' : 'bottom-mobile-cart-clear md:bottom-24',
+      )}
     >
       <span>{message}</span>
       {actionLabel && onAction ? (

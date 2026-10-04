@@ -174,7 +174,8 @@ export function PosRail({ active }: { active: RailTarget }) {
         </div>
       ) : null}
 
-      {readyNote ? <Toast message={readyNote} onDismiss={() => setReadyNote(null)} durationMs={10_000} /> : null}
+      {/* At the top: at the bottom it covered the pay button (batch 21). */}
+      {readyNote ? <Toast message={readyNote} placement="top" onDismiss={() => setReadyNote(null)} durationMs={10_000} /> : null}
 
       <ConfirmDialog
         open={confirmingSignOut}

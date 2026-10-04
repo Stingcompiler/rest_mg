@@ -11,12 +11,13 @@
  */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Printer, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Printer, TriangleAlert } from 'lucide-react';
 
 import {
   AmountRow,
   Button,
   CalloutPanel,
+  ConfirmDialog,
   DenominationRow,
   IconButton,
   Numeric,
@@ -25,7 +26,7 @@ import {
 } from '@/components';
 import { AppHeader } from '@/components/layout/layout';
 import { useI18n } from '@/i18n';
-import { DomainError } from '@/domain';
+import { DomainError, type Shift } from '@/domain';
 import { buildPrintContext, printShiftReportToPaper } from '@/print';
 import { usePos } from './PosProvider';
 import { holdsSomething } from './shiftClose';
@@ -49,6 +50,12 @@ export function ShiftCloseScreen() {
   // entity — which then refuses, and the cashier sees an error for having
   // done nothing wrong.
   const [closing, setClosing] = useState(false);
+  // Closing is final and a new shift opens straight after, so it asks first.
+  const [confirming, setConfirming] = useState(false);
+  // The shift just closed, kept so its report can still be printed. Before,
+  // the report could only be printed before closing, and the screen left at
+  // once, so nobody saw the confirmation either.
+  const [closed, setClosed] = useState<Shift | null>(null);
 
   const expected = shift.expectedCash();
   const counted = shift.countedCash();
@@ -78,11 +85,13 @@ export function ShiftCloseScreen() {
     if (closing || alreadyClosed) return;
     setError(null);
     setClosing(true);
+    const closingShift = shift;
     try {
       await pos.closeShift();
-      setNote(i18n.t('pos.shift.closedOk'));
-      router.push('/pos');
+      setConfirming(false);
+      setClosed(closingShift);
     } catch (caught) {
+      setConfirming(false);
       setClosing(false);
       // The entity refuses with a stable code; say why, on screen. This used to
       // go to the console, so the button simply appeared to do nothing.
@@ -90,6 +99,10 @@ export function ShiftCloseScreen() {
       setError(i18n.t(code as Parameters<typeof i18n.t>[0]));
     }
   };
+
+  if (closed) {
+    return <ClosedShiftScreen shift={closed} onNext={() => router.push('/pos')} />;
+  }
 
   return (
     <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
@@ -142,6 +155,8 @@ export function ShiftCloseScreen() {
                     incrementLabel={i18n.t('pos.shift.countMore')}
                     onDecrement={() => changeCount(key, denominationMinor, -1)}
                     onIncrement={() => changeCount(key, denominationMinor, +1)}
+                    onSet={(next) => pos.setDenominationCount(denominationMinor, key, next)}
+                    valueLabel={i18n.t('pos.shift.countOf', { note: i18n.int(Number(denominationMinor)) })}
                   />
                 }
               />
@@ -167,6 +182,9 @@ export function ShiftCloseScreen() {
               />
             ),
           )}
+          {shift.openingFloatMinor > 0n ? (
+            <AmountRow label={i18n.t('pos.shift.openingFloat')} amount={i18n.money(shift.openingFloatMinor)} />
+          ) : null}
           <AmountRow label={i18n.t('pos.shift.expectedCash')} amount={i18n.money(expected)} />
 
           {/* Short or over, the difference is shown and — beyond tolerance —
@@ -238,12 +256,71 @@ export function ShiftCloseScreen() {
               variant="primary"
               size="xl"
               disabled={blocking.length > 0 || closing || alreadyClosed}
-              onClick={close}
+              onClick={() => setConfirming(true)}
             >
               {closing ? i18n.t('pos.shift.closing') : i18n.t('pos.shift.close')}
             </Button>
           </div>
         </div>
+      </div>
+      <ConfirmDialog
+        open={confirming}
+        tone="accent"
+        title={i18n.t('pos.shift.confirmTitle')}
+        body={i18n.t('pos.shift.confirmBody', { counted: i18n.money(counted), expected: i18n.money(expected) })}
+        confirmLabel={i18n.t('pos.shift.close')}
+        cancelLabel={i18n.t('common.back')}
+        pending={closing}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => void close()}
+      />
+    </div>
+  );
+}
+
+/** After the close: what was handed over, and the report, still printable. */
+function ClosedShiftScreen({ shift, onNext }: { shift: Shift; onNext(): void }) {
+  const i18n = useI18n();
+  const [note, setNote] = useState<string | null>(null);
+  const variance = shift.variance();
+  return (
+    <div className="flex h-screen flex-col items-center justify-center gap-20 bg-bg p-24 text-text" dir={i18n.dir}>
+      <CheckCircle2 size={44} className="text-success" />
+      <h1 className="text-ar-2xl font-semibold" role="status">
+        {i18n.t('pos.shift.closedOk')}
+      </h1>
+      <div className="flex w-full max-w-md flex-col gap-8">
+        <AmountRow label={i18n.t('pos.shift.expectedCash')} amount={i18n.money(shift.expectedCash())} />
+        <AmountRow label={i18n.t('pos.shift.counted')} amount={i18n.money(shift.countedCash())} />
+        {variance !== 0n ? (
+          <AmountRow
+            label={i18n.t(variance < 0n ? 'pos.shift.shortfall' : 'pos.shift.surplus')}
+            amount={i18n.money(variance)}
+          />
+        ) : null}
+      </div>
+      {note ? (
+        <p role="status" aria-live="polite" className="text-ar-base text-text-muted">
+          {note}
+        </p>
+      ) : null}
+      <div className="grid w-full max-w-md grid-cols-2 gap-10">
+        <Button
+          variant="secondary"
+          size="xl"
+          onClick={() => {
+            const ok = printShiftReportToPaper(shift, buildPrintContext(i18n.locale, i18n.numerals));
+            setNote(i18n.t(ok ? 'pos.shift.printed' : 'pos.shift.printBlocked'));
+          }}
+        >
+          <span className="flex items-center justify-center gap-8">
+            <Printer size={20} />
+            {i18n.t('pos.shift.printReport')}
+          </span>
+        </Button>
+        <Button variant="primary" size="xl" onClick={onNext}>
+          {i18n.t('pos.shift.startNext')}
+        </Button>
       </div>
     </div>
   );

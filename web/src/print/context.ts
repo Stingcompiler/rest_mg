@@ -45,6 +45,8 @@ export function buildPrintContext(locale: Locale, numerals: Numerals): PrintCont
     formatDate: (date) => formatDate(date),
     labels: {
       kitchen: t('print.kitchen'),
+      kitchenAmend: t('print.kitchenAmend'),
+      kitchenCancelled: t('print.kitchenCancelled'),
       receipt: name,
       order: t('print.order'),
       table: t('print.table'),

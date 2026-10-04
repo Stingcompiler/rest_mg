@@ -42,6 +42,8 @@ export interface OrderLineRecord {
   lineTotalMinor: MoneyString;
   isVoid: boolean;
   voidReason: string;
+  /** How many the kitchen has been sent. Absent on lines saved before batch 11. */
+  kitchenQty?: number;
 }
 
 export interface PaymentRecord {
@@ -140,6 +142,8 @@ export interface ShiftRecord {
   openedAt: IsoTimestamp;
   closedAt: IsoTimestamp | null;
   openingFloatMinor: MoneyString;
+  /** When the float was entered. Absent on shifts saved before batch 11. */
+  openingFloatConfirmedAt?: IsoTimestamp | null;
   expectedCashMinor: MoneyString;
   countedCashMinor: MoneyString;
   varianceMinor: MoneyString;

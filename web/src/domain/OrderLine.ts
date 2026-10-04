@@ -20,6 +20,12 @@ export interface OrderLineSnapshot {
   modifiersText: string;
   isVoid: boolean;
   voidReason: string;
+  /**
+   * How many of this line the kitchen has been sent. A voided line counts as
+   * zero once its cancellation has gone out. The gap between this and what
+   * the bill holds now is the next ticket.
+   */
+  kitchenQty: number;
 }
 
 export interface NewLineInput {
@@ -49,6 +55,7 @@ export class OrderLine {
       modifiersText: input.modifiersText ?? '',
       isVoid: false,
       voidReason: '',
+      kitchenQty: 0,
     });
   }
 
@@ -74,6 +81,29 @@ export class OrderLine {
 
   get unitPriceMinor(): Money {
     return this.state.unitPriceMinor;
+  }
+
+  get nameAr(): string {
+    return this.state.nameAr;
+  }
+
+  get modifiersText(): string {
+    return this.state.modifiersText;
+  }
+
+  /** How many the kitchen has been told about. */
+  get kitchenQty(): number {
+    return this.state.kitchenQty;
+  }
+
+  /** What the next kitchen ticket must say about this line: more (+) or fewer (−). */
+  kitchenDelta(): number {
+    return (this.state.isVoid ? 0 : this.state.qty) - this.state.kitchenQty;
+  }
+
+  /** The kitchen now has this line as it stands. */
+  markSentToKitchen(): void {
+    this.state.kitchenQty = this.state.isVoid ? 0 : this.state.qty;
   }
 
   /** A voided line contributes nothing; a live line is price × quantity. */

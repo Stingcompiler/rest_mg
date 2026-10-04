@@ -19,7 +19,7 @@ export {
 export { OrderLine, type OrderLineSnapshot, type NewLineInput } from './OrderLine';
 export { Payment, type PaymentSnapshot, type NewPaymentInput } from './Payment';
 export { MenuItem, type MenuItemSnapshot } from './MenuItem';
-export { Order, type OrderSnapshot, type NewOrderInput } from './Order';
+export { Order, type OrderSnapshot, type NewOrderInput, type KitchenChange, type KitchenSend } from './Order';
 export { CartSession } from './CartSession';
 export { CashCount, type CashCountSnapshot } from './CashCount';
 export { Shift, type ShiftSnapshot, type NewShiftInput, type ShiftBlockingReason } from './Shift';

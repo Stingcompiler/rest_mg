@@ -74,10 +74,15 @@ function lineToRecord(line: OrderLineSnapshot): OrderLineRecord {
     lineTotalMinor: fromMinor(lineTotal),
     isVoid: line.isVoid,
     voidReason: line.voidReason,
+    kitchenQty: line.kitchenQty,
   };
 }
 
-function lineRecordToSnapshot(record: OrderLineRecord): OrderLineSnapshot {
+/**
+ * A line saved before the kitchen quantity was tracked belongs to an order
+ * that was sent whole, if it was sent at all.
+ */
+function lineRecordToSnapshot(record: OrderLineRecord, orderSent: boolean): OrderLineSnapshot {
   return {
     id: record.id,
     itemId: record.itemId,
@@ -88,6 +93,7 @@ function lineRecordToSnapshot(record: OrderLineRecord): OrderLineSnapshot {
     modifiersText: record.modifiersText,
     isVoid: record.isVoid,
     voidReason: record.voidReason,
+    kitchenQty: record.kitchenQty ?? (orderSent && !record.isVoid ? record.qty : 0),
   };
 }
 
@@ -166,7 +172,7 @@ export function orderRecordToSnapshot(record: OrderRecord): OrderSnapshot {
     shiftRef: record.shiftRef,
     voidReason: record.voidReason,
     correctsId: record.correctsId,
-    lines: record.lines.map(lineRecordToSnapshot),
+    lines: record.lines.map((line) => lineRecordToSnapshot(line, record.sentAt !== null)),
     payments: record.payments.map(paymentRecordToSnapshot),
   };
 }
@@ -208,6 +214,7 @@ export function shiftToRecord(shift: Shift, existing?: ShiftRecord): ShiftRecord
     openedAt: snapshot.openedAt,
     closedAt: snapshot.closedAt,
     openingFloatMinor: fromMinor(snapshot.openingFloatMinor),
+    openingFloatConfirmedAt: snapshot.openingFloatConfirmedAt,
     expectedCashMinor: fromMinor(shift.expectedCash()),
     countedCashMinor: fromMinor(shift.countedCash()),
     varianceMinor: fromMinor(shift.variance()),
@@ -229,6 +236,9 @@ export function shiftRecordToSnapshot(record: ShiftRecord): ShiftSnapshot {
     openedAt: record.openedAt,
     closedAt: record.closedAt,
     openingFloatMinor: toMinor(record.openingFloatMinor),
+    // A shift from before batch 11 is already under way; do not ask now.
+    openingFloatConfirmedAt:
+      record.openingFloatConfirmedAt === undefined ? record.openedAt : record.openingFloatConfirmedAt,
     varianceReason: record.varianceReason,
     counts: record.counts.map(cashCountRecordToSnapshot),
   };

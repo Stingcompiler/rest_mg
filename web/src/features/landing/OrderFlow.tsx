@@ -18,6 +18,7 @@ import { Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2, Loader2 } from 'luci
 
 import { formatInteger, formatMoney, t } from '@/i18n';
 import { IconButton } from '@/components/primitives/controls';
+import { normalizeSudanPhone } from '@/lib/phone';
 import { uuid4 } from '@/lib/uuid';
 import { useModalDialog } from '@/lib/useModalDialog';
 
@@ -292,6 +293,13 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
       setError(label('landing.form.required'));
       return;
     }
+    // A number the restaurant can call: every order is confirmed by phone
+    // before the kitchen sees it. "123" used to go through.
+    const dialable = normalizeSudanPhone(phone);
+    if (!dialable) {
+      setError(label('landing.form.phoneInvalid'));
+      return;
+    }
     setSending(true);
     try {
       const response = await fetch('/api/v1/public/order/', {
@@ -299,7 +307,7 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attempt },
         body: JSON.stringify({
           customer_name: name.trim(),
-          customer_phone: phone.trim(),
+          customer_phone: dialable,
           customer_address: address.trim(),
           customer_area: area.trim(),
           customer_notes: notes.trim(),
@@ -314,6 +322,8 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
         setError(
           closed
             ? label('landing.order.closed')
+            : body?.error?.code === 'invalid_phone'
+              ? label('landing.form.phoneInvalid')
             : response.status === 429
               ? label('landing.order.tooMany')
               : response.status === 409
@@ -337,7 +347,18 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field label={label('landing.form.phone')}>
-          <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" dir="ltr" />
+          <input
+            className={inputClass}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            inputMode="tel"
+            dir="ltr"
+            placeholder="09xxxxxxxx"
+            aria-describedby="phone-hint"
+          />
+          <span id="phone-hint" className="text-ar-sm text-text-muted">
+            {label('landing.form.phoneHint')}
+          </span>
         </Field>
         <Field label={label('landing.form.address')}>
           <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} />

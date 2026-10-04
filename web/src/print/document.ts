@@ -9,7 +9,7 @@
  * same template prints correctly in Arabic and English.
  */
 import { EscPosBuilder, utf8Encoder, type Align, type Encoder } from './escpos';
-import type { Order, Shift } from '@/domain';
+import type { KitchenSend, Order, Shift } from '@/domain';
 
 export type PrintBlock =
   | { kind: 'text'; text: string; align?: Align; bold?: boolean; size?: number }
@@ -38,6 +38,10 @@ export interface PrintContext {
   now?: Date;
   labels: {
     kitchen: string;
+    /** Heads a ticket that only carries changes to an order the kitchen has. */
+    kitchenAmend: string;
+    /** Marks a line the kitchen should no longer make. */
+    kitchenCancelled: string;
     receipt: string;
     order: string;
     table: string;
@@ -135,19 +139,37 @@ function printedAt(ctx: PrintContext): string {
   return `${ctx.formatDate(at)} ${ctx.formatTime(at)}`;
 }
 
-export function buildKitchenTicket(order: Order, ctx: PrintContext): PrintDocument {
+export function buildKitchenTicket(order: Order, ctx: PrintContext, sent?: KitchenSend): PrintDocument {
   const snapshot = order.toSnapshot();
+  const amendment = sent?.amendment === true;
   const blocks: PrintBlock[] = [
     { kind: 'text', text: ctx.labels.kitchen, align: 'center', bold: true, size: 2 },
+    ...(amendment
+      ? [{ kind: 'text', text: ctx.labels.kitchenAmend, align: 'center', bold: true } as PrintBlock]
+      : []),
     { kind: 'text', text: `${ctx.labels.order} ${snapshot.number}`, align: 'center' },
     { kind: 'text', text: orderTypeLabel(order, ctx), align: 'center' },
     { kind: 'text', text: ctx.formatTime(ctx.now ?? new Date()), align: 'center' },
     { kind: 'divider' },
   ];
 
-  for (const line of liveLines(order)) {
-    blocks.push({ kind: 'text', text: `${ctx.formatQty(line.qty)}× ${line.nameAr}`, size: 2 });
-    if (line.modifiersText) blocks.push({ kind: 'text', text: `  ${line.modifiersText}` });
+  if (amendment) {
+    // Only what changed: a second copy of the whole order is cooked twice.
+    for (const change of sent!.changes) {
+      const qty = `${ctx.formatQty(Math.abs(change.delta))}× ${change.nameAr}`;
+      blocks.push({
+        kind: 'text',
+        text: change.delta > 0 ? qty : `${ctx.labels.kitchenCancelled}: ${qty}`,
+        size: 2,
+        bold: change.delta < 0,
+      });
+      if (change.delta > 0 && change.modifiersText) blocks.push({ kind: 'text', text: `  ${change.modifiersText}` });
+    }
+  } else {
+    for (const line of liveLines(order)) {
+      blocks.push({ kind: 'text', text: `${ctx.formatQty(line.qty)}× ${line.nameAr}`, size: 2 });
+      if (line.modifiersText) blocks.push({ kind: 'text', text: `  ${line.modifiersText}` });
+    }
   }
 
   // Somewhere for the two people handing over to sign.

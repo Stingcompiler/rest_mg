@@ -24,7 +24,11 @@ export type DomainErrorCode =
   | 'cart_not_found'
   | 'nothing_to_split'
   | 'line_note_after_send'
-  | 'line_note_too_long';
+  | 'line_note_too_long'
+  | 'nothing_to_send'
+  | 'order_has_payments'
+  | 'payment_not_found'
+  | 'invalid_float';
 
 export class DomainError extends Error {
   constructor(

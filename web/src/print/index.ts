@@ -6,7 +6,7 @@
  * and enqueue it durably before any send is attempted. The pump drains the queue
  * in the background.
  */
-import type { Order, Shift } from '@/domain';
+import type { KitchenSend, Order, Shift } from '@/domain';
 import {
   buildKitchenTicket,
   buildReceipt,
@@ -42,8 +42,8 @@ export {
 } from './PrintService';
 
 /** Kitchen ticket — printed on send, before payment. */
-export async function printKitchenTicket(order: Order, ctx: PrintContext): Promise<void> {
-  const bytes = renderDocument(buildKitchenTicket(order, ctx));
+export async function printKitchenTicket(order: Order, ctx: PrintContext, sent?: KitchenSend): Promise<void> {
+  const bytes = renderDocument(buildKitchenTicket(order, ctx, sent));
   await enqueuePrintJob({ orderId: order.id, destination: 'kitchen', kind: 'kitchen', bytes });
 }
 

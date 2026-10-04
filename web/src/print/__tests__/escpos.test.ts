@@ -24,6 +24,8 @@ function ctx(dir: 'rtl' | 'ltr' = 'rtl'): PrintContext {
     now: new Date('2026-08-07T12:32:00Z'),
     labels: {
       kitchen: 'KITCHEN',
+      kitchenAmend: 'CHANGES',
+      kitchenCancelled: 'CANCELLED',
       receipt: 'WISAM',
       order: 'ORDER',
       table: 'TABLE',

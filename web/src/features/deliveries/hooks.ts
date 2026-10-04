@@ -18,8 +18,8 @@ export function useDeliveries(query: { limit?: number; offset?: number } = {}) {
 export function useSetDeliveryStatus() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: DeliveryStatus }) =>
-      deliveriesApi.setStatus(id, status),
+    mutationFn: ({ id, status, reason }: { id: string; status: DeliveryStatus; reason?: string }) =>
+      deliveriesApi.setStatus(id, status, reason),
     onSuccess: () => client.invalidateQueries({ queryKey: ['deliveries'] }),
   });
 }

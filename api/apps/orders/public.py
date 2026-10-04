@@ -40,6 +40,7 @@ from apps.catalog.models import MenuItem
 from apps.core.scoping import in_branch_or_shared
 from apps.orders.models import Order, OrderLine
 from apps.orders.numbers import next_online_number
+from apps.orders.phone import normalize_sudan_phone
 from apps.orders.throttles import PUBLIC_ORDER_THROTTLES
 from apps.profiles.models import RestaurantProfile
 
@@ -109,6 +110,19 @@ class PublicOrderView(APIView):
         payload = PublicOrderSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
+
+        phone = normalize_sudan_phone(data["customer_phone"])
+        if phone is None:
+            return Response(
+                {
+                    "error": {
+                        "code": "invalid_phone",
+                        "message": "A Sudanese phone number the restaurant can call, e.g. 0912345678.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        data["customer_phone"] = phone
 
         # Orders are only accepted while the page is actually published — and go
         # to the restaurant whose page it is. With several published, an order

@@ -20,6 +20,7 @@ from apps.catalog.models import Category, MenuItem
 from apps.core.scoping import in_branch_or_shared
 from apps.customers.models import Customer
 from apps.orders.models import Order
+from apps.orders.pickups import maybe_expire_pickups
 from apps.catalog.serializers import CategorySerializer, MenuItemSerializer
 from apps.profiles.models import RestaurantProfile
 from apps.profiles.serializers import RestaurantProfileSerializer
@@ -109,6 +110,8 @@ class SyncViewSet(viewsets.ViewSet):
         offline for days and their clocks drift; filtering on a device timestamp
         would silently skip rows.
         """
+        # Every till's sync is also the clock for pickups nobody came for (batch 17).
+        maybe_expire_pickups()
         since_raw = request.query_params.get("since")
         since = None
         if since_raw:

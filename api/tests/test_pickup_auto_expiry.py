@@ -9,6 +9,7 @@ someone working, which is when it matters.
 from __future__ import annotations
 
 from django.core.cache import cache
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from apps.accounts.models import ManagerUser
@@ -37,7 +38,11 @@ class AutomaticExpiryTests(NoShowTests):
         self.assertEqual(till.get("/api/v1/sync/pull/").status_code, 200)
         self.assertEqual(Order.objects.get(id=late).void_reason, "لم يحضر الزبون")
 
+    # The test settings use a dummy cache, which never remembers; this one
+    # needs the real behaviour.
+    @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
     def test_it_runs_at_most_once_a_minute(self):
+        cache.clear()
         cashier = self.as_role("c.auto2", ManagerUser.Role.CASHIER)
         cashier.get("/api/v1/orders/deliveries/")
         late = self.ready_since(61)

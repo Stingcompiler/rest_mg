@@ -15,31 +15,28 @@
  * and its cart; when it does not, to the WhatsApp and phone links.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  Award,
   Clock,
-  Leaf,
   MapPin,
   Minus,
   Phone,
   Plus,
   ShoppingBag,
   Sparkles,
-  Truck,
   Utensils,
-  Wallet,
   X,
-  Zap,
 } from 'lucide-react';
 
 import { formatInteger, formatMoney, t } from '@/i18n';
 import { Ornament } from '@/components/primitives/indicators';
 import { IconButton } from '@/components/primitives/controls';
 import { scrollBehavior } from '@/lib/motion';
+import { useModalDialog } from '@/lib/useModalDialog';
 import { browserStorage } from './browserStorage';
 import { forgetOrder, recallOrder, type PlacedOrder } from './lastOrder';
 import { CartProvider, ORDER_PLACED_EVENT, useCart } from './OrderFlow';
-import { activeSection } from './menuSpy';
+import { activeSection, readingLine } from './menuSpy';
 import { pageLoadFailure, type PageLoadFailure } from './pageLoad';
 import { FINISHED_STATUSES, customerStatusKey } from './statusText';
 
@@ -89,14 +86,6 @@ type State =
   | { status: 'error'; failure: PageLoadFailure }
   | { status: 'ok'; data: Landing };
 
-const WHY = [
-  { icon: Award, title: 'landing.why.qualityTitle', desc: 'landing.why.qualityDesc' },
-  { icon: Leaf, title: 'landing.why.freshTitle', desc: 'landing.why.freshDesc' },
-  { icon: Zap, title: 'landing.why.fastTitle', desc: 'landing.why.fastDesc' },
-  { icon: Truck, title: 'landing.why.deliveryTitle', desc: 'landing.why.deliveryDesc' },
-  { icon: Wallet, title: 'landing.why.priceTitle', desc: 'landing.why.priceDesc' },
-  { icon: Sparkles, title: 'landing.why.serviceTitle', desc: 'landing.why.serviceDesc' },
-] as const;
 
 export function LandingClient() {
   const [state, setState] = useState<State>({ status: 'loading' });
@@ -237,6 +226,10 @@ function Landing({ data }: { data: Landing }) {
         </div>
       </section>
 
+      {/* What a visitor looks for, from the restaurant itself: under the hero
+          on a large screen, after the menu on a phone (batch 20). */}
+      <InfoBand data={data} ordering={ordering} className="hidden lg:block" />
+
       {/* Featured shelf */}
       {data.featured.length ? (
         <Section title={label('landing.featured')}>
@@ -250,27 +243,10 @@ function Landing({ data }: { data: Landing }) {
         </Section>
       ) : null}
 
-      {/* Dynamic menu with category filter */}
+      {/* The menu, with its category bar */}
       <MenuSection menu={data.menu} />
 
-      {/* Why us */}
-      <section className="bg-bg">
-        <div className="mx-auto max-w-6xl px-16 py-56 sm:px-24">
-          <SectionHeading title={label('landing.whyUs')} />
-          <div className="mt-32 grid grid-cols-1 gap-14 sm:grid-cols-2 lg:grid-cols-3">
-            {WHY.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex flex-col items-center gap-10 rounded-md border border-line bg-surface p-24 text-center">
-                {/* A thin gold ring, not a green blob (batch 13). */}
-                <span className="flex size-control-xl items-center justify-center rounded-full border border-gold-soft text-gold">
-                  <Icon size={22} />
-                </span>
-                <span className="font-display text-ar-lg font-semibold">{label(title)}</span>
-                <span className="text-ar-base text-text-muted">{label(desc)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <InfoBand data={data} ordering={ordering} className="lg:hidden" />
 
       {/* Order CTA + contact */}
       <section id="order" className="scroll-mt-header border-t border-line">
@@ -298,44 +274,6 @@ function Landing({ data }: { data: Landing }) {
                 </a>
               ) : null}
             </div>
-          </div>
-
-          {/* Restaurant info */}
-          <div className="mt-28 grid grid-cols-1 gap-16 md:grid-cols-2">
-            {data.description_ar ? (
-              <div className="flex flex-col gap-8 rounded-md border border-line bg-surface p-24">
-                <h3 className="font-display text-ar-lg font-semibold">{label('landing.aboutUs')}</h3>
-                <p className="text-ar-base text-text-muted">{data.description_ar}</p>
-                {data.address_ar ? (
-                  <span className="mt-4 flex items-center gap-8 text-ar-sm text-text-muted">
-                    <MapPin size={16} className="text-gold" />
-                    {data.address_ar}
-                  </span>
-                ) : null}
-                {data.map_url ? (
-                  <a href={data.map_url} className="text-ar-sm font-medium text-accent">
-                    {label('landing.location')}
-                  </a>
-                ) : null}
-              </div>
-            ) : null}
-
-            {data.hours?.length ? (
-              <div className="flex flex-col gap-10 rounded-md border border-line bg-surface p-24">
-                <h3 className="flex items-center gap-8 font-display text-ar-lg font-semibold">
-                  <Clock size={18} className="text-gold" />
-                  {label('landing.hours')}
-                </h3>
-                {data.hours.map((row, index) => (
-                  <div key={index} className="flex justify-between text-ar-base text-text-muted">
-                    <span>{row.day_ar}</span>
-                    <span className="numeric text-text" dir="ltr">
-                      {row.open} – {row.close}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </div>
         </div>
       </section>
@@ -431,7 +369,11 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
     let frame = 0;
     const update = () => {
       frame = 0;
-      const line = (bar.current?.getBoundingClientRect().bottom ?? 0) + 8;
+      const line = readingLine({
+        wide: window.matchMedia('(min-width: 1024px)').matches,
+        headerBottom: document.querySelector('header')?.getBoundingClientRect().bottom ?? 0,
+        barBottom: bar.current?.getBoundingClientRect().bottom ?? 0,
+      });
       const tops = categories.map((category) => ({
         id: category.id,
         top: document.getElementById(sectionId(category.id))?.getBoundingClientRect().top ?? Infinity,
@@ -482,44 +424,53 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
           <p className="mt-24 text-ar-base text-text-muted">{label('landing.menuEmpty')}</p>
         ) : (
           <>
-            {/* No scrollbar: on a phone it drew a grey line across the first
-                dish (batch 19). */}
-            <nav
-              ref={bar}
-              aria-label={label('landing.ourMenu')}
-              className="sticky top-header z-30 -mx-16 mt-24 flex gap-8 overflow-x-auto bg-surface/90 px-16 py-10 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-24 sm:px-24"
-            >
-              {categories.map((category) => {
-                const active = activeId === category.id;
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    data-category={category.id}
-                    aria-current={active ? 'true' : undefined}
-                    onClick={() => jump(category.id)}
-                    className={
-                      active
-                        ? 'min-h-control-md flex-none rounded-md bg-ink px-18 text-ar-sm font-semibold text-on-ink'
-                        : 'min-h-control-md flex-none rounded-md border border-line bg-surface px-18 text-ar-sm text-text-muted transition hover:border-gold-soft hover:text-text'
-                    }
-                  >
-                    {category.name_ar}
-                  </button>
-                );
-              })}
-            </nav>
+            {/* A bar under the top bar on a phone, a column beside the dishes
+                from 1024px (batch 20). No scrollbar: on a phone it drew a grey
+                line across the first dish (batch 19). */}
+            <div className="lg:mt-32 lg:grid lg:grid-cols-menu-page lg:items-start lg:gap-32">
+              <nav
+                ref={bar}
+                aria-label={label('landing.ourMenu')}
+                className="sticky top-header z-30 -mx-16 mt-24 flex gap-8 overflow-x-auto bg-surface/90 px-16 py-10 backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-24 sm:px-24 lg:flex-col lg:top-header-gap lg:mx-0 lg:mt-0 lg:gap-4 lg:overflow-visible lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+              >
+                {categories.map((category) => {
+                  const active = activeId === category.id;
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      data-category={category.id}
+                      aria-current={active ? 'true' : undefined}
+                      onClick={() => jump(category.id)}
+                      className={
+                        active
+                          ? 'min-h-control-md flex-none rounded-md bg-ink px-18 text-ar-sm font-semibold text-on-ink lg:text-start'
+                          : 'min-h-control-md flex-none rounded-md border border-line bg-surface px-18 text-ar-sm text-text-muted transition hover:border-gold-soft hover:text-text lg:border-transparent lg:bg-transparent lg:text-start'
+                      }
+                    >
+                      {category.name_ar}
+                    </button>
+                  );
+                })}
+              </nav>
 
-            {categories.map((category) => (
-              <div key={category.id} id={sectionId(category.id)} className="scroll-mt-menu pt-28">
-                <h3 className="font-display text-ar-xl font-semibold">{category.name_ar}</h3>
-                <div className="mt-8 grid grid-cols-1 sm:mt-16 sm:grid-cols-2 sm:gap-18 lg:grid-cols-3">
-                  {category.items.map((item) => (
-                    <ItemCard key={item.id} item={item} />
-                  ))}
-                </div>
+              <div>
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    id={sectionId(category.id)}
+                    className="scroll-mt-menu pt-28 lg:scroll-mt-header-gap lg:pt-0 lg:[&:not(:first-child)]:pt-40"
+                  >
+                    <h3 className="font-display text-ar-xl font-semibold">{category.name_ar}</h3>
+                    <div className="mt-8 grid grid-cols-1 sm:mt-16 sm:grid-cols-2 sm:gap-18 xl:grid-cols-3">
+                      {category.items.map((item) => (
+                        <ItemCard key={item.id} item={item} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </>
         )}
       </div>
@@ -613,15 +564,28 @@ function AddControl({ item }: { item: LandingItem }) {
 
 function ItemCard({ item }: { item: LandingItem }) {
   const cart = useCart();
+  const [open, setOpen] = useState(false);
   return (
     // A row on a phone, text first and the photo beside it, divided by a
-    // hairline; a card from 640px up (batch 19).
-    <article className="group flex flex-row gap-12 border-b border-line py-16 sm:flex-col sm:gap-0 sm:overflow-hidden sm:rounded-md sm:border sm:bg-bg sm:py-0 sm:shadow-card sm:transition sm:hover:shadow-raised">
+    // hairline; a card from 640px up (batch 19). The whole dish opens its
+    // details, through the name's button stretched over it; the "+" sits
+    // above that stretch, so it still adds (batch 20).
+    <article className="group relative flex flex-row gap-12 border-b border-line py-16 sm:flex-col sm:gap-0 sm:overflow-hidden sm:rounded-md sm:border sm:bg-bg sm:py-0 sm:shadow-card sm:transition sm:hover:shadow-raised">
       <DishPhoto item={item} className="order-last size-row-image rounded-md sm:order-first sm:h-card-image sm:w-full sm:rounded-none" />
       <div className="flex min-w-0 flex-1 flex-col gap-6 sm:p-18">
         <div className="flex items-start justify-between gap-8">
           {/* Under its category's h3 (batch 19). */}
-          <h4 className="text-ar-md font-semibold">{item.name_ar}</h4>
+          <h4 className="text-ar-md font-semibold">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-haspopup="dialog"
+              aria-label={label('landing.dishDetails', { name: item.name_ar })}
+              className="text-start after:absolute after:inset-0"
+            >
+              {item.name_ar}
+            </button>
+          </h4>
           {item.is_available ? null : <SoldOut />}
         </div>
         {item.description_ar ? (
@@ -629,17 +593,125 @@ function ItemCard({ item }: { item: LandingItem }) {
         ) : null}
         <div className="mt-auto flex items-center justify-between gap-8 pt-4">
           <Price minor={item.price_minor} />
-          {cart.ordering ? <AddControl item={item} /> : null}
+          <div className="relative z-10">{cart.ordering ? <AddControl item={item} /> : null}</div>
         </div>
       </div>
+      {open ? <DishDetails item={item} onClose={() => setOpen(false)} /> : null}
     </article>
+  );
+}
+
+/**
+ * A dish on its own: the photo large, the whole description, the price and
+ * the counter. Tapping a dish did nothing before (batch 20). A sheet from the
+ * bottom on a phone, a centred dialog from 640px, like the cart.
+ */
+function DishDetails({ item, onClose }: { item: LandingItem; onClose: () => void }) {
+  const cart = useCart();
+  const dialog = useRef<HTMLDivElement>(null);
+  useModalDialog(dialog, onClose);
+  const titleId = `dish-${item.id}`;
+  // On <body>, not inside the card: inside it, hovering the dialog was
+  // hovering the card, and its photo zoomed.
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir="rtl" lang="ar">
+      <button type="button" tabIndex={-1} aria-label={label('landing.confirm.close')} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div
+        ref={dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-y-auto rounded-t-xl border border-line bg-surface text-text sm:rounded-xl"
+      >
+        <DishPhoto item={item} className="h-dish-photo w-full" />
+        <div className="flex flex-col gap-12 p-24">
+          <div className="flex items-start justify-between gap-12">
+            <h2 id={titleId} className="font-display text-ar-2xl font-semibold">
+              {item.name_ar}
+            </h2>
+            <IconButton variant="quiet" label={label('landing.confirm.close')} onClick={onClose}>
+              <X size={22} />
+            </IconButton>
+          </div>
+          {item.is_available ? null : <SoldOut />}
+          {item.description_ar ? <p className="text-ar-base text-text-muted">{item.description_ar}</p> : null}
+          <div className="flex items-center justify-between gap-12 pt-8">
+            <Price minor={item.price_minor} size="lg" />
+            {cart.ordering ? <AddControl item={item} /> : null}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * The facts a visitor comes for, from the restaurant's own profile: when it is
+ * open, how to order, and where it is. Six cards of stock copy ("جودة عالية")
+ * stood here, and these facts sat in two boxes at the very bottom (batch 20).
+ * A fact the restaurant has not filled in is left out; with none, nothing is
+ * drawn.
+ */
+function InfoBand({ data, ordering, className }: { data: Landing; ordering: boolean; className: string }) {
+  const hours = (data.hours ?? []).filter((row) => row.day_ar || row.open || row.close);
+  if (!hours.length && !ordering && !data.address_ar) return null;
+  return (
+    <section aria-label={label('landing.info.title')} className={className}>
+      <div className="border-b border-line bg-surface">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-18 px-16 py-24 sm:px-24 lg:grid-cols-3 lg:gap-24 lg:py-28">
+          {hours.length ? (
+            <Fact icon={<Clock size={20} />} title={label('landing.hours')}>
+              {hours.map((row, index) => (
+                <span key={index} className="flex justify-between gap-12">
+                  <span>{row.day_ar}</span>
+                  <span className="numeric text-text" dir="ltr">
+                    {row.open} – {row.close}
+                  </span>
+                </span>
+              ))}
+            </Fact>
+          ) : null}
+          {ordering ? (
+            <Fact icon={<ShoppingBag size={20} />} title={label('landing.info.orderTitle')}>
+              <span>{label('landing.info.orderBody')}</span>
+            </Fact>
+          ) : null}
+          {data.address_ar ? (
+            <Fact icon={<MapPin size={20} />} title={label('landing.info.whereTitle')}>
+              <span>{data.address_ar}</span>
+              {data.map_url ? (
+                <a href={data.map_url} className="w-fit font-medium text-accent">
+                  {label('landing.location')}
+                </a>
+              ) : null}
+            </Fact>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Fact({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-12">
+      <span className="flex size-control-md flex-none items-center justify-center rounded-full border border-gold-soft text-gold">
+        {icon}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-4 text-ar-sm text-text-muted">
+        <h3 className="text-ar-base font-semibold text-text">{title}</h3>
+        {children}
+      </div>
+    </div>
   );
 }
 
 function FeaturedCard({ item }: { item: LandingItem }) {
   const cart = useCart();
+  const [open, setOpen] = useState(false);
   return (
-    <article className="group flex h-full w-[15rem] flex-none flex-col overflow-hidden rounded-md border border-line bg-surface shadow-card transition hover:shadow-raised sm:w-[16.5rem]">
+    <article className="group relative flex h-full w-[15rem] flex-none flex-col overflow-hidden rounded-md border border-line bg-surface shadow-card transition hover:shadow-raised sm:w-[16.5rem]">
       <DishPhoto item={item} className="h-[10rem]" />
       <div className="flex flex-1 flex-col gap-6 p-18">
         <div className="flex items-center justify-between gap-8">
@@ -650,15 +722,26 @@ function FeaturedCard({ item }: { item: LandingItem }) {
           </span>
           {item.is_available ? null : <SoldOut />}
         </div>
-        <h3 className="truncate font-display text-ar-lg font-semibold">{item.name_ar}</h3>
+        <h3 className="truncate font-display text-ar-lg font-semibold">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-haspopup="dialog"
+            aria-label={label('landing.dishDetails', { name: item.name_ar })}
+            className="text-start after:absolute after:inset-0"
+          >
+            {item.name_ar}
+          </button>
+        </h3>
         {item.description_ar ? (
           <p className="line-clamp-1 text-ar-sm text-text-muted">{item.description_ar}</p>
         ) : null}
         <div className="mt-auto flex items-center justify-between gap-8 pt-4">
           <Price minor={item.price_minor} size="lg" />
-          {cart.ordering ? <AddControl item={item} /> : null}
+          <div className="relative z-10">{cart.ordering ? <AddControl item={item} /> : null}</div>
         </div>
       </div>
+      {open ? <DishDetails item={item} onClose={() => setOpen(false)} /> : null}
     </article>
   );
 }

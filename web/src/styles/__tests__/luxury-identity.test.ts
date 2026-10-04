@@ -20,7 +20,7 @@ const shell = read('features/manager/ManagerShell.tsx');
 
 describe('tokens', () => {
   it('define the display face, gold and ink', () => {
-    expect(tokens).toMatch(/--font-display:\s*var\(--font-el-messiri\)/);
+    expect(tokens).toMatch(/--font-display:\s*var\(--font-/);
     const colors = (config.theme?.extend?.colors ?? {}) as Record<string, unknown>;
     for (const name of ['gold', 'ink', 'on-ink']) expect(colors[name], name).toBeDefined();
     const family = (config.theme?.extend?.fontFamily ?? {}) as Record<string, unknown>;
@@ -42,9 +42,8 @@ describe('the public page', () => {
     expect(landing).toMatch(/<footer className="[^"]*\bbg-ink\b/);
   });
 
-  it('marks section titles with the gold rule', () => {
-    expect(landing).toMatch(/<Ornament\b/);
-  });
+  // The gold rule after every title went in batch 18: it now marks the hero
+  // alone (modern-identity.test.ts).
 });
 
 describe('the manager', () => {

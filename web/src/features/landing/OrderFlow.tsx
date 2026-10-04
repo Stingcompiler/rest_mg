@@ -548,7 +548,7 @@ function DoneStep({ placed, onClose }: { placed: PlacedSummary | null; onClose: 
   const cart = useCart();
   return (
     <div className="flex flex-col items-center gap-16 p-32 text-center">
-      <CheckCircle2 size={56} strokeWidth={1.5} className="text-success" />
+      <CheckCircle2 size={56} className="text-success" />
       <h3 className="font-display text-ar-2xl font-semibold">{label('landing.confirm.title')}</h3>
       {placed ? (
         <div className="flex w-full flex-col gap-8 rounded-md border border-line bg-bg p-16">

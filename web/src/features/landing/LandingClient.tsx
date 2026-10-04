@@ -33,6 +33,7 @@ import {
 import { formatMoney, t } from '@/i18n';
 import { Ornament } from '@/components/primitives/indicators';
 import { IconButton } from '@/components/primitives/controls';
+import { scrollBehavior } from '@/lib/motion';
 import { browserStorage } from './browserStorage';
 import { forgetOrder, recallOrder, type PlacedOrder } from './lastOrder';
 import { CartProvider, ORDER_PLACED_EVENT, useCart } from './OrderFlow';
@@ -155,7 +156,8 @@ function Landing({ data }: { data: Landing }) {
     data.photos?.[0]?.url ??
     data.featured.find((i) => i.image_url)?.image_url ??
     null;
-  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  // Glides, unless the visitor asked the system for less motion (batch 18).
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior() });
   // "Order now" goes where ordering actually happens: the menu and its cart
   // when the page takes orders, the WhatsApp and phone section when it does not.
   const ordering = data.online_ordering_enabled === true;
@@ -273,7 +275,7 @@ function Landing({ data }: { data: Landing }) {
               <div key={title} className="flex flex-col items-center gap-10 rounded-md border border-line bg-surface p-24 text-center">
                 {/* A thin gold ring, not a green blob (batch 13). */}
                 <span className="flex size-control-xl items-center justify-center rounded-full border border-gold-soft text-gold">
-                  <Icon size={22} strokeWidth={1.5} />
+                  <Icon size={22} />
                 </span>
                 <span className="font-display text-ar-lg font-semibold">{label(title)}</span>
                 <span className="text-ar-base text-text-muted">{label(desc)}</span>
@@ -288,7 +290,6 @@ function Landing({ data }: { data: Landing }) {
         <div className="mx-auto max-w-6xl px-16 py-40 sm:px-24">
           <div className="flex flex-col items-center gap-16 rounded-md bg-ink p-24 text-center text-on-ink sm:p-40">
             <h2 className="max-w-2xl font-display text-ar-2xl font-semibold sm:text-ar-3xl">{label('landing.orderCtaTitle')}</h2>
-            <Ornament />
             <p className="max-w-xl text-ar-base text-on-ink-muted">{label('landing.orderCtaSubtitle')}</p>
             <div className="flex flex-wrap justify-center gap-12">
               {data.whatsapp ? (
@@ -370,15 +371,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 /**
- * A section title: centred, in the display face, over the gold rule. Every
- * section used to open the same way, a green icon and a bold line, so the
- * page read as one long list (batch 13).
+ * A section title: large, in the display face, aligned to the start like the
+ * text under it. The gold rule that followed every title (batch 13) now marks
+ * the hero alone, and a short emerald bar opens the title instead (batch 18).
  */
 function SectionHeading({ title }: { title: string }) {
   return (
-    <div className="flex flex-col items-center gap-12 text-center">
+    <div className="flex flex-col items-start gap-10">
+      <span aria-hidden="true" className="h-4 w-thumb-sm rounded-full bg-accent" />
       <h2 className="font-display text-ar-3xl font-semibold">{title}</h2>
-      <Ornament />
     </div>
   );
 }
@@ -401,7 +402,7 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
         )}
 
         {/* Dynamic filter — the "All" chip plus one per category from the API. */}
-        <div className="sticky top-header z-30 -mx-16 mt-24 flex gap-8 overflow-x-auto bg-surface/90 px-16 py-10 backdrop-blur sm:-mx-24 sm:justify-center sm:px-24">
+        <div className="sticky top-header z-30 -mx-16 mt-24 flex gap-8 overflow-x-auto bg-surface/90 px-16 py-10 backdrop-blur sm:-mx-24 sm:px-24">
           <Chip label={label('landing.all')} active={activeId === null} onClick={() => setActiveId(null)} />
           {menu.map((c) => (
             <Chip key={c.id} label={c.name_ar} active={activeId === c.id} onClick={() => setActiveId(c.id)} />
@@ -444,7 +445,7 @@ function ItemImage({ item, className }: { item: LandingItem; className?: string 
   }
   return (
     <div className={`flex h-full w-full items-center justify-center bg-surface-2 ${className ?? ''}`}>
-      <Utensils size={30} strokeWidth={1.25} className="text-gold" />
+      <Utensils size={30} className="text-gold" />
     </div>
   );
 }
@@ -455,7 +456,7 @@ function ItemCard({ item }: { item: LandingItem }) {
     // Hairline, a little lift on hover, and the price in gold (batch 13).
     <article className="group flex flex-col overflow-hidden rounded-md border border-line bg-bg shadow-card transition hover:shadow-raised">
       <div className="relative h-card-image overflow-hidden">
-        <ItemImage item={item} className="transition duration-500 group-hover:scale-105" />
+        <ItemImage item={item} className="transition duration-slow group-hover:scale-105" />
         {!item.is_available ? (
           <span className="absolute end-8 top-8 rounded-sm bg-ink px-10 py-2 text-ar-xs font-medium text-on-ink">
             {label('landing.soldOut')}
@@ -491,7 +492,7 @@ function FeaturedCard({ item }: { item: LandingItem }) {
   return (
     <article className="group flex w-[15rem] flex-none flex-col overflow-hidden rounded-md border border-line bg-surface shadow-card transition hover:shadow-raised sm:w-[16.5rem]">
       <div className="relative h-[10rem] overflow-hidden">
-        <ItemImage item={item} className="transition duration-500 group-hover:scale-105" />
+        <ItemImage item={item} className="transition duration-slow group-hover:scale-105" />
         {/* The featured mark: gold on ink. */}
         <span className="absolute end-10 top-10 inline-flex items-center gap-4 rounded-sm bg-ink px-10 py-2 text-ar-xs font-semibold text-gold-soft shadow-card">
           <Sparkles size={13} />
@@ -539,7 +540,6 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
             <Utensils size={20} className="text-gold-soft" />
             {data.name_ar}
           </span>
-          <span aria-hidden="true" className="h-px w-thumb-sm bg-gold-soft" />
           <p className="text-ar-sm text-on-ink-muted">{data.description_ar || label('landing.footerAbout')}</p>
         </div>
 
@@ -584,7 +584,7 @@ function LandingSkeleton() {
         <div className="h-8 w-thumb-w animate-pulse rounded-xs bg-surface-2" />
         <div className="mt-18 grid grid-cols-1 gap-14 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-card-skeleton animate-pulse rounded-xl bg-surface-2" />
+            <div key={i} className="h-card-skeleton animate-pulse rounded-md bg-surface-2" />
           ))}
         </div>
       </div>

@@ -15,6 +15,13 @@ describe('auditValueKey', () => {
     expect(auditValueKey('kitchen_status', 'ready')).toBe('kitchen.ready');
   });
 
+  it('names the pickup statuses too', () => {
+    // Batch 16 added them, and the log printed "ready_for_pickup → collected"
+    // (found while verifying batch 18).
+    expect(auditValueKey('delivery_status', 'ready_for_pickup')).toBe('deliveries.status.readyForPickup');
+    expect(auditValueKey('delivery_status', 'collected')).toBe('deliveries.status.collected');
+  });
+
   it('names roles', () => {
     expect(auditValueKey('role', 'cashier')).toBe('role.cashier');
   });

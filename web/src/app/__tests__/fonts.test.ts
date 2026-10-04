@@ -36,10 +36,11 @@ describe('font preloading', () => {
   });
 
   it('loads the display face for titles without preloading it', () => {
-    // El Messiri sets the restaurant's name and the section titles (batch 13).
-    // The till never draws it, so it must not cost the till a download.
-    expect(options('El_Messiri')).toMatch(/preload:\s*false/);
-    expect(options('El_Messiri')).toMatch(/variable:\s*'--font-el-messiri'/);
+    // Readex Pro sets the restaurant's name and the section titles (batch 18,
+    // in place of El Messiri from batch 13). The till never draws it, so it
+    // must not cost the till a download.
+    expect(options('Readex_Pro')).toMatch(/preload:\s*false/);
+    expect(options('Readex_Pro')).toMatch(/variable:\s*'--font-readex-pro'/);
   });
 
   it('loads every numeral weight the screens ask for', () => {

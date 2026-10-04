@@ -54,6 +54,11 @@ lookup — with the collisions that implies ([Q4](#q4--light-mode-has-no-hover-o
 > emerald for actions, brass gold for prices and ornaments, and El Messiri for titles. The values below
 > are the original extraction; the live tokens and the reasoning are in
 > [LUXURY-DESIGN.ar.md](LUXURY-DESIGN.ar.md) and `web/src/styles/design-tokens.css`.
+>
+> **Batch 18 — modern foundation.** The palette stays. Titles moved from El Messiri to Readex Pro
+> (600 only, not preloaded), the gold ornament now marks the public page's hero alone, and motion
+> has tokens and honours `prefers-reduced-motion`. See
+> [MODERN-DESIGN-REVIEW.ar.md](MODERN-DESIGN-REVIEW.ar.md).
 
 ### 1.1 Tokens declared by the design itself
 
@@ -169,6 +174,21 @@ line-height 1.5–1.7 to clear ascenders and dots"* and *"NUMERALS — MONOSPACE
 - **Smallest Arabic step:** 14px (was 13px).
 - **Kitchen display:** from 1280px up (`[data-screen='kitchen']`), tickets take a larger scale (24px base) and a 380px floor.
 - **Receipts:** 14px body, 13px secondary text, black only. A thermal head prints grey as faint dither.
+- **Display face (batch 18):** Readex Pro 600 for titles (`font-display`), replacing El Messiri. Every title is set semibold, and a test holds that, since any other weight would be faked from the one face loaded.
+
+### 2.3 Motion (batch 18)
+
+| Token | Value | Tailwind | Use |
+|---|---|---|---|
+| `--motion-instant` | 80ms | `duration-instant` | A keypad press |
+| `--motion-fast` | 120ms | `duration-fast`, and the bare `transition` | Colour and border on hover |
+| `--motion-base` | 200ms | `duration-base` | A panel or sheet arriving |
+| `--motion-slow` | 400ms | `duration-slow` | A dish photo easing in on hover |
+| `--ease-out` | `cubic-bezier(0.2, 0, 0, 1)` | `ease-out`, and the default | Everything |
+
+- **No raw durations:** `duration-500` and the like are refused by a test.
+- **Reduced motion:** under `prefers-reduced-motion: reduce`, `globals.css` makes transitions and animations finish at once and turns off smooth scrolling.
+- **Scripted scrolling:** asks `scrollBehavior()` in `lib/motion.ts`, because an explicit `behavior: 'smooth'` would override the CSS rule.
 
 ### 2.1 Documented scale vs. what the screens use
 

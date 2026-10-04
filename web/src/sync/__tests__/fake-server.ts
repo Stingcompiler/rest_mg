@@ -6,7 +6,7 @@
  * It can be told to drop the connection after N records — writing those N but
  * never returning a response — to simulate a mid-batch failure.
  */
-import type { PushEnvelope, PushResponse, PullResponse, SyncTransport } from '../transport';
+import { SyncHttpError, type PushEnvelope, type PushResponse, type PullResponse, type SyncTransport } from '../transport';
 
 export class FakeServer implements SyncTransport {
   /** uuids the server has durably written. Each appears once — that is the test. */
@@ -23,12 +23,21 @@ export class FakeServer implements SyncTransport {
   pendingDeliveries: unknown[] = [];
   /** The restaurant profile the pull carries, or null when unchanged. */
   profile: unknown = null;
+  /** Till orders the kitchen has marked ready. */
+  kitchenReady: unknown[] = [];
+  /** Answer the next push with this HTTP status, as an expired session does. */
+  failPushWith: number | null = null;
 
   seedCatalog(categories: unknown[], items: unknown[]): void {
     this.catalog = { categories, items };
   }
 
   async push(_token: string, envelope: PushEnvelope): Promise<PushResponse> {
+    if (this.failPushWith !== null) {
+      const status = this.failPushWith;
+      this.failPushWith = null;
+      throw new SyncHttpError('push', status);
+    }
     const results = [];
     for (let index = 0; index < envelope.records.length; index += 1) {
       if (this.dropAfter !== null && index >= this.dropAfter) {
@@ -57,6 +66,7 @@ export class FakeServer implements SyncTransport {
       items: this.catalog.items,
       customers: this.customers,
       pending_deliveries: this.pendingDeliveries,
+      kitchen_ready: this.kitchenReady,
       profile: this.profile,
     };
   }

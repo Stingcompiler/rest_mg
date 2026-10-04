@@ -151,6 +151,8 @@ LOGIN_THROTTLE_RATES = {
 PUBLIC_ORDER_THROTTLE_RATES = {
     "address": "30/hour",
     "phone": "5/hour",
+    # A customer's page asks how their order stands every half minute.
+    "status": "240/hour",
 }
 
 # The throttle counts. One process's memory is enough for development; production

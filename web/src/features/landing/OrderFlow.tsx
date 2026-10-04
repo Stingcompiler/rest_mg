@@ -13,12 +13,16 @@
  * Arabic-first, RTL, Mobile-first: a floating bar summarises the cart and opens
  * a full sheet, which walks cart → form → confirmation in place.
  */
-import { createContext, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2, Loader2 } from 'lucide-react';
 
 import { formatInteger, formatMoney, t } from '@/i18n';
 import { IconButton } from '@/components/primitives/controls';
 import { normalizeSudanPhone } from '@/lib/phone';
+import { browserStorage } from './browserStorage';
+import { loadCart, saveCart } from './cartStore';
+import { rememberOrder } from './lastOrder';
+import { validateOrderForm, type OrderField } from './orderForm';
 import { uuid4 } from '@/lib/uuid';
 import { useModalDialog } from '@/lib/useModalDialog';
 
@@ -66,17 +70,30 @@ export function useCart(): CartApi {
   return ctx;
 }
 
+/** Fired when an order is placed, so the page's status card can show it. */
+export const ORDER_PLACED_EVENT = 'sp-order-placed';
+
 export function CartProvider({
   children,
   ordering,
   slug,
+  menu,
 }: {
   children: React.ReactNode;
   ordering: boolean;
   slug?: string;
+  /** Every dish on the page, to rebuild a saved cart from (batch 14). */
+  menu?: OrderableItem[];
 }) {
-  const [lines, setLines] = useState<CartLine[]>([]);
+  const storeKey = slug ?? '_';
+  // A reload used to empty the cart. It is rebuilt from the menu as it is now.
+  const [lines, setLines] = useState<CartLine[]>(() =>
+    ordering && menu ? loadCart(browserStorage(), storeKey, menu) : [],
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
+  useEffect(() => {
+    if (ordering) saveCart(browserStorage(), storeKey, lines);
+  }, [lines, ordering, storeKey]);
 
   const api = useMemo<CartApi>(() => {
     const count = lines.reduce((sum, l) => sum + l.qty, 0);
@@ -153,7 +170,9 @@ type Step = 'cart' | 'form' | 'done';
 function OrderSheet({ onClose }: { onClose: () => void }) {
   const cart = useCart();
   const [step, setStep] = useState<Step>('cart');
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<PlacedSummary | null>(null);
+  // Kept here, not in the form: going back to the cart used to clear it.
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const dialog = useRef<HTMLDivElement>(null);
   useModalDialog(dialog, onClose);
 
@@ -180,15 +199,18 @@ function OrderSheet({ onClose }: { onClose: () => void }) {
           <CartStep onCheckout={() => setStep('form')} />
         ) : step === 'form' ? (
           <FormStep
+            draft={draft}
+            onDraft={setDraft}
             onBack={() => setStep('cart')}
-            onDone={(number) => {
-              setOrderNumber(number);
+            onDone={(summary) => {
+              setPlaced(summary);
               setStep('done');
+              setDraft(EMPTY_DRAFT);
               cart.clear();
             }}
           />
         ) : (
-          <DoneStep orderNumber={orderNumber} onClose={onClose} />
+          <DoneStep placed={placed} onClose={onClose} />
         )}
       </div>
     </div>
@@ -274,13 +296,39 @@ function Field({ label: text, children }: { label: string; children: React.React
 const inputClass =
   'min-h-control-lg rounded-md border border-line bg-bg px-14 text-ar-base text-text outline-none focus-visible:border-accent';
 
-function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber: string) => void }) {
+interface Draft {
+  name: string;
+  phone: string;
+  address: string;
+  area: string;
+  notes: string;
+}
+
+const EMPTY_DRAFT: Draft = { name: '', phone: '', address: '', area: '', notes: '' };
+
+interface PlacedSummary {
+  number: string;
+  totalMinor: bigint;
+  phone: string;
+}
+
+function FormStep({
+  draft,
+  onDraft,
+  onBack,
+  onDone,
+}: {
+  draft: Draft;
+  onDraft: (draft: Draft) => void;
+  onBack: () => void;
+  onDone: (summary: PlacedSummary) => void;
+}) {
   const cart = useCart();
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [area, setArea] = useState('');
-  const [notes, setNotes] = useState('');
+  const set = (field: keyof Draft) => (value: string) => onDraft({ ...draft, [field]: value });
+  // One message per field, next to it, and focus on the first one to fix. A
+  // single sentence used to cover every field (batch 14).
+  const [problems, setProblems] = useState<Partial<Record<OrderField, string>>>({});
+  const fields = { name: useRef<HTMLInputElement>(null), phone: useRef<HTMLInputElement>(null), address: useRef<HTMLInputElement>(null) };
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   // One key per checkout attempt, kept across retries of the same attempt: a
@@ -290,105 +338,157 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
 
   const submit = async () => {
     setError(null);
-    if (!name.trim() || !phone.trim() || !address.trim()) {
-      setError(label('landing.form.required'));
+    const found = validateOrderForm(draft);
+    setProblems(Object.fromEntries(found.map((problem) => [problem.field, label(problem.key)])));
+    if (found.length > 0) {
+      fields[found[0]!.field].current?.focus();
       return;
     }
     // A number the restaurant can call: every order is confirmed by phone
     // before the kitchen sees it. "123" used to go through.
-    const dialable = normalizeSudanPhone(phone);
-    if (!dialable) {
-      setError(label('landing.form.phoneInvalid'));
-      return;
-    }
+    const dialable = normalizeSudanPhone(draft.phone)!;
     setSending(true);
     try {
       const response = await fetch('/api/v1/public/order/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': attempt },
         body: JSON.stringify({
-          customer_name: name.trim(),
+          customer_name: draft.name.trim(),
           customer_phone: dialable,
-          customer_address: address.trim(),
-          customer_area: area.trim(),
-          customer_notes: notes.trim(),
+          customer_address: draft.address.trim(),
+          customer_area: draft.area.trim(),
+          customer_notes: draft.notes.trim(),
           ...(cart.slug ? { slug: cart.slug } : {}),
           items: cart.lines.map((l) => ({ item_id: l.item.id, qty: l.qty })),
         }),
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        // Ordering closed since the page loaded: say so and keep the cart.
-        const closed = body?.error?.code === 'online_ordering_closed';
-        setError(
-          closed
-            ? label('landing.order.closed')
-            : body?.error?.code === 'invalid_phone'
-              ? label('landing.form.phoneInvalid')
-            : response.status === 429
-              ? label('landing.order.tooMany')
-              : response.status === 409
-                ? label('landing.order.unavailable')
-                : label('landing.order.error'),
-        );
+        const code = body?.error?.code;
+        if (code === 'invalid_phone') {
+          setProblems({ phone: label('landing.form.phoneInvalid') });
+          fields.phone.current?.focus();
+        } else {
+          // Ordering closed since the page loaded: say so and keep the cart.
+          setError(
+            code === 'online_ordering_closed'
+              ? label('landing.order.closed')
+              : response.status === 429
+                ? label('landing.order.tooMany')
+                : response.status === 409
+                  ? label('landing.order.unavailable')
+                  : label('landing.order.error'),
+          );
+        }
         setSending(false);
         return;
       }
-      onDone(String(body.number));
+      // Kept, so the page can show how the order stands after this closes.
+      rememberOrder(browserStorage(), cart.slug ?? '_', {
+        id: String(body.id),
+        number: String(body.number),
+        placedAt: Date.now(),
+      });
+      window.dispatchEvent(new Event(ORDER_PLACED_EVENT));
+      onDone({ number: String(body.number), totalMinor: BigInt(body.total_minor ?? cart.subtotalMinor), phone: dialable });
     } catch {
       setError(label('landing.order.error'));
       setSending(false);
     }
   };
 
+  const invalid = (field: OrderField) =>
+    problems[field]
+      ? { 'aria-invalid': true as const, 'aria-describedby': `${field}-error` }
+      : { 'aria-invalid': false as const };
+  const problem = (field: OrderField) =>
+    problems[field] ? (
+      <span id={`${field}-error`} role="alert" className="text-ar-sm text-danger-text">
+        {problems[field]}
+      </span>
+    ) : null;
+
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-16">
       <div className="flex flex-col gap-12">
         <Field label={label('landing.form.name')}>
-          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+          <input
+            ref={fields.name}
+            className={inputClass}
+            value={draft.name}
+            onChange={(e) => set('name')(e.target.value)}
+            autoComplete="name"
+            {...invalid('name')}
+          />
+          {problem('name')}
         </Field>
         <Field label={label('landing.form.phone')}>
           <input
+            ref={fields.phone}
             className={inputClass}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            value={draft.phone}
+            onChange={(e) => set('phone')(e.target.value)}
             inputMode="tel"
+            type="tel"
+            autoComplete="tel"
             dir="ltr"
             placeholder="09xxxxxxxx"
-            aria-describedby="phone-hint"
+            aria-invalid={Boolean(problems.phone)}
+            aria-describedby={problems.phone ? 'phone-error phone-hint' : 'phone-hint'}
           />
+          {problem('phone')}
           <span id="phone-hint" className="text-ar-sm text-text-muted">
             {label('landing.form.phoneHint')}
           </span>
         </Field>
         <Field label={label('landing.form.address')}>
-          <input className={inputClass} value={address} onChange={(e) => setAddress(e.target.value)} />
+          <input
+            ref={fields.address}
+            className={inputClass}
+            value={draft.address}
+            onChange={(e) => set('address')(e.target.value)}
+            autoComplete="street-address"
+            {...invalid('address')}
+          />
+          {problem('address')}
         </Field>
         <Field label={label('landing.form.area')}>
-          <input className={inputClass} value={area} onChange={(e) => setArea(e.target.value)} />
+          <input
+            className={inputClass}
+            value={draft.area}
+            onChange={(e) => set('area')(e.target.value)}
+            autoComplete="address-level2"
+          />
         </Field>
         <Field label={label('landing.form.notes')}>
-          <textarea className={`${inputClass} py-10`} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+          <textarea className={`${inputClass} py-10`} value={draft.notes} onChange={(e) => set('notes')(e.target.value)} rows={2} />
         </Field>
 
-        <div className="flex items-center justify-between rounded-lg bg-surface-2 p-12 text-ar-base font-semibold">
-          <span>{label('landing.cart.total')}</span>
-          <span className="numeric text-accent">{money(cart.subtotalMinor)}</span>
+        <div className="flex flex-col gap-6 rounded-md bg-surface-2 p-12">
+          <div className="flex items-center justify-between text-ar-base font-semibold">
+            <span>{label('landing.cart.total')}</span>
+            <span className="numeric text-gold">{money(cart.subtotalMinor)}</span>
+          </div>
+          <span className="text-ar-sm text-text-muted">{label('landing.form.payOnDelivery')}</span>
         </div>
 
-        {error ? <span className="text-ar-sm text-danger">{error}</span> : null}
+        {error ? (
+          <span role="alert" className="text-ar-sm text-danger-text">
+            {error}
+          </span>
+        ) : null}
 
         <div className="flex gap-10">
           <button
             type="button"
             onClick={() => void submit()}
             disabled={sending}
-            className="inline-flex min-h-control-xl flex-1 items-center justify-center gap-8 rounded-full bg-accent text-ar-md font-semibold text-text-on-accent transition hover:opacity-90 disabled:opacity-60"
+            className="inline-flex min-h-control-xl flex-1 items-center justify-center gap-8 rounded-md bg-accent text-ar-md font-semibold text-text-on-accent transition hover:bg-accent-hover disabled:opacity-60"
           >
             {sending ? <Loader2 size={20} className="animate-spin" /> : <ShoppingBag size={20} />}
             {sending ? label('landing.form.sending') : label('landing.form.submit')}
           </button>
-          <button type="button" onClick={onBack} disabled={sending} className="inline-flex min-h-control-xl items-center justify-center rounded-full border border-line px-18 text-ar-sm text-text-muted">
+          <button type="button" onClick={onBack} disabled={sending} className="inline-flex min-h-control-xl items-center justify-center rounded-md border border-line px-18 text-ar-sm text-text-muted">
             {label('landing.form.back')}
           </button>
         </div>
@@ -397,25 +497,40 @@ function FormStep({ onBack, onDone }: { onBack: () => void; onDone: (orderNumber
   );
 }
 
-function DoneStep({ orderNumber, onClose }: { orderNumber: string | null; onClose: () => void }) {
+/**
+ * After ordering: the number, the total, who calls whom, and where to look
+ * next. It used to show the number and "we'll contact you", and closing it
+ * lost the number (batch 14).
+ */
+function DoneStep({ placed, onClose }: { placed: PlacedSummary | null; onClose: () => void }) {
   return (
     <div className="flex flex-col items-center gap-16 p-32 text-center">
-      <CheckCircle2 size={64} className="text-success" />
-      <h3 className="text-ar-2xl font-bold">{label('landing.confirm.title')} 🎉</h3>
-      {orderNumber ? (
-        <div className="flex flex-col items-center gap-4">
-          <span className="text-ar-sm text-text-muted">{label('landing.confirm.orderNumber')}</span>
-          <span className="numeric text-num-2xl font-bold text-accent" dir="ltr">#{orderNumber}</span>
+      <CheckCircle2 size={56} strokeWidth={1.5} className="text-success" />
+      <h3 className="font-display text-ar-2xl font-semibold">{label('landing.confirm.title')}</h3>
+      {placed ? (
+        <div className="flex w-full flex-col gap-8 rounded-md border border-line bg-bg p-16">
+          <div className="flex items-baseline justify-between">
+            <span className="text-ar-sm text-text-muted">{label('landing.confirm.orderNumber')}</span>
+            <span className="numeric text-num-xl font-semibold" dir="ltr">#{placed.number}</span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-ar-sm text-text-muted">{label('landing.confirm.total')}</span>
+            <span className="numeric text-num-lg font-semibold text-gold">{money(placed.totalMinor)}</span>
+          </div>
         </div>
       ) : null}
-      <p className="text-ar-base text-text-muted">{label('landing.confirm.message')}</p>
+      <p className="text-ar-base text-text-muted">
+        {placed ? label('landing.confirm.callYou', { phone: placed.phone }) : label('landing.confirm.message')}
+      </p>
+      <p className="text-ar-sm text-text-muted">{label('landing.confirm.track')}</p>
       <button
         type="button"
         onClick={onClose}
-        className="inline-flex min-h-control-xl items-center justify-center rounded-full bg-accent px-24 text-ar-md font-semibold text-text-on-accent"
+        className="inline-flex min-h-control-xl items-center justify-center rounded-md bg-accent px-24 text-ar-md font-semibold text-text-on-accent"
       >
         {label('landing.confirm.close')}
       </button>
     </div>
   );
+
 }

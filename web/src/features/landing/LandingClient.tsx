@@ -26,16 +26,21 @@ import {
   Truck,
   Utensils,
   Wallet,
+  X,
   Zap,
 } from 'lucide-react';
 
 import { formatMoney, t } from '@/i18n';
 import { Ornament } from '@/components/primitives/indicators';
-import { CartProvider, useCart } from './OrderFlow';
+import { IconButton } from '@/components/primitives/controls';
+import { browserStorage } from './browserStorage';
+import { forgetOrder, recallOrder, type PlacedOrder } from './lastOrder';
+import { CartProvider, ORDER_PLACED_EVENT, useCart } from './OrderFlow';
+import { pageLoadFailure, type PageLoadFailure } from './pageLoad';
 
 const LOCALE = 'ar' as const;
 const NUMERALS = 'arabic-indic' as const;
-const label = (key: Parameters<typeof t>[0]) => t(key, LOCALE);
+const label = (key: Parameters<typeof t>[0], params?: Record<string, string | number>) => t(key, LOCALE, params);
 const money = (minor: string) => formatMoney(BigInt(minor), NUMERALS);
 
 interface LandingItem {
@@ -73,7 +78,10 @@ interface Landing {
   featured: LandingItem[];
 }
 
-type State = { status: 'loading' } | { status: 'error' } | { status: 'ok'; data: Landing };
+type State =
+  | { status: 'loading' }
+  | { status: 'error'; failure: PageLoadFailure }
+  | { status: 'ok'; data: Landing };
 
 const WHY = [
   { icon: Award, title: 'landing.why.qualityTitle', desc: 'landing.why.qualityDesc' },
@@ -91,7 +99,7 @@ export function LandingClient() {
     const segments = window.location.pathname.split('/').filter(Boolean);
     const slug = segments[0] === 'r' ? segments[1] : undefined;
     if (slug === '_') {
-      setState({ status: 'error' });
+      setState({ status: 'error', failure: 'not_enabled' });
       return;
     }
     const endpoint = slug ? `/api/v1/public/${slug}/` : '/api/v1/public/';
@@ -99,11 +107,15 @@ export function LandingClient() {
     (async () => {
       try {
         const response = await fetch(endpoint);
-        if (!response.ok) throw new Error('not found');
+        if (!response.ok) {
+          if (!cancelled) setState({ status: 'error', failure: pageLoadFailure(response) });
+          return;
+        }
         const data = (await response.json()) as Landing;
         if (!cancelled) setState({ status: 'ok', data });
-      } catch {
-        if (!cancelled) setState({ status: 'error' });
+      } catch (error) {
+        // A dropped line is not a page that is switched off (batch 14).
+        if (!cancelled) setState({ status: 'error', failure: pageLoadFailure(error) });
       }
     })();
     return () => {
@@ -114,8 +126,19 @@ export function LandingClient() {
   if (state.status === 'loading') return <LandingSkeleton />;
   if (state.status === 'error') {
     return (
-      <main dir="rtl" lang="ar" className="flex min-h-screen items-center justify-center bg-bg text-text">
-        <span className="text-ar-base text-text-muted">{label('landing.unavailable')}</span>
+      <main dir="rtl" lang="ar" className="flex min-h-screen flex-col items-center justify-center gap-16 bg-bg p-24 text-center text-text">
+        <span className="max-w-md text-ar-base text-text-muted">
+          {label(state.failure === 'retry' ? 'landing.loadRetry' : 'landing.unavailable')}
+        </span>
+        {state.failure === 'retry' ? (
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex min-h-control-xl items-center justify-center rounded-md bg-accent px-24 text-ar-md font-semibold text-text-on-accent"
+          >
+            {label('common.retry')}
+          </button>
+        ) : null}
       </main>
     );
   }
@@ -135,9 +158,18 @@ function Landing({ data }: { data: Landing }) {
   // "Order now" goes where ordering actually happens: the menu and its cart
   // when the page takes orders, the WhatsApp and phone section when it does not.
   const ordering = data.online_ordering_enabled === true;
+  const allItems = useMemo(() => data.menu.flatMap((category) => category.items), [data.menu]);
+
+  // The tab and a shared link said "نقاط البيع", the app's own name (batch 14).
+  useEffect(() => {
+    document.title = data.name_ar;
+    const description = document.querySelector('meta[name="description"]') ?? document.head.appendChild(document.createElement('meta'));
+    description.setAttribute('name', 'description');
+    description.setAttribute('content', data.description_ar || data.name_ar);
+  }, [data.name_ar, data.description_ar]);
 
   return (
-    <CartProvider ordering={data.online_ordering_enabled === true} slug={data.slug}>
+    <CartProvider ordering={data.online_ordering_enabled === true} slug={data.slug} menu={allItems}>
       <main dir="rtl" lang="ar" className="min-h-screen bg-bg text-text">
       {/* Sticky top bar */}
       <header className="sticky top-0 z-40 border-b border-gold-soft bg-surface/90 backdrop-blur">
@@ -167,6 +199,8 @@ function Landing({ data }: { data: Landing }) {
           </button>
         </div>
       </header>
+
+      <OrderStatus slug={data.slug ?? '_'} />
 
       {/* Hero */}
       <section className="relative flex min-h-[68vh] items-end overflow-hidden">
@@ -549,5 +583,81 @@ function LandingSkeleton() {
         </div>
       </div>
     </main>
+  );
+}
+
+const STATUS_KEYS = {
+  pending: 'landing.status.pending',
+  confirmed: 'landing.status.confirmed',
+  preparing: 'landing.status.preparing',
+  out_for_delivery: 'landing.status.out_for_delivery',
+  delivered: 'landing.status.delivered',
+  cancelled: 'landing.status.cancelled',
+} as const;
+
+const FINISHED = new Set(['delivered', 'cancelled']);
+
+/**
+ * How the customer's last order stands, at the top of the page, for twelve
+ * hours after placing it (batch 14). It asks the server every half minute
+ * until the order is delivered or cancelled.
+ */
+function OrderStatus({ slug }: { slug: string }) {
+  const [order, setOrder] = useState<PlacedOrder | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const read = () => setOrder(recallOrder(browserStorage(), slug));
+    read();
+    window.addEventListener(ORDER_PLACED_EVENT, read);
+    return () => window.removeEventListener(ORDER_PLACED_EVENT, read);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!order) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const check = async () => {
+      try {
+        const response = await fetch(`/api/v1/public/order/${order.id}/`);
+        const body = response.ok ? await response.json() : null;
+        const next = typeof body?.delivery_status === 'string' ? body.delivery_status : 'unknown';
+        if (stopped) return;
+        setStatus(next);
+        if (FINISHED.has(next)) return;
+      } catch {
+        if (!stopped) setStatus('unknown');
+      }
+      if (!stopped) timer = setTimeout(() => void check(), 30_000);
+    };
+    void check();
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [order]);
+
+  if (!order) return null;
+  const key = status && status in STATUS_KEYS ? STATUS_KEYS[status as keyof typeof STATUS_KEYS] : status ? 'landing.status.unknown' : null;
+  return (
+    <div role="status" aria-live="polite" className="border-b border-gold-soft bg-ink text-on-ink">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-12 px-16 py-10 sm:px-24">
+        <span className="flex flex-wrap items-baseline gap-x-10 gap-y-2">
+          <span className="font-display text-ar-md font-semibold">{label('landing.status.title', { number: order.number })}</span>
+          {key ? <span className="text-ar-sm text-on-ink-muted">{label(key)}</span> : null}
+        </span>
+        <IconButton
+          variant="quiet"
+          label={label('landing.status.dismiss')}
+          className="text-on-ink-muted hover:bg-ink-2"
+          onClick={() => {
+            forgetOrder(browserStorage(), slug);
+            setOrder(null);
+          }}
+        >
+          <X size={20} />
+        </IconButton>
+      </div>
+    </div>
   );
 }

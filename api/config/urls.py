@@ -22,7 +22,7 @@ from apps.audit.views import AuditLogViewSet
 from apps.catalog.views import CategoryViewSet, MenuItemViewSet
 from apps.customers.views import CustomerViewSet
 from apps.orders.kitchen import KitchenViewSet
-from apps.orders.public import PublicOrderView
+from apps.orders.public import PublicOrderStatusView, PublicOrderView
 from apps.orders.views import OrderViewSet
 from apps.profiles.views import RestaurantProfileViewSet
 from apps.profiles.views import PublicLandingView
@@ -56,6 +56,7 @@ urlpatterns = [
     # Placing a public delivery order. Registered before the slug landing route
     # so "order" is never mistaken for a restaurant slug.
     path("api/v1/public/order/", PublicOrderView.as_view()),
+    path("api/v1/public/order/<uuid:order_id>/", PublicOrderStatusView.as_view()),
     # Public, no-auth landing data by slug — kept outside the router so it never
     # picks up the manager authentication the router endpoints carry.
     path("api/v1/public/<slug:slug>/", PublicLandingView.as_view()),

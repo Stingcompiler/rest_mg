@@ -636,5 +636,22 @@
   "pos.menu.waitingHintOnline": "إن كان المطعم جديدًا فأنشئ المنيو أولًا من شاشة الأصناف في لوحة الإدارة، ثم زامن.",
   "pos.menu.waitingHintOffline": "الجهاز غير متصل. يصل المنيو مع أول مزامنة بعد عودة الاتصال.",
   "pos.menu.syncing": "جارٍ طلب المنيو من الخادم…",
-  "kitchen.loadFailed": "تعذّر تحميل الطلبات"
+  "kitchen.loadFailed": "تعذّر تحميل الطلبات",
+  "landing.form.nameRequired": "اكتب اسمك.",
+  "landing.form.phoneRequired": "اكتب رقم هاتفك ليتصل بك المطعم.",
+  "landing.form.addressRequired": "اكتب عنوان التوصيل.",
+  "landing.form.payOnDelivery": "الدفع عند الاستلام. سيتصل بك المطعم لتأكيد الطلب قبل تحضيره.",
+  "landing.confirm.total": "الإجمالي",
+  "landing.confirm.callYou": "سيتصل بك المطعم على {phone} لتأكيد الطلب.",
+  "landing.confirm.track": "تجد حالة طلبك أعلى هذه الصفحة، حتى لو أغلقتها وعدت إليها.",
+  "landing.status.title": "طلبك #{number}",
+  "landing.status.pending": "بانتظار تأكيد المطعم",
+  "landing.status.confirmed": "أكّد المطعم طلبك",
+  "landing.status.preparing": "قيد التحضير",
+  "landing.status.out_for_delivery": "في الطريق إليك",
+  "landing.status.delivered": "تم التوصيل. بالهناء والشفاء!",
+  "landing.status.cancelled": "أُلغي الطلب. اتصل بالمطعم إن كان ذلك خطأ.",
+  "landing.status.unknown": "تعذّر معرفة الحالة الآن",
+  "landing.status.dismiss": "إخفاء",
+  "landing.loadRetry": "تعذّر تحميل صفحة المطعم. تأكد من الاتصال وأعد المحاولة."
 }

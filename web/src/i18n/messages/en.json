@@ -636,5 +636,22 @@
   "pos.menu.waitingHintOnline": "If the restaurant is new, build the menu in the manager's catalog first, then sync.",
   "pos.menu.waitingHintOffline": "This device is offline. The menu arrives with the first sync once the connection returns.",
   "pos.menu.syncing": "Asking the server for the menu…",
-  "kitchen.loadFailed": "Could not load the tickets"
+  "kitchen.loadFailed": "Could not load the tickets",
+  "landing.form.nameRequired": "Enter your name.",
+  "landing.form.phoneRequired": "Enter your phone number so the restaurant can call you.",
+  "landing.form.addressRequired": "Enter the delivery address.",
+  "landing.form.payOnDelivery": "Pay on delivery. The restaurant will call to confirm before preparing it.",
+  "landing.confirm.total": "Total",
+  "landing.confirm.callYou": "The restaurant will call you on {phone} to confirm.",
+  "landing.confirm.track": "You will find your order's status at the top of this page, even if you close it and come back.",
+  "landing.status.title": "Your order #{number}",
+  "landing.status.pending": "Waiting for the restaurant to confirm",
+  "landing.status.confirmed": "The restaurant has confirmed your order",
+  "landing.status.preparing": "Being prepared",
+  "landing.status.out_for_delivery": "On its way to you",
+  "landing.status.delivered": "Delivered. Enjoy your meal!",
+  "landing.status.cancelled": "The order was cancelled. Call the restaurant if that is a mistake.",
+  "landing.status.unknown": "Could not check the status right now",
+  "landing.status.dismiss": "Dismiss",
+  "landing.loadRetry": "Could not load the restaurant's page. Check your connection and try again."
 }

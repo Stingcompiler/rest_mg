@@ -72,6 +72,8 @@ export function QuickCashButton({ label, onClick }: { label: string; onClick?():
 export interface KeypadKey {
   label: string;
   value: string;
+  /** For a key whose face is a symbol, such as ⌫ (batch 15). */
+  ariaLabel?: string;
 }
 
 export interface KeypadProps {
@@ -87,6 +89,7 @@ export function Keypad({ keys, onPress }: KeypadProps) {
           key={key.value}
           type="button"
           onClick={() => onPress(key.value)}
+          aria-label={key.ariaLabel}
           // A till key must answer the finger: without a pressed state the pad
           // looked inert, and a cashier could not tell a registered tap from a
           // missed one.

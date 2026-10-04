@@ -18,6 +18,9 @@ export interface SearchFieldProps extends React.InputHTMLAttributes<HTMLInputEle
 }
 
 export function SearchField({ icon, className, ...rest }: SearchFieldProps) {
+  // A placeholder is not a name: a screen reader reads the field as unnamed.
+  // It becomes the accessible name unless the caller gives one (batch 15).
+  const named = rest['aria-label'] ?? (typeof rest.placeholder === 'string' ? rest.placeholder : undefined);
   return (
     <div className="flex min-h-control-md flex-1 items-center gap-10 rounded-md border border-line bg-bg px-14">
       {icon ? <span className="text-text-muted">{icon}</span> : null}
@@ -27,6 +30,7 @@ export function SearchField({ icon, className, ...rest }: SearchFieldProps) {
           className,
         )}
         {...rest}
+        aria-label={named}
       />
     </div>
   );

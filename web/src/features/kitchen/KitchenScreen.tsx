@@ -94,7 +94,7 @@ export function KitchenScreen() {
     storageKey: ARRIVAL_KEYS.kitchen,
     ready: tickets !== null,
     noticeTitle: i18n.t('alerts.newTicketTitle'),
-    noticeBody: (count) => i18n.t('alerts.newTicketBody', { count: i18n.int(count) }),
+    noticeBody: (count) => i18n.plural('alerts.newTicketBody', count),
   });
 
   // Tickets with a step in flight. Their buttons wait, so a double tap on
@@ -191,7 +191,7 @@ export function KitchenScreen() {
           >
             <span className="flex items-center gap-10">
               <BellRing size={22} className="text-accent" />
-              {i18n.t('alerts.newBanner', { count: i18n.int(alert.unseen) })}
+              {i18n.plural('alerts.newBanner', alert.unseen)}
             </span>
             <span className="text-ar-sm font-normal text-text-muted">{i18n.t('alerts.dismiss')}</span>
           </button>
@@ -244,7 +244,7 @@ export function KitchenScreen() {
                             : 'text-ar-base text-success'
                       }
                     >
-                      {i18n.t('kitchen.minutesAgo', { count: i18n.int(minutes) })}
+                      {i18n.plural('kitchen.minutesAgo', minutes)}
                     </span>
                   </div>
 

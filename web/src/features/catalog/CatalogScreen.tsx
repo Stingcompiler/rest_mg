@@ -14,10 +14,11 @@
  * column on a wide screen and a horizontal strip on a phone, and the item editor
  * is a sheet that fills a small screen.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ArrowRight, ImageOff, Plus, Star, Pencil, Trash2, X } from 'lucide-react';
 
 import { Button, EmptyState, ErrorState, IconButton, LoadingList, SettingsMenu, TextField, Toggle } from '@/components';
+import { useModalDialog } from '@/lib/useModalDialog';
 import { toMinor, fromMinor } from '@/db';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -237,12 +238,21 @@ function ItemCard({ item, onEdit }: { item: MenuItem; onEdit: () => void }) {
 /** A centred modal shell, used by both editors. */
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   const i18n = useI18n();
+  // Focus in, Tab kept inside, Escape out (batch 15).
+  const panel = useRef<HTMLDivElement>(null);
+  useModalDialog(panel, onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
-      <button type="button" aria-label={i18n.t('catalog.cancel')} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl">
+      <button type="button" tabIndex={-1} aria-label={i18n.t('catalog.cancel')} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl"
+      >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
-          <span className="text-ar-lg font-semibold">{title}</span>
+          <span className="font-display text-ar-lg font-semibold">{title}</span>
           <IconButton variant="quiet" label={i18n.t('catalog.cancel')} onClick={onClose}>
             <X size={22} />
           </IconButton>
@@ -382,7 +392,11 @@ function ItemEditor({
           </label>
         </div>
 
-        {error ? <span className="text-ar-sm text-danger">{error}</span> : null}
+        {error ? (
+          <span role="alert" className="text-ar-sm text-danger">
+            {error}
+          </span>
+        ) : null}
         <div className="flex gap-10">
           <Button variant="primary" onClick={() => void save()} disabled={busy}>{i18n.t('catalog.save')}</Button>
           <Button variant="secondary" onClick={onClose} disabled={busy}>{i18n.t('catalog.cancel')}</Button>
@@ -427,7 +441,11 @@ function CategoryEditor({ category, onClose }: { category: Category | null; onCl
         <Field label={i18n.t('catalog.categoryNameEn')}>
           <TextField value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
         </Field>
-        {error ? <span className="text-ar-sm text-danger">{error}</span> : null}
+        {error ? (
+          <span role="alert" className="text-ar-sm text-danger">
+            {error}
+          </span>
+        ) : null}
         <div className="flex items-center gap-10">
           <Button variant="primary" onClick={() => void save()} disabled={busy}>{i18n.t('catalog.save')}</Button>
           <Button variant="secondary" onClick={onClose} disabled={busy}>{i18n.t('catalog.cancel')}</Button>

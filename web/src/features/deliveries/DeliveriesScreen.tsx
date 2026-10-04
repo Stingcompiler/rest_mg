@@ -136,7 +136,7 @@ export function DeliveriesScreen() {
     storageKey: ARRIVAL_KEYS.deliveries,
     ready: !deliveries.isLoading && !deliveries.isError,
     noticeTitle: i18n.t('alerts.newDeliveryTitle'),
-    noticeBody: (count) => i18n.t('alerts.newDeliveryBody', { count: i18n.int(count) }),
+    noticeBody: (count) => i18n.plural('alerts.newDeliveryBody', count),
   });
 
   return (
@@ -181,7 +181,7 @@ export function DeliveriesScreen() {
               >
                 <span className="flex items-center gap-8">
                   <BellRing size={18} className="text-accent" />
-                  {i18n.t('alerts.newBanner', { count: i18n.int(alert.unseen) })}
+                  {i18n.plural('alerts.newBanner', alert.unseen)}
                 </span>
                 <span className="text-ar-sm text-text-muted">{i18n.t('alerts.dismiss')}</span>
               </button>
@@ -392,7 +392,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
               i18n.t('deliveries.reason.outOfArea'),
               i18n.t('deliveries.reason.unavailable'),
             ]}
-            otherReason={{ label: i18n.t('pos.void.other'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
+            otherReason={{ label: i18n.t('pos.void.otherReason'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
             pending={setStatus.isPending}
             error={confirmingCancel ? refusal : null}
             onCancel={() => {

@@ -11,10 +11,11 @@
  * Repayment never edits the sale. It is its own line, and the balance is the
  * difference — so a bill from last month still reads exactly as it happened.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Receipt, UserPlus, Wallet, X } from 'lucide-react';
 
 import { Button, EmptyState, ErrorState, IconButton, LoadingList, Pager, TextField } from '@/components';
+import { useModalDialog } from '@/lib/useModalDialog';
 import { formatDate, formatTime, useI18n } from '@/i18n';
 import { pageWindow } from '@/lib/paging';
 import { ManagerShell } from './ManagerShell';
@@ -72,6 +73,7 @@ export function CustomersScreen() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={i18n.t('customers.search')}
+              aria-label={i18n.t('customers.search')}
             />
             <Button variant={owingOnly ? 'primary' : 'secondary'} onClick={() => setOwingOnly((v) => !v)}>
               {owingOnly ? i18n.t('customers.all') : i18n.t('customers.owingOnly')}
@@ -198,6 +200,9 @@ function CustomerRow({ person, onStatement }: { person: Customer; onStatement: (
 }
 
 function StatementSheet({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+  // Focus in, Tab kept inside, Escape out (batch 15).
+  const panel = useRef<HTMLDivElement>(null);
+  useModalDialog(panel, onClose);
   const i18n = useI18n();
   const [lineOffset, setLineOffset] = useState(0);
   const statement = useStatement(customer.id, {
@@ -235,8 +240,14 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={i18n.dir}>
-      <button type="button" aria-label={i18n.t('customers.close')} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl">
+      <button type="button" tabIndex={-1} aria-label={i18n.t('customers.close')} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={current.name}
+        className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl"
+      >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
           <div className="flex flex-col">
             <span className="text-ar-lg font-bold">{current.name}</span>

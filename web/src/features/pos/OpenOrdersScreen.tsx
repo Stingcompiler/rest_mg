@@ -142,7 +142,7 @@ export function OpenOrdersScreen() {
                     typeLabel={i18n.t(typeLabelKey[order.type])}
                     total={i18n.money(order.total())}
                     items={items}
-                    age={i18n.t('pos.orders.age', { count: i18n.int(age.minutes) })}
+                    age={i18n.plural('pos.orders.age', age.minutes)}
                     agePercent={age.percent}
                     ageTone={age.tone}
                     /* Nothing on this screen is ever "closed", so the badge
@@ -178,7 +178,7 @@ export function OpenOrdersScreen() {
         // The reason was always the button's own label ("cancel"), so the log
         // could never say why a bill was dropped.
         reasons={[i18n.t('pos.void.customer'), i18n.t('pos.void.mistake'), i18n.t('pos.orders.cancelDuplicate')]}
-        otherReason={{ label: i18n.t('pos.void.other'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
+        otherReason={{ label: i18n.t('pos.void.otherReason'), placeholder: i18n.t('pos.void.otherPlaceholder') }}
         error={cancelError}
         onCancel={() => {
           setPendingCancel(null);

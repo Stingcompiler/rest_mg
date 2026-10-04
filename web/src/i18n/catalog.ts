@@ -36,3 +36,20 @@ export function translate(locale: Locale, key: MessageKey, params?: TranslatePar
 export function hasMessage(key: string): key is MessageKey {
   return Object.prototype.hasOwnProperty.call(ar, key);
 }
+
+const PLURAL_RULES: Partial<Record<Locale, Intl.PluralRules>> = {};
+
+/**
+ * A counted message in the right form for the count (batch 15).
+ *
+ * Arabic has six plural categories (zero, one, two, few, many, other) and a
+ * counted noun changes with each, where one form used to serve every count
+ * ("قبل ٥ دقيقة"). A key with plural forms has `key.zero` … `key.other` in both
+ * catalogues; a key without them is used as it is.
+ */
+export function plural(locale: Locale, key: MessageKey, count: number, params?: TranslateParams): string {
+  const rules = (PLURAL_RULES[locale] ??= new Intl.PluralRules(locale));
+  const form = `${key}.${rules.select(count)}`;
+  const chosen = hasMessage(form) ? form : hasMessage(`${key}.other`) ? (`${key}.other` as MessageKey) : key;
+  return translate(locale, chosen, { count, ...params });
+}

@@ -35,6 +35,13 @@ describe('font preloading', () => {
     expect(layout).not.toMatch(/Tajawal/);
   });
 
+  it('loads the display face for titles without preloading it', () => {
+    // El Messiri sets the restaurant's name and the section titles (batch 13).
+    // The till never draws it, so it must not cost the till a download.
+    expect(options('El_Messiri')).toMatch(/preload:\s*false/);
+    expect(options('El_Messiri')).toMatch(/variable:\s*'--font-el-messiri'/);
+  });
+
   it('loads every numeral weight the screens ask for', () => {
     // Totals are set bold. Without a 700 face the browser smears the 600 one.
     expect(options('IBM_Plex_Mono')).toMatch(/'700'/);

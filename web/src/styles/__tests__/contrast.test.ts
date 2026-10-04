@@ -76,6 +76,24 @@ describe.each(THEMES)('contrast — $name theme', ({ c }) => {
     expect(contrastRatio(c['border-strong'], c.surface)).toBeGreaterThanOrEqual(3);
   });
 
+  // The luxury identity (batch 13, docs/LUXURY-DESIGN.ar.md).
+  it('gold, used for prices and the featured mark, reads as text on bg and surface', () => {
+    expect(contrastRatio(c.gold, c.surface)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(c.gold, c.bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('text on the ink surface (hero, footer, sidebar) clears AAA for body and AA for muted', () => {
+    expect(contrastRatio(c['on-ink'], c.ink)).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(c['on-ink'], c['ink-2'])).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(c['on-ink-muted'], c.ink)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('the gold rule stands out on ink and on the page', () => {
+    // Ornament only, never text: the 3:1 non-text minimum.
+    expect(contrastRatio(c['gold-soft'], c.ink)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(c.gold, c.ink)).toBeGreaterThanOrEqual(3);
+  });
+
   it('the focus ring colour is distinct from the surface it rings', () => {
     // The ring is accent (light) / accent-soft (dark); either must stand out.
     const ring = c['accent-soft'] ?? c.accent;

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Cairo, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Cairo, El_Messiri, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 
 import { DEFAULT_LOCALE, direction, t } from '@/i18n';
 
@@ -19,6 +19,16 @@ const cairo = Cairo({
   weight: ['400', '500', '600', '700'],
   variable: '--font-cairo',
   display: 'swap',
+});
+
+// The display face for titles: the restaurant's name, section and page titles
+// (batch 13). The till never draws it, so it is not preloaded.
+const elMessiri = El_Messiri({
+  subsets: ['arabic', 'latin'],
+  weight: ['500', '600', '700'],
+  variable: '--font-el-messiri',
+  display: 'swap',
+  preload: false,
 });
 
 const plexSans = IBM_Plex_Sans({
@@ -48,8 +58,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F4F2EE' },
-    { media: '(prefers-color-scheme: dark)', color: '#16181A' },
+    { media: '(prefers-color-scheme: light)', color: '#F6F1E8' },
+    { media: '(prefers-color-scheme: dark)', color: '#12100D' },
   ],
 };
 
@@ -80,7 +90,7 @@ const BOOTSTRAP = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = DEFAULT_LOCALE;
-  const fontVariables = `${cairo.variable} ${plexSans.variable} ${plexMono.variable}`;
+  const fontVariables = `${cairo.variable} ${elMessiri.variable} ${plexSans.variable} ${plexMono.variable}`;
 
   return (
     <html

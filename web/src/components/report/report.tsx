@@ -27,7 +27,9 @@ export interface KpiCardProps {
 
 export function KpiCard({ label, value, sub, tone = 'text' }: KpiCardProps) {
   return (
-    <div className="flex flex-col gap-8 rounded-lg border border-line bg-surface p-18">
+    // A gold hairline on top: the manager's figures carry the same mark as the
+    // public page's titles (batch 13).
+    <div className="flex flex-col gap-8 rounded-md border border-line border-t-strong border-t-gold-soft bg-surface p-18 shadow-card">
       <span className="text-ar-base text-text-muted">{label}</span>
       <Numeric className={cn('text-num-4xl font-semibold', KPI_TONES[tone])}>{value}</Numeric>
       {sub ? <span className="text-ar-sm text-text-muted">{sub}</span> : null}

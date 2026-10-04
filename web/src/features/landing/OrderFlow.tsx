@@ -131,12 +131,13 @@ function CartBar({ onOpen }: { onOpen: () => void }) {
       type="button"
       onClick={onOpen}
       dir="rtl"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-6xl items-center justify-between gap-12 border-t border-line bg-accent px-16 py-12 text-text-on-accent shadow-overlay sm:bottom-4 sm:rounded-full sm:border-0"
+      // Ink with a gold edge, like the page's footer (batch 13).
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-6xl items-center justify-between gap-12 border-t border-gold-soft bg-ink px-16 py-12 text-on-ink shadow-overlay sm:bottom-4 sm:rounded-md sm:border"
     >
       <span className="flex items-center gap-8 text-ar-md font-semibold">
         <span className="relative">
           <ShoppingBag size={22} />
-          <span className="absolute -end-2 -top-2 flex min-w-badge items-center justify-center rounded-full bg-bg px-4 text-num-xs text-text">
+          <span className="absolute -end-2 -top-2 flex min-w-badge items-center justify-center rounded-full bg-gold-soft px-4 text-num-xs text-ink">
             {int(cart.count)}
           </span>
         </span>

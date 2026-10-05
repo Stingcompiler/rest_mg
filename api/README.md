@@ -1,4 +1,4 @@
-# Sudan POS — API
+# Orderak (اوردراك) — API
 
 Django 5 + DRF. PostgreSQL only.
 

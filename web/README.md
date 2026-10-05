@@ -1,4 +1,4 @@
-# Sudan POS — web
+# Orderak (اوردراك) — web
 
 Next.js 15 (App Router) + TypeScript + Tailwind. One app, three surfaces that
 never blur into each other.

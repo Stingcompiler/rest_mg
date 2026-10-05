@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Sudan POS — Tailwind theme extension.
+ * Orderak — Tailwind theme extension.
  *
  * Every value here resolves to a custom property declared in
  * `src/styles/design-tokens.css`. Nothing in this file is a literal colour,

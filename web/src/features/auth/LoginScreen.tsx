@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-import { Button, TextField } from '@/components';
+import { BrandMark, Button, TextField } from '@/components';
 import { useI18n } from '@/i18n';
 import { ApiError, destinationAfterLogin } from '@/lib/http';
 import { useAuth } from './AuthProvider';
@@ -69,8 +69,12 @@ export function LoginScreen() {
       className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-16 p-24"
       dir={i18n.dir}
     >
-      {/* The gold rule marks the public page's hero alone (batch 18). */}
-      <h1 className="text-center font-display text-ar-2xl font-semibold">{i18n.t('auth.signInTitle')}</h1>
+      {/* The product's name first, then what the screen is for. The gold rule
+          marks the public page's hero alone (batch 18). */}
+      <div className="flex flex-col items-center gap-16 pb-8">
+        <BrandMark align="center" />
+        <h1 className="text-center font-display text-ar-xl font-semibold text-text-muted">{i18n.t('auth.signInTitle')}</h1>
+      </div>
       <form onSubmit={submit} className="flex flex-col gap-12">
         <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
           {i18n.t('manager.login.username')}

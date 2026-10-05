@@ -52,7 +52,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: t('common.appName'),
+  // Every tab names its screen, then the product: "الكاشير · اوردراك".
+  title: { default: t('common.appName'), template: `%s · ${t('common.appName')}` },
   manifest: '/manifest.webmanifest',
 };
 

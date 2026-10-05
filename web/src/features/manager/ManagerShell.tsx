@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { BarChart3, History, LayoutDashboard, Menu, MonitorSmartphone, Store, Users, Utensils, Wallet, LogOut } from 'lucide-react';
 
-import { IconButton, SettingsMenu } from '@/components';
+import { BrandMark, IconButton, SettingsMenu } from '@/components';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -72,8 +72,10 @@ export function ManagerShell({
   const nav = (
     <nav className="flex h-full flex-col gap-8">
       <div className="flex flex-col gap-10 px-10 pb-14 pt-6">
-        <span className="font-display text-ar-xl font-semibold text-on-ink">{i18n.t('manager.title')}</span>
+        {/* The product's name heads the sidebar, and the area under it. */}
+        <BrandMark onInk />
         <span aria-hidden="true" className="h-px w-thumb-sm bg-gold-soft" />
+        <span className="text-ar-sm text-on-ink-muted">{i18n.t('manager.title')}</span>
       </div>
       {NAV.map((entry) => {
         // The export serves every page with a trailing slash ("/manager/"), so

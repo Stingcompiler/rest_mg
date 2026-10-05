@@ -1,7 +1,7 @@
 {
-  "name": "نقاط البيع",
+  "name": "اوردراك",
   "short_name": "الكاشير",
-  "description": "نظام نقاط بيع للمطاعم يعمل دون اتصال",
+  "description": "اوردراك: نظام المطاعم، يعمل دون اتصال",
   "start_url": "/pos",
   "scope": "/pos/",
   "display": "standalone",

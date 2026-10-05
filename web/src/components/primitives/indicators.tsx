@@ -2,12 +2,13 @@
 
 /**
  * Non-interactive display primitives: Numeric, StatusChip, ConnectionDot,
- * Badge, SyncBadge, ProgressBar, Divider.
+ * Badge, SyncBadge, ProgressBar, Divider, Ornament, BrandMark.
  *
  * `Numeric` is the one every money and count value flows through — it applies
  * the mono, tabular numeral treatment so columns line up in both numeral
  * systems (verified in phase 4). Callers pass an already-formatted string.
  */
+import { t } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 export function Numeric({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -125,6 +126,24 @@ export function Ornament({ align = 'center', className }: { align?: 'center' | '
       <span className="h-px w-thumb-sm bg-gold-soft" />
       <span className="size-6 rotate-45 border border-gold-soft" />
       <span className="h-px w-thumb-sm bg-gold-soft" />
+    </span>
+  );
+}
+
+/**
+ * The product's name, Orderak — اوردراك (owner's decision, 2026-10-05): the
+ * Arabic in the display face, the Latin under it. Both scripts whatever the
+ * interface language, because together they are the name.
+ */
+export function BrandMark({ onInk = false, align = 'start' }: { onInk?: boolean; align?: 'start' | 'center' }) {
+  return (
+    <span className={cn('flex flex-col gap-2', align === 'center' ? 'items-center' : 'items-start')}>
+      <span lang="ar" className={cn('font-display text-ar-2xl font-semibold', onInk ? 'text-on-ink' : 'text-text')}>
+        {t('common.appName', 'ar')}
+      </span>
+      <span lang="en" dir="ltr" className={cn('text-la-sm font-medium tracking-wide', onInk ? 'text-gold-soft' : 'text-gold')}>
+        {t('common.appName', 'en')}
+      </span>
     </span>
   );
 }

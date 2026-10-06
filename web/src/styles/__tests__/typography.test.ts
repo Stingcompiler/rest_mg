@@ -57,12 +57,13 @@ describe('the English interface', () => {
 });
 
 describe('Arabic text in an English interface', () => {
-  it('is drawn in Cairo, not the system font', () => {
+  it('is drawn in the Arabic face, not the system font', () => {
     // Menu names stay Arabic when the till is switched to English. Plex Sans
-    // has no Arabic glyphs, so without Cairo in the Latin stack those names
-    // fell through to whatever the device had (found verifying batch 10).
+    // has no Arabic glyphs, so without the Arabic face in the Latin stack
+    // those names fell through to whatever the device had (found verifying
+    // batch 10). The face is IBM Plex Sans Arabic since batch 27.
     const latin = /--font-latin:([^;]*);/.exec(tokens)?.[1] ?? '';
-    expect(latin).toMatch(/var\(--font-cairo\)/);
+    expect(latin).toMatch(/var\(--font-plex-arabic\)/);
   });
 
   it('switches back to the Arabic face inside a lang="ar" block', () => {

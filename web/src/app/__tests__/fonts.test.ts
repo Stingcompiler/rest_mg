@@ -55,7 +55,8 @@ describe('the Arabic interface face (batch 27)', () => {
     // the till's two-column phone grid ran out of room for them.
     expect(options('IBM_Plex_Sans_Arabic')).toMatch(/variable:\s*'--font-plex-arabic'/);
     expect(options('IBM_Plex_Sans_Arabic')).toMatch(/subsets:\s*\['arabic'/);
-    expect(layout).not.toMatch(/\bCairo\b/);
+    // A comment may still name it; nothing loads it.
+    expect(layout).not.toMatch(/\bCairo\(|import \{[^}]*\bCairo\b/);
   });
 
   it.each(['IBM_Plex_Mono', 'IBM_Plex_Sans'])('gives %s no Arial stand-in that would draw Arabic', (family) => {

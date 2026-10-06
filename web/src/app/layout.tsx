@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Cairo, IBM_Plex_Mono, IBM_Plex_Sans, Readex_Pro } from 'next/font/google';
+import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Sans_Arabic, Readex_Pro } from 'next/font/google';
 
 import { DEFAULT_LOCALE, direction, t } from '@/i18n';
 
@@ -14,10 +14,14 @@ import './globals.css';
  * Each family exposes a CSS variable that `design-tokens.css` consumes, so the
  * token stays the single reference and the concrete font is wired in one place.
  */
-const cairo = Cairo({
-  subsets: ['arabic', 'latin'],
+// The Arabic interface face (batch 27). Cairo set the same menu names about
+// 11% wider at the same visual size, and the till's phone grid ran out of
+// room; Plex Sans Arabic is narrower, and the same family as the numerals and
+// the English interface, so the three read as one.
+const plexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-cairo',
+  variable: '--font-plex-arabic',
   display: 'swap',
 });
 
@@ -38,6 +42,10 @@ const plexSans = IBM_Plex_Sans({
   weight: ['400', '500', '600', '700'],
   variable: '--font-plex-sans',
   display: 'swap',
+  // No Arial stand-in: Arial has Arabic glyphs, and would draw the Arabic
+  // menu names in the English interface before the stack reached the Arabic
+  // face (batch 27).
+  adjustFontFallback: false,
   // The English interface only. It loads when English is chosen.
   preload: false,
 });
@@ -49,6 +57,10 @@ const plexMono = IBM_Plex_Mono({
   weight: ['400', '500', '600', '700'],
   variable: '--font-plex-mono',
   display: 'swap',
+  // No Arial stand-in: next/font's fallback face is Arial enlarged 135% to the
+  // mono's metrics, and Arial has Arabic-Indic digits, so it drew every
+  // ٢٥٬٠٠٠ at 79px where the Arabic face takes 45 (batch 27).
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -93,7 +105,7 @@ const BOOTSTRAP = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = DEFAULT_LOCALE;
-  const fontVariables = `${cairo.variable} ${readexPro.variable} ${plexSans.variable} ${plexMono.variable}`;
+  const fontVariables = `${plexArabic.variable} ${readexPro.variable} ${plexSans.variable} ${plexMono.variable}`;
 
   return (
     <html

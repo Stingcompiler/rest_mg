@@ -234,21 +234,24 @@
  * -------------------------------------------------------------------------- */
 
 :root {
-  /* The --font-cairo/plex-sans/plex-mono variables come from next/font
+  /* The --font-plex-arabic/plex-sans/plex-mono variables come from next/font
      (self-hosted, wired in the root layout); the quoted names are the fallback
-     if a face fails to load. */
-  --font-arabic: var(--font-cairo), 'Cairo', system-ui, sans-serif;
-  /* Cairo behind Plex Sans: menu names stay Arabic in the English interface,
-     and Plex Sans has no Arabic glyphs to draw them with. */
-  --font-latin: var(--font-plex-sans), 'IBM Plex Sans', var(--font-cairo), 'Cairo', system-ui, sans-serif;
+     if a face fails to load. One family in three scripts since batch 27:
+     IBM Plex Sans Arabic for Arabic, Plex Sans for English, Plex Mono for
+     numerals. */
+  --font-arabic: var(--font-plex-arabic), 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  /* The Arabic face behind Plex Sans: menu names stay Arabic in the English
+     interface, and Plex Sans has no Arabic glyphs to draw them with. */
+  --font-latin: var(--font-plex-sans), 'IBM Plex Sans', var(--font-plex-arabic), 'IBM Plex Sans Arabic', system-ui, sans-serif;
   /* Titles only: the restaurant's name, section and page titles. Readex Pro
      is geometric and modern in both scripts; it replaced the calligraphic
-     El Messiri of batch 13 in batch 18. Cairo stands behind it while it
-     loads, and for anything it lacks. */
-  --font-display: var(--font-readex-pro), 'Readex Pro', var(--font-cairo), 'Cairo', sans-serif;
-  /* Plex Mono carries no Arabic-Indic glyphs; Cairo is the working fallback
-     for ٠١٢٣, so tabular alignment comes from --numeric-tabular, not the font. */
-  --font-numeric: var(--font-plex-mono), var(--font-cairo), 'IBM Plex Mono', 'Cairo', monospace;
+     El Messiri of batch 13 in batch 18. The Arabic face stands behind it
+     while it loads, and for anything it lacks. */
+  --font-display: var(--font-readex-pro), 'Readex Pro', var(--font-plex-arabic), 'IBM Plex Sans Arabic', sans-serif;
+  /* Plex Mono carries no Arabic-Indic glyphs; the Arabic face right behind it
+     draws ٠١٢٣ (tabular alignment comes from --numeric-tabular). Nothing may
+     sit between them: an Arial stand-in there drew the digits 80% wider. */
+  --font-numeric: var(--font-plex-mono), var(--font-plex-arabic), 'IBM Plex Mono', 'IBM Plex Sans Arabic', monospace;
   --numeric-tabular: tabular-nums lining-nums;
 
   /* Display — Readex Pro, for the restaurant's name on the public page only */
@@ -301,7 +304,7 @@
    - The kitchen on a wide display, read from across the room. */
 :root,
 [lang='ar'] {
-  /* 14px, not 13: Cairo's dots and joins blur below it on the low-density
+  /* 14px, not 13: Arabic dots and joins blur below it on the low-density
      tablets restaurants buy. */
   --text-ar-xs: 14px;
   --text-ar-sm: 15px;

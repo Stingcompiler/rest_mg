@@ -63,7 +63,7 @@ const PRINT_STYLE_ID = 'sp-print-style';
  * of it from code; with a margin set, every receipt comes out with
  * "127.0.0.1:8000/pos/shift-close" across the top.
  *
- * `var(--font-arabic)` is Cairo, self-hosted by next/font. It
+ * `var(--font-arabic)` is IBM Plex Sans Arabic, self-hosted by next/font. It
  * resolves because this prints from *inside* the app's own document. The old
  * path opened a blank popup and named the fonts in a CSS stack the popup had
  * never loaded, so every receipt silently fell back to the system font.
@@ -83,7 +83,7 @@ const PRINT_CSS = `
     width: 72mm;
     margin: 0 auto;
     padding: 4mm 0 8mm;
-    font-family: var(--font-arabic), 'Cairo', system-ui, sans-serif;
+    font-family: var(--font-arabic), 'IBM Plex Sans Arabic', system-ui, sans-serif;
     /* 14px, and black throughout: a thermal head prints dots, not greys, and
        small Arabic loses its dots at 203dpi. */
     font-size: 14px;
@@ -129,9 +129,9 @@ export function renderDocumentToHtml(doc: PrintDocument, title = 'receipt'): str
   @page { size: 80mm auto; margin: 0; }
   /* Standalone, so the app's next/font faces are not available: name the
      families and let the device use them if they are installed. Inside the app
-     printDocumentInBrowser is used instead, and gets the real Cairo. */
+     printDocumentInBrowser is used instead, and gets the real Arabic face. */
   body {
-    font-family: 'Cairo', 'Segoe UI', system-ui, sans-serif;
+    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
     font-size: 14px; line-height: 1.6; color: #000; background: #fff;
     width: 72mm; margin: 0 auto; padding: 4mm 0 8mm;
   }

@@ -21,7 +21,7 @@ function options(family: string): string {
 }
 
 describe('font preloading', () => {
-  it.each(['Cairo', 'IBM_Plex_Mono'])('preloads %s, which every page draws with', (family) => {
+  it.each(['IBM_Plex_Sans_Arabic', 'IBM_Plex_Mono'])('preloads %s, which every page draws with', (family) => {
     expect(options(family)).not.toMatch(/preload:\s*false/);
   });
 
@@ -46,5 +46,24 @@ describe('font preloading', () => {
   it('loads every numeral weight the screens ask for', () => {
     // Totals are set bold. Without a 700 face the browser smears the 600 one.
     expect(options('IBM_Plex_Mono')).toMatch(/'700'/);
+  });
+});
+
+describe('the Arabic interface face (batch 27)', () => {
+  it('is IBM Plex Sans Arabic, the same family as the numerals and the English', () => {
+    // Cairo set the same names about 11% wider at the same visual size, and
+    // the till's two-column phone grid ran out of room for them.
+    expect(options('IBM_Plex_Sans_Arabic')).toMatch(/variable:\s*'--font-plex-arabic'/);
+    expect(options('IBM_Plex_Sans_Arabic')).toMatch(/subsets:\s*\['arabic'/);
+    // A comment may still name it; nothing loads it.
+    expect(layout).not.toMatch(/\bCairo\(|import \{[^}]*\bCairo\b/);
+  });
+
+  it.each(['IBM_Plex_Mono', 'IBM_Plex_Sans'])('gives %s no Arial stand-in that would draw Arabic', (family) => {
+    // next/font adds a fallback face built on the device's Arial. Arial has
+    // Arabic glyphs, so it drew every Arabic-Indic price — enlarged 135% to
+    // match the mono's metrics — before the stack reached the Arabic face:
+    // ٢٥٬٠٠٠ took 79px instead of 45 (found in batch 27).
+    expect(options(family)).toMatch(/adjustFontFallback:\s*false/);
   });
 });

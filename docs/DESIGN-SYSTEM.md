@@ -174,6 +174,7 @@ line-height 1.5–1.7 to clear ascenders and dots"* and *"NUMERALS — MONOSPACE
 - **Smallest Arabic step:** 14px (was 13px).
 - **Kitchen display:** from 1280px up (`[data-screen='kitchen']`), tickets take a larger scale (24px base) and a 380px floor.
 - **Receipts:** 14px body, 13px secondary text, black only. A thermal head prints grey as faint dither.
+- **Interface face (batch 27):** IBM Plex Sans Arabic replaced Cairo for all Arabic UI text: about 11% narrower at the same visual size, and one family with Plex Mono and Plex Sans. Plex Mono and Plex Sans load with `adjustFontFallback: false`: next/font's Arial fallback face has Arabic glyphs and drew Arabic-Indic prices 80% wider.
 - **Display face (batch 18):** Readex Pro 600 for titles (`font-display`), replacing El Messiri. Every title is set semibold, and a test holds that, since any other weight would be faked from the one face loaded.
 
 ### 2.3 Motion (batch 18)

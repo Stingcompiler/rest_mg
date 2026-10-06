@@ -253,7 +253,7 @@ function CartStep({ onCheckout }: { onCheckout: () => void }) {
                 <IconButton
                   label={label('pos.cart.qtyLess', { name: item.name_ar })}
                   onClick={() => cart.setQty(item.id, qty - 1)}
-                  className="rounded-full"
+                  shape="circle"
                 >
                   <Minus size={16} />
                 </IconButton>
@@ -261,7 +261,7 @@ function CartStep({ onCheckout }: { onCheckout: () => void }) {
                 <IconButton
                   label={label('pos.cart.qtyMore', { name: item.name_ar })}
                   onClick={() => cart.setQty(item.id, qty + 1)}
-                  className="rounded-full"
+                  shape="circle"
                 >
                   <Plus size={16} />
                 </IconButton>

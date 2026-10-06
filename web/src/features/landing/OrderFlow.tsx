@@ -156,7 +156,8 @@ function CartBar({ onOpen }: { onOpen: () => void }) {
       onClick={onOpen}
       dir="rtl"
       // Ink with a gold edge, like the page's footer (batch 13).
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-6xl items-center justify-between gap-12 border-t border-gold-soft bg-ink px-16 py-12 text-on-ink shadow-overlay sm:bottom-4 sm:rounded-md sm:border"
+      // Slides in the first time something is added (batch 28).
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-6xl animate-slide-up items-center justify-between gap-12 border-t border-gold-soft bg-ink px-16 py-12 text-on-ink shadow-overlay sm:bottom-4 sm:rounded-md sm:border"
     >
       <span className="flex items-center gap-8 text-ar-md font-semibold">
         <span className="relative">

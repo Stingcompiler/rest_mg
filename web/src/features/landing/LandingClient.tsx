@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
+  ChevronDown,
   Clock,
   MapPin,
   Minus,
@@ -32,7 +33,8 @@ import { TIME_ZONE, formatInteger, formatMoney, t } from '@/i18n';
 import { dayName, openState, type HoursRow } from '@/lib/hours';
 import { Ornament } from '@/components/primitives/indicators';
 import { IconButton } from '@/components/primitives/controls';
-import { scrollBehavior } from '@/lib/motion';
+import { cn } from '@/lib/cn';
+import { prefersReducedMotion, scrollBehavior } from '@/lib/motion';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { browserStorage } from './browserStorage';
 import { forgetOrder, recallOrder, type PlacedOrder } from './lastOrder';
@@ -183,27 +185,33 @@ function Landing({ data }: { data: Landing }) {
           first screen (batch 19). */}
       <section
         className={`relative flex items-end overflow-hidden ${
-          heroImage ? 'min-h-[52vh] sm:min-h-[68vh]' : 'min-h-[36vh] sm:min-h-[44vh]'
+          heroImage ? 'min-h-[52vh] sm:min-h-[68vh] lg:min-h-[80vh]' : 'min-h-[36vh] sm:min-h-[44vh] lg:min-h-[62vh]'
         }`}
       >
         {heroImage ? (
-          <img src={heroImage} alt={data.name_ar} className="absolute inset-0 h-full w-full object-cover" />
+          // A slow drift on the photo, so the hero is never a still (batch 28).
+          <img src={heroImage} alt={data.name_ar} className="absolute inset-0 h-full w-full animate-kenburns object-cover" />
         ) : (
-          <div className="absolute inset-0 bg-ink" />
+          // Without a photo: embers glowing over ink, for a grill (batch 28).
+          <div className="absolute inset-0 ember animate-ember" />
         )}
         {/* Ink, not black: the overlay is part of the palette (batch 13). */}
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-ink/10" />
         <div className="relative mx-auto w-full max-w-6xl px-16 pb-32 pt-40 sm:px-24 sm:pb-40 sm:pt-56">
           <div className="flex max-w-2xl flex-col gap-16 text-on-ink">
-            <h1 className="font-display text-ar-4xl font-semibold leading-normal sm:text-display-xl">{data.name_ar}</h1>
+            <h1 className="font-display text-ar-4xl font-semibold leading-normal sm:text-display-xl"><HeroWords text={data.name_ar} /></h1>
             <Ornament align="start" />
             <OpenBadge data={data} />
             {data.description_ar ? (
-              <p className="max-w-xl text-ar-lg text-on-ink-muted">{data.description_ar}</p>
+              <p className="max-w-xl animate-rise text-ar-lg text-on-ink-muted" style={{ animationDelay: '360ms' }}>
+                {data.description_ar}
+              </p>
             ) : (
-              <p className="max-w-xl text-ar-lg text-on-ink-muted">{label('landing.orderCtaSubtitle')}</p>
+              <p className="max-w-xl animate-rise text-ar-lg text-on-ink-muted" style={{ animationDelay: '360ms' }}>
+                {label('landing.orderCtaSubtitle')}
+              </p>
             )}
-            <div className="flex flex-wrap gap-12 pt-4">
+            <div className="flex animate-rise flex-wrap gap-12 pt-4" style={{ animationDelay: '480ms' }}>
               <button
                 type="button"
                 onClick={() => scrollTo(ordering ? 'menu' : 'order')}
@@ -227,7 +235,15 @@ function Landing({ data }: { data: Landing }) {
             </div>
           </div>
         </div>
+        {/* "There is more below": a cue that bobs at the hero's foot. */}
+        <span aria-hidden="true" className="absolute inset-x-0 bottom-12 mx-auto hidden w-fit animate-bob text-on-ink-muted sm:block">
+          <ChevronDown size={26} />
+        </span>
       </section>
+
+      {/* The dishes in motion, a band of names under the hero (batch 28). */}
+      <DishMarquee menu={data.menu} />
+
 
       {/* What a visitor looks for, from the restaurant itself: under the hero
           on a large screen, after the menu on a phone (batch 20). */}
@@ -237,10 +253,10 @@ function Landing({ data }: { data: Landing }) {
       {data.featured.length ? (
         <Section title={label('landing.featured')}>
           <div className="-mx-4 flex snap-x snap-mandatory gap-14 overflow-x-auto px-4 pb-6 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {data.featured.map((item) => (
-              <div key={item.id} className="snap-start">
+            {data.featured.map((item, index) => (
+              <Reveal key={item.id} delay={index * 90} className="snap-start">
                 <FeaturedCard item={item} />
-              </div>
+              </Reveal>
             ))}
           </div>
         </Section>
@@ -254,7 +270,7 @@ function Landing({ data }: { data: Landing }) {
       {/* Order CTA + contact */}
       <section id="order" className="scroll-mt-header border-t border-line">
         <div className="mx-auto max-w-6xl px-16 py-40 sm:px-24">
-          <div className="flex flex-col items-center gap-16 rounded-md bg-ink p-24 text-center text-on-ink sm:p-40">
+          <div className="ember flex animate-ember flex-col items-center gap-16 rounded-md p-24 text-center text-on-ink sm:p-40">
             <h2 className="max-w-2xl font-display text-ar-2xl font-semibold sm:text-ar-3xl">{label('landing.orderCtaTitle')}</h2>
             <p className="max-w-xl text-ar-base text-on-ink-muted">{label('landing.orderCtaSubtitle')}</p>
             <div className="flex flex-wrap justify-center gap-12">
@@ -326,8 +342,22 @@ function TopBar({ data, ordering, onOrder }: { data: Landing; ordering: boolean;
   const cart = useCart();
   const hasCart = ordering && cart.count > 0;
   const text = hasCart ? label('landing.cart.view') : label('landing.orderNow');
+  // Ink over the hero, ivory once the page scrolls: the bar reads what is
+  // under it (batch 28).
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 24);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
   return (
-    <header className="sticky top-0 z-40 border-b border-gold-soft bg-surface/90 backdrop-blur">
+    <header
+      className={cn(
+        'sticky top-0 z-40 border-b backdrop-blur transition-colors duration-base',
+        scrolled ? 'border-gold-soft bg-surface/90 text-text' : 'border-ink-2 bg-ink text-on-ink',
+      )}
+    >
       <div className="mx-auto flex h-header max-w-6xl items-center justify-between gap-12 px-16 sm:px-24">
         <span className="flex min-w-0 items-center gap-8 font-display text-ar-lg font-semibold sm:text-ar-xl">
           {/* The uploaded logo, or the generic mark when there is none. The
@@ -344,18 +374,106 @@ function TopBar({ data, ordering, onOrder }: { data: Landing; ordering: boolean;
           type="button"
           onClick={() => (hasCart ? cart.open() : onOrder())}
           aria-label={hasCart ? `${text}: ${int(cart.count)}` : text}
-          className="relative inline-flex min-h-control-md min-w-control-md flex-none items-center justify-center gap-6 rounded-md bg-accent px-12 text-ar-sm font-semibold text-text-on-accent transition hover:bg-accent-hover sm:px-16"
+          className={cn(
+            'relative inline-flex min-h-control-md min-w-control-md flex-none items-center justify-center gap-6 rounded-md px-12 text-ar-sm font-semibold transition sm:px-16',
+            scrolled ? 'bg-accent text-text-on-accent hover:bg-accent-hover' : 'bg-on-ink text-ink hover:bg-surface-2',
+          )}
         >
           <ShoppingBag size={18} />
           <span className="sr-only sm:not-sr-only">{text}</span>
           {hasCart ? (
-            <span className="absolute -end-4 -top-4 flex min-w-badge items-center justify-center rounded-full bg-gold-soft px-4 text-num-xs text-ink">
+            <span
+              key={cart.count}
+              className="absolute -end-4 -top-4 flex min-w-badge animate-pop items-center justify-center rounded-full bg-gold-soft px-4 text-num-xs text-ink"
+            >
               {int(cart.count)}
             </span>
           ) : null}
         </button>
       </div>
     </header>
+  );
+}
+
+/**
+ * The restaurant's name, a word at a time (batch 28). Each word is its own
+ * box so it can rise into place; the spaces stay between the boxes, where an
+ * inline-block would swallow them.
+ */
+function HeroWords({ text }: { text: string }) {
+  const words = text.split(/\s+/).filter(Boolean);
+  return (
+    <>
+      {words.map((word, index) => (
+        <span key={index}>
+          <span className="inline-block animate-rise" style={{ animationDelay: `${index * 110}ms` }}>
+            {word}
+          </span>
+          {index < words.length - 1 ? ' ' : null}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/**
+ * The dish names running past under the hero (batch 28), the way praised
+ * restaurant sites keep their page moving. Two copies side by side, so when
+ * the first has moved its own width the second is where it began and the
+ * loop has no seam. Decoration only: hidden from screen readers, which have
+ * the menu itself; paused under a pointer; stopped under "reduce motion".
+ */
+function DishMarquee({ menu }: { menu: LandingCategory[] }) {
+  const names = menu.flatMap((category) => category.items.map((item) => item.name_ar)).slice(0, 12);
+  if (names.length < 3) return null;
+  return (
+    <div aria-hidden="true" className="overflow-hidden border-b border-ink-2 bg-ink py-10 text-on-ink sm:py-14">
+      <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
+        {[0, 1].map((copy) => (
+          <div key={copy} className="flex flex-none items-center">
+            {names.map((name, index) => (
+              <span key={index} className="flex items-center gap-24 px-12 font-display text-ar-lg font-semibold sm:text-ar-xl">
+                {name}
+                <Sparkles size={16} className="text-gold-soft" />
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A block that rises into place the first time it enters the screen, then
+ * stays (batch 28). Where the browser cannot watch, or the visitor asked for
+ * less motion, it is simply there.
+ */
+function Reveal({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof IntersectionObserver === 'undefined' || prefersReducedMotion()) {
+      setShown(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShown(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px' },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={cn(shown ? 'animate-rise' : 'opacity-0', className)} style={shown ? { animationDelay: `${delay}ms` } : undefined}>
+      {children}
+    </div>
   );
 }
 
@@ -377,10 +495,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
  */
 function SectionHeading({ title }: { title: string }) {
   return (
-    <div className="flex flex-col items-start gap-10">
+    <Reveal className="flex flex-col items-start gap-10">
       <span aria-hidden="true" className="h-4 w-thumb-sm rounded-full bg-accent" />
       <h2 className="font-display text-ar-3xl font-semibold">{title}</h2>
-    </div>
+    </Reveal>
   );
 }
 
@@ -444,7 +562,7 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
 
   return (
     <section id="menu" className="scroll-mt-header border-y border-line bg-surface">
-      <div className="mx-auto max-w-6xl px-16 py-40 sm:px-24 sm:py-56">
+      <div className="mx-auto max-w-6xl px-16 pb-40 pt-24 sm:px-24 sm:py-56">
         <SectionHeading title={label('landing.ourMenu')} />
         {cart.ordering ? null : (
           <p role="note" className="mt-16 rounded-lg border border-line bg-surface-2 px-16 py-12 text-ar-base text-text-muted">
@@ -495,8 +613,11 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
                   >
                     <h3 className="font-display text-ar-xl font-semibold">{category.name_ar}</h3>
                     <div className="mt-8 grid grid-cols-1 sm:mt-16 sm:grid-cols-2 sm:gap-18 xl:grid-cols-3">
-                      {category.items.map((item) => (
-                        <ItemCard key={item.id} item={item} />
+                      {category.items.map((item, index) => (
+                        // A row at a time, the cards of a row a beat apart.
+                        <Reveal key={item.id} delay={(index % 3) * 80} className="grid">
+                          <ItemCard item={item} />
+                        </Reveal>
                       ))}
                     </div>
                   </div>
@@ -580,7 +701,10 @@ function AddControl({ item }: { item: LandingItem }) {
         <Minus size={18} />
       </IconButton>
       <span className="numeric min-w-icon-lg text-center text-num-base font-semibold text-accent" aria-live="polite">
-        {int(qty)}
+        {/* Re-mounted on every change, so it pops each time (batch 28). */}
+        <span key={qty} className="inline-block animate-pop">
+          {int(qty)}
+        </span>
       </span>
       <IconButton
         variant="accent"
@@ -693,31 +817,37 @@ function InfoBand({ data, ordering, className }: { data: Landing; ordering: bool
       <div className="border-b border-line bg-surface">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-18 px-16 py-24 sm:px-24 lg:grid-cols-3 lg:gap-24 lg:py-28">
           {hours.length ? (
-            <Fact icon={<Clock size={20} />} title={label('landing.hours')}>
-              {hours.map((row, index) => (
-                <span key={index} className="flex justify-between gap-12">
-                  <span>{row.day_ar}</span>
-                  <span className="numeric text-text" dir="ltr">
-                    {row.open} – {row.close}
+            <Reveal>
+              <Fact icon={<Clock size={20} />} title={label('landing.hours')}>
+                {hours.map((row, index) => (
+                  <span key={index} className="flex justify-between gap-12">
+                    <span>{row.day_ar}</span>
+                    <span className="numeric text-text" dir="ltr">
+                      {row.open} – {row.close}
+                    </span>
                   </span>
-                </span>
-              ))}
-            </Fact>
+                ))}
+              </Fact>
+            </Reveal>
           ) : null}
           {ordering ? (
-            <Fact icon={<ShoppingBag size={20} />} title={label('landing.info.orderTitle')}>
-              <span>{label('landing.info.orderBody')}</span>
-            </Fact>
+            <Reveal delay={90}>
+              <Fact icon={<ShoppingBag size={20} />} title={label('landing.info.orderTitle')}>
+                <span>{label('landing.info.orderBody')}</span>
+              </Fact>
+            </Reveal>
           ) : null}
           {data.address_ar ? (
-            <Fact icon={<MapPin size={20} />} title={label('landing.info.whereTitle')}>
-              <span>{data.address_ar}</span>
-              {data.map_url ? (
-                <a href={data.map_url} className="w-fit font-medium text-accent">
-                  {label('landing.location')}
-                </a>
-              ) : null}
-            </Fact>
+            <Reveal delay={180}>
+              <Fact icon={<MapPin size={20} />} title={label('landing.info.whereTitle')}>
+                <span>{data.address_ar}</span>
+                {data.map_url ? (
+                  <a href={data.map_url} className="w-fit font-medium text-accent">
+                    {label('landing.location')}
+                  </a>
+                ) : null}
+              </Fact>
+            </Reveal>
           ) : null}
         </div>
       </div>

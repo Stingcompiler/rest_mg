@@ -684,19 +684,19 @@ function AddControl({ item }: { item: LandingItem }) {
         label={label('landing.addItem', { name: item.name_ar })}
         onClick={() => cart.add(item)}
         disabled={!item.is_available}
-        className="rounded-full"
+        shape="circle"
       >
         <Plus size={20} />
       </IconButton>
     );
   }
   return (
-    <div className="flex flex-none items-center rounded-full border border-accent">
+    <div className="flex flex-none items-center gap-2 rounded-full border border-accent p-2">
       <IconButton
         variant="accent"
         label={label('pos.cart.qtyLess', { name: item.name_ar })}
         onClick={() => cart.setQty(item.id, qty - 1)}
-        className="rounded-full"
+        shape="circle"
       >
         <Minus size={18} />
       </IconButton>
@@ -710,7 +710,7 @@ function AddControl({ item }: { item: LandingItem }) {
         variant="accent"
         label={label('pos.cart.qtyMore', { name: item.name_ar })}
         onClick={() => cart.add(item)}
-        className="rounded-full"
+        shape="circle"
       >
         <Plus size={18} />
       </IconButton>

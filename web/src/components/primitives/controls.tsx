@@ -73,10 +73,14 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   /** Required: an icon button has no text, so it must name itself for a11y. */
   label: string;
   variant?: IconButtonVariant;
+  /** Round, for the public page's "+" and its counter. A prop and not a
+   *  className: `rounded-full` from a caller loses to the button's own
+   *  `rounded-md`, which comes later in the stylesheet (batch 29). */
+  shape?: 'square' | 'circle';
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-  { label, variant = 'framed', className, type = 'button', children, ...rest },
+  { label, variant = 'framed', shape = 'square', className, type = 'button', children, ...rest },
   ref,
 ) {
   return (
@@ -86,7 +90,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-label={label}
       title={label}
       className={cn(
-        'inline-flex flex-none items-center justify-center rounded-md outline-none',
+        'inline-flex flex-none items-center justify-center outline-none',
+        shape === 'circle' ? 'rounded-full' : 'rounded-md',
         ICON_BUTTON_VARIANTS[variant],
         className,
       )}

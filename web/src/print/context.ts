@@ -56,6 +56,7 @@ export function buildPrintContext(locale: Locale, numerals: Numerals): PrintCont
       change: t('pos.payment.change'),
       paid: t('pos.payment.recorded'),
       thanks: t('print.thanks'),
+      poweredBy: t('print.poweredBy'),
       restaurantName: name,
       shiftReport: t('pos.shift.reportTitle'),
       expectedCash: t('pos.shift.expectedCash'),

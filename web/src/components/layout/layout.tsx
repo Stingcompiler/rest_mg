@@ -83,9 +83,12 @@ export interface NavRailProps {
   children: React.ReactNode;
   /** The offline/online footer indicator. */
   footer?: React.ReactNode;
+  /** Above the items on the vertical rail: the product's name. Hidden on the
+   *  phone's bottom bar, which has no room for it. */
+  header?: React.ReactNode;
 }
 
-export function NavRail({ children, footer }: NavRailProps) {
+export function NavRail({ children, footer, header }: NavRailProps) {
   return (
     <nav
       className={cn(
@@ -96,6 +99,7 @@ export function NavRail({ children, footer }: NavRailProps) {
         'md:static md:h-auto md:w-rail md:flex-col md:items-center md:gap-6 md:border-s md:border-t-0 md:px-0 md:py-12',
       )}
     >
+      {header ? <div className="hidden md:flex md:justify-center md:pb-10">{header}</div> : null}
       {children}
       {footer ? (
         <div className="flex items-center md:mt-auto md:flex-col md:gap-4 md:pt-10">{footer}</div>

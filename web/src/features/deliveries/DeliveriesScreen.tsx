@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BellRing, Banknote, Clock, MapPin, Phone, StickyNote, Truck, X } from 'lucide-react';
 
-import { Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
+import { BrandMark, Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
 import { describeError } from '@/lib/describeError';
 import { formatTime, useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -126,6 +126,7 @@ export function DeliveriesScreen() {
           <IconButton variant="quiet" label={i18n.t('catalog.back')} onClick={goHome}>
             <ArrowRight size={22} className="rtl:rotate-180" />
           </IconButton>
+          <span className="hidden border-e border-line pe-12 sm:flex"><BrandMark inline /></span>
           <h1 className="flex items-center gap-10 truncate text-ar-lg font-semibold sm:text-ar-xl">
             <Truck size={22} className="text-accent" />
             {i18n.t('deliveries.title')}

@@ -115,6 +115,8 @@
   "landing.closed.opensToday": "opens today at {time}",
   "landing.closed.opensTomorrow": "opens tomorrow at {time}",
   "landing.closed.opensOn": "opens {day} at {time}",
+  "print.poweredBy": "اوردراك · Orderak",
+  "landing.poweredBy": "Runs on Orderak (اوردراك)",
   "manager.dashboard.title": "Overview",
   "manager.dashboard.revenue": "Daily revenue",
   "manager.dashboard.payMix": "Payment mix",

@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BellRing } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, Numeric, SettingsMenu, StatusChip, Toast } from '@/components';
+import { BrandMark, Button, EmptyState, ErrorState, Numeric, SettingsMenu, StatusChip, Toast } from '@/components';
 import { AlertBell } from '@/features/alerts/AlertBell';
 import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
@@ -162,6 +162,7 @@ export function KitchenScreen() {
     <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir} data-screen="kitchen" data-theme="dark">
       <header className="flex h-header flex-none items-center justify-between gap-10 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex items-baseline gap-12">
+          <span className="hidden border-e border-line pe-12 sm:flex"><BrandMark inline /></span>
           <h1 className="text-ar-lg font-semibold sm:text-ar-xl">{i18n.t('kitchen.title')}</h1>
           <Numeric className="text-num-base text-text-muted">
             {i18n.int(tickets?.length ?? 0)}

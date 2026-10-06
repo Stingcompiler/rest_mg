@@ -14,6 +14,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 import { BrandMark } from '@/components/primitives/indicators';
+import { buildPrintContext } from '@/print';
 
 import ar from '../../i18n/messages/ar.json';
 import en from '../../i18n/messages/en.json';
@@ -57,5 +58,41 @@ describe('the name inside the screens (2026-10-05)', () => {
   it('opens the sign-in screen and heads the manager\'s sidebar', () => {
     expect(read('features/auth/LoginScreen.tsx')).toMatch(/<BrandMark\b/);
     expect(read('features/manager/ManagerShell.tsx')).toMatch(/<nav[\s\S]{0,300}<BrandMark\b/);
+  });
+});
+
+describe('the name everywhere (2026-10-05)', () => {
+  it('has a one-line form for a screen header', () => {
+    const html = renderToStaticMarkup(createElement(BrandMark, { inline: true }));
+    expect(html).toMatch(/\bflex-row\b/);
+    expect(html).toContain('اوردراك');
+    expect(html).toContain('Orderak');
+  });
+
+  it('tops the till\'s rail', () => {
+    expect(read('features/pos/PosRail.tsx')).toMatch(/<NavRail\s+header=\{[\s\S]{0,200}<BrandMark\b/);
+    expect(read('components/layout/layout.tsx')).toMatch(/header\s*\?\s*\(?\s*<div[^>]*>\s*\{header\}/);
+  });
+
+  it.each(['features/kitchen/KitchenScreen.tsx', 'features/deliveries/DeliveriesScreen.tsx', 'features/catalog/CatalogScreen.tsx'])(
+    'heads %s',
+    (path) => {
+      expect(read(path)).toMatch(/<header[\s\S]{0,600}<BrandMark inline\b/);
+    },
+  );
+
+  it("signs off the restaurant's page", () => {
+    const landing = read('features/landing/LandingClient.tsx');
+    expect(/<footer[\s\S]*?<\/footer>/.exec(landing)?.[0]).toMatch(/label\('landing\.poweredBy'\)/);
+    expect(ar['landing.poweredBy' as keyof typeof ar]).toContain('اوردراك');
+  });
+
+  it('closes the receipt and the shift report', () => {
+    expect(buildPrintContext('ar', 'western').labels.poweredBy).toBe('اوردراك · Orderak');
+    const document = read('print/document.ts');
+    for (const builder of ['buildReceipt', 'buildShiftReport']) {
+      const body = new RegExp(`export function ${builder}\\b[\\s\\S]*?\\n\\}`).exec(document)?.[0] ?? '';
+      expect(body, builder).toMatch(/text: ctx\.labels\.poweredBy/);
+    }
   });
 });

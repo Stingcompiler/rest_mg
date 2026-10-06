@@ -115,6 +115,8 @@
   "landing.closed.opensToday": "يفتح اليوم {time}",
   "landing.closed.opensTomorrow": "يفتح غدًا {time}",
   "landing.closed.opensOn": "يفتح {day} {time}",
+  "print.poweredBy": "اوردراك · Orderak",
+  "landing.poweredBy": "يعمل بنظام اوردراك (Orderak)",
   "manager.dashboard.title": "نظرة عامة",
   "manager.dashboard.revenue": "الإيراد اليومي",
   "manager.dashboard.payMix": "توزيع طرق الدفع",

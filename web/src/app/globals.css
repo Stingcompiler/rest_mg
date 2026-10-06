@@ -38,6 +38,18 @@
   }
 }
 
+/* The hero's ember glow (batch 28): two warm lights drifting over ink, for a
+   restaurant that cooks over coals. Only behind the hero and the order card,
+   never behind body text. */
+.ember {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(45% 60% at 15% 90%, color-mix(in srgb, var(--color-ember) 55%, transparent), transparent 70%),
+    radial-gradient(40% 55% at 90% 15%, color-mix(in srgb, var(--color-gold-soft) 30%, transparent), transparent 70%),
+    linear-gradient(var(--color-ink), var(--color-ink));
+  background-size: 200% 200%, 200% 200%, 100% 100%;
+}
+
 /* Less motion for anyone who asked the system for it (batch 18). Transitions
    and animations finish at once — the end state still shows, so a hover
    still changes colour — and anchored scrolling jumps. Scripted scrolling

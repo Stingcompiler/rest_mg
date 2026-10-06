@@ -57,6 +57,7 @@
   /* Gold: prices, the featured mark, ornaments. Never a button, never prose. */
   --color-gold: #8A672A;
   --color-gold-soft: #C6A869; /* rules and ornaments only */
+  --color-ember: #B4441E;     /* the hero's glow only, never text (batch 28) */
 
   /* Ink: the dark surface of the hero, the footer and the navigation rails */
   --color-ink: #16130F;
@@ -133,6 +134,8 @@
 
     --color-gold: #D8B877;
     --color-gold-soft: #9E8452;
+  --color-ember: #C4552B;
+    --color-ember: #C4552B;
 
     --color-ink: #0C0A08;
     --color-ink-2: #171410;
@@ -462,6 +465,12 @@
   --motion-fast: 120ms;     /* colour and border on hover: the default */
   --motion-base: 200ms;     /* a panel or a sheet arriving */
   --motion-slow: 400ms;     /* a dish photo easing in on hover */
+  /* The public page's motion (batch 28). */
+  --motion-reveal: 700ms;   /* a block rising into place as it enters the screen */
+  --motion-bob: 2400ms;     /* the hero's "scroll down" cue */
+  --motion-marquee: 48s;    /* one pass of the dish band */
+  --motion-ambient: 18s;    /* the ember glow, the hero photo's drift */
+  --rise-distance: 18px;
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
 }
 

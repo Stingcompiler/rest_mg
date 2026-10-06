@@ -255,6 +255,34 @@ const config: Config = {
         base: 'var(--motion-base)',
         slow: 'var(--motion-slow)',
       },
+      // The public page's motion (batch 28): every duration a token, and all
+      // of it stopped by the reduce-motion rule in globals.css.
+      keyframes: {
+        rise: {
+          from: { opacity: '0', transform: 'translateY(var(--rise-distance))' },
+          to: { opacity: '1', transform: 'none' },
+        },
+        ember: {
+          '0%, 100%': { backgroundPosition: '0% 100%, 100% 0%, 50% 50%' },
+          '50%': { backgroundPosition: '100% 60%, 0% 40%, 50% 50%' },
+        },
+        // Right-to-left pages: the band moves towards the start edge's
+        // opposite, half its width, where the second copy takes over.
+        marquee: { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(50%)' } },
+        kenburns: { from: { transform: 'scale(1)' }, to: { transform: 'scale(1.08)' } },
+        pop: { '0%': { transform: 'scale(1)' }, '40%': { transform: 'scale(1.22)' }, '100%': { transform: 'scale(1)' } },
+        'slide-up': { from: { opacity: '0', transform: 'translateY(100%)' }, to: { opacity: '1', transform: 'none' } },
+        bob: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(6px)' } },
+      },
+      animation: {
+        rise: 'rise var(--motion-reveal) var(--ease-out) both',
+        ember: 'ember var(--motion-ambient) ease-in-out infinite',
+        marquee: 'marquee var(--motion-marquee) linear infinite',
+        kenburns: 'kenburns var(--motion-ambient) ease-in-out infinite alternate',
+        pop: 'pop var(--motion-base) var(--ease-out)',
+        'slide-up': 'slide-up var(--motion-base) var(--ease-out) both',
+        bob: 'bob var(--motion-bob) ease-in-out infinite',
+      },
       transitionTimingFunction: {
         DEFAULT: 'var(--ease-out)',
         out: 'var(--ease-out)',

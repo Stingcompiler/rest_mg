@@ -132,16 +132,50 @@ export function Ornament({ align = 'center', className }: { align?: 'center' | '
 
 /**
  * The product's name, Orderak — اوردراك (owner's decision, 2026-10-05): the
- * Arabic in the display face, the Latin under it. Both scripts whatever the
+ * Arabic in the display face, the Latin with it. Both scripts whatever the
  * interface language, because together they are the name.
+ *
+ * Stacked (the sign-in screen, the manager's sidebar), stacked and small (the
+ * till's narrow rail), or on one line (a screen's header).
  */
-export function BrandMark({ onInk = false, align = 'start' }: { onInk?: boolean; align?: 'start' | 'center' }) {
+export function BrandMark({
+  onInk = false,
+  align = 'start',
+  size = 'lg',
+  inline = false,
+}: {
+  onInk?: boolean;
+  align?: 'start' | 'center';
+  size?: 'lg' | 'sm';
+  inline?: boolean;
+}) {
   return (
-    <span className={cn('flex flex-col gap-2', align === 'center' ? 'items-center' : 'items-start')}>
-      <span lang="ar" className={cn('font-display text-ar-2xl font-semibold', onInk ? 'text-on-ink' : 'text-text')}>
+    <span
+      className={cn(
+        'flex',
+        inline ? 'flex-row items-baseline gap-6' : 'flex-col gap-2',
+        !inline && (align === 'center' ? 'items-center' : 'items-start'),
+      )}
+    >
+      <span
+        lang="ar"
+        className={cn(
+          'font-display font-semibold',
+          inline ? 'text-ar-md' : size === 'sm' ? 'text-ar-sm' : 'text-ar-2xl',
+          onInk ? 'text-on-ink' : 'text-text',
+        )}
+      >
         {t('common.appName', 'ar')}
       </span>
-      <span lang="en" dir="ltr" className={cn('text-la-sm font-medium tracking-wide', onInk ? 'text-gold-soft' : 'text-gold')}>
+      <span
+        lang="en"
+        dir="ltr"
+        className={cn(
+          'font-medium tracking-wide',
+          inline || size === 'sm' ? 'text-la-xs' : 'text-la-sm',
+          onInk ? 'text-gold-soft' : 'text-gold',
+        )}
+      >
         {t('common.appName', 'en')}
       </span>
     </span>

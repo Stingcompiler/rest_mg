@@ -51,6 +51,8 @@ export interface PrintContext {
     change: string;
     paid: string;
     thanks: string;
+    /** The product's name, at the foot of a receipt and a shift report. */
+    poweredBy?: string;
     restaurantName: string;
     shiftReport: string;
     expectedCash: string;
@@ -222,6 +224,7 @@ export function buildReceipt(order: Order, ctx: PrintContext): PrintDocument {
 
   blocks.push({ kind: 'divider' });
   blocks.push({ kind: 'text', text: ctx.labels.thanks, align: 'center' });
+  if (ctx.labels.poweredBy) blocks.push({ kind: 'text', text: ctx.labels.poweredBy, align: 'center' });
   blocks.push({ kind: 'cut' });
 
   return { width: ctx.width ?? 48, dir: ctx.dir, codepage: ctx.codepage, blocks };
@@ -287,6 +290,10 @@ export function buildShiftReport(shift: Shift, ctx: PrintContext): PrintDocument
     }
   }
 
+  if (ctx.labels.poweredBy) {
+    blocks.push({ kind: 'divider' });
+    blocks.push({ kind: 'text', text: ctx.labels.poweredBy, align: 'center' });
+  }
   blocks.push({ kind: 'cut' });
   return { width: ctx.width ?? 48, dir: ctx.dir, codepage: ctx.codepage, blocks };
 }

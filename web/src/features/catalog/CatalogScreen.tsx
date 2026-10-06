@@ -17,7 +17,7 @@
 import { useRef, useState } from 'react';
 import { ArrowRight, ImageOff, Plus, Star, Pencil, Trash2, X } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, IconButton, LoadingList, SettingsMenu, TextField, Toggle } from '@/components';
+import { BrandMark, Button, EmptyState, ErrorState, IconButton, LoadingList, SettingsMenu, TextField, Toggle } from '@/components';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { toMinor, fromMinor } from '@/db';
 import { useI18n } from '@/i18n';
@@ -59,6 +59,7 @@ export function CatalogScreen() {
           <IconButton variant="quiet" label={i18n.t('catalog.back')} onClick={goHome}>
             <ArrowRight size={22} className="rtl:rotate-180" />
           </IconButton>
+          <span className="hidden border-e border-line pe-12 sm:flex"><BrandMark inline /></span>
           <h1 className="truncate text-ar-lg font-semibold sm:text-ar-xl">{i18n.t('catalog.title')}</h1>
         </div>
         <SettingsMenu />

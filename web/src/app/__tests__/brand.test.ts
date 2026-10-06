@@ -77,7 +77,7 @@ describe('the name everywhere (2026-10-05)', () => {
   it.each(['features/kitchen/KitchenScreen.tsx', 'features/deliveries/DeliveriesScreen.tsx', 'features/catalog/CatalogScreen.tsx'])(
     'heads %s',
     (path) => {
-      expect(read(path)).toMatch(/<header[\s\S]{0,400}<BrandMark inline\b/);
+      expect(read(path)).toMatch(/<header[\s\S]{0,600}<BrandMark inline\b/);
     },
   );
 

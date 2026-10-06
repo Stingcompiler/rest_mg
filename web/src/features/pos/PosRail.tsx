@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 
-import { Button, ConfirmDialog, IconButton, NavRail, NavRailItem, RailStatus, Toast } from '@/components';
+import { BrandMark, Button, ConfirmDialog, IconButton, NavRail, NavRailItem, RailStatus, Toast } from '@/components';
 import { useArrivalAlert } from '@/features/alerts/useArrivalAlert';
 import { ARRIVAL_KEYS } from '@/features/alerts/memory';
 import { useI18n } from '@/i18n';
@@ -124,6 +124,7 @@ export function PosRail({ active }: { active: RailTarget }) {
   return (
     <>
       <NavRail
+        header={<BrandMark onInk size="sm" align="center" />}
         footer={
           <div className="hidden md:flex md:flex-col md:items-center md:gap-6">
             {/* On the phone the header carries the same chip. */}

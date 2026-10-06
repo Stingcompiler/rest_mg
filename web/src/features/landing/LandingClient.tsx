@@ -820,6 +820,8 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
       </div>
       <div className="border-t border-ink-2 py-14 text-center text-ar-xs text-on-ink-muted">
         © <span className="numeric" dir="ltr">{year}</span> {data.name_ar} · {label('landing.footerRights')}
+        {/* The product the page runs on, after the restaurant's own line. */}
+        <span className="mt-4 block text-gold-soft">{label('landing.poweredBy')}</span>
       </div>
     </footer>
   );

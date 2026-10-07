@@ -1,0 +1,45 @@
+{
+  "generated": "2026-10-07",
+  "server": "audit copy of the dev server (X-Frame-Options SAMEORIGIN), build of main b270fdb",
+  "script": "docs/review-evidence/ui-audit.js",
+  "note": "Contrast is measured on the colour actually under each text. Text dimmed with CSS opacity was measured apart (see UX-VISUAL-REVIEW.ar.md, finding C2). complexBackgrounds are texts over a gradient or photo (the public page's hero), checked by hand. targetsUnder44 on the public page are the dish names, whose button is stretched over the whole card.",
+  "plan": [
+    { "role": "visitor", "locale": "ar", "routes": ["/r/wisam-al-sham/", "/login/"], "widths": [375, 768, 1024, 1280, 1440], "themes": ["light", "dark"] },
+    { "role": "cashier", "locale": "ar", "routes": ["/pos/", "/pos/orders/", "/pos/payment/", "/pos/report/", "/pos/shift-close/", "/pos/sync/", "/pos/menu/", "/deliveries/", "/catalog/"], "widths": [375, 1024, 1280], "themes": ["light", "dark"] },
+    { "role": "kitchen", "locale": "ar", "routes": ["/kitchen/"], "widths": [768, 1280, 1440], "themes": ["light"] },
+    { "role": "manager", "locale": "ar", "routes": ["/manager/", "/manager/reports/", "/manager/customers/", "/manager/staff/", "/manager/activity/", "/manager/profile/", "/manager/devices/"], "widths": [375, 1024, 1440], "themes": ["light", "dark"] },
+    { "role": "cashier", "locale": "en", "routes": ["/pos/", "/pos/payment/"], "widths": [1280], "themes": ["light"] },
+    { "role": "manager", "locale": "en", "routes": ["/manager/"], "widths": [1440], "themes": ["light"] }
+  ],
+  "runs": 122,
+  "errors": [],
+  "byRoute": {
+    "/r/wisam-al-sham/": { "runs": 10, "contrastFails": 0, "complexBackgrounds": 90, "overflow": [], "minFont": 14, "fontSizes": "14 15 17 19 20 22 24 27 34 44 56", "radii": { "0px": 94, "10px": 166 }, "targetsUnder24": ["قائمتنا (footer)", "اطلب الآن (footer)", "0912345678 (footer)"], "greyBorderRuns": 0 },
+    "/login/": { "runs": 10, "contrastFails": 0, "overflow": [], "minFont": 13, "fontSizes": "13 15 22 24 27", "radii": { "10px": 30 }, "greyBorderRuns": 0 },
+    "/pos/": { "runs": 7, "contrastFails": 0, "overflow": [], "minFont": 12, "fontSizes": "12 13 14 15 16 17 18 19 20 22 24 38", "radii": { "0px": 39, "8px": 7, "10px": 69, "12px": 64 }, "greyBorderRuns": 5 },
+    "/pos/orders/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 12, "radii": { "0px": 24, "8px": 6, "10px": 16, "12px": 18 }, "greyBorderRuns": 4 },
+    "/pos/payment/": { "runs": 7, "contrastFails": 0, "overflow": [], "minFont": 12, "fontSizes": "12 13 14 15 17 18 20 22 24 28 32 44", "radii": { "0px": 21, "10px": 35, "12px": 126, "14px": 7 }, "greyBorderRuns": 7 },
+    "/pos/report/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 12, "radii": { "0px": 24, "8px": 6, "12px": 6 }, "greyBorderRuns": 0 },
+    "/pos/shift-close/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 15, "radii": { "0px": 18, "10px": 84, "12px": 18 }, "targetsUnder24": ["الطلبات: #UL-1048 (21px)"], "greyBorderRuns": 6 },
+    "/pos/sync/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 12, "radii": { "0px": 24, "8px": 6, "10px": 6, "12px": 12 }, "greyBorderRuns": 0 },
+    "/pos/menu/": { "runs": 6, "contrastFails": 0, "overflow": ["375 light", "1024 light", "375 dark", "1024 dark"], "minFont": 12, "radii": { "0px": 36, "8px": 6, "10px": 72, "12px": 42 }, "targetsUnder44": "6 availability toggles, 34px tall, squeezed to 36px wide at 375", "greyBorderRuns": 6 },
+    "/deliveries/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 12, "radii": { "0px": 12, "10px": 54, "12px": 12 }, "targetsUnder24": ["the customer's phone link (21px)"], "greyBorderRuns": 6 },
+    "/catalog/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 12, "radii": { "0px": 60, "10px": 18, "12px": 36 }, "targetsUnder44": "toggles, 34px", "greyBorderRuns": 0 },
+    "/kitchen/": { "runs": 3, "contrastFails": 0, "overflow": [], "minFont": 12, "fontSizes": "12 15 17 18 19 22 24 26 30 34", "radii": { "0px": 6, "10px": 15, "12px": 9 }, "greyBorderRuns": 3 },
+    "/manager/": { "runs": 7, "contrastFails": 0, "overflow": [], "minFont": 12, "radii": { "0px": 26, "8px": 5, "10px": 49, "12px": 28 }, "greyBorderRuns": 0 },
+    "/manager/reports/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 13, "radii": { "0px": 16, "8px": 4, "12px": 18 }, "greyBorderRuns": 0 },
+    "/manager/customers/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 13, "radii": { "0px": 16, "8px": 4, "10px": 30, "12px": 12 }, "greyBorderRuns": 6 },
+    "/manager/staff/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 13, "radii": { "0px": 16, "8px": 4, "10px": 60, "12px": 36 }, "greyBorderRuns": 6 },
+    "/manager/activity/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 13, "radii": { "0px": 22, "8px": 4, "10px": 24, "12px": 12 }, "greyBorderRuns": 0 },
+    "/manager/profile/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 13, "radii": { "0px": 16, "8px": 4, "10px": 96, "12px": 24 }, "targetsUnder44": "7 day buttons (40px), 2 toggles (34px; squeezed at 375)", "greyBorderRuns": 6 },
+    "/manager/devices/": { "runs": 6, "contrastFails": 0, "overflow": [], "minFont": 13, "radii": { "0px": 16, "8px": 4, "10px": 12, "12px": 12 }, "greyBorderRuns": 0 }
+  },
+  "opacityDimmedText": {
+    "note": "Measured apart: text dimmed with CSS opacity, which the per-text check above does not compose.",
+    "categoryTabCount_inactive_light": 3.19,
+    "categoryTabCount_inactive_dark": 4.18,
+    "categoryTabCount_active_light": 5.89,
+    "cartTabTotal_light": 7.15,
+    "required": 4.5
+  }
+}

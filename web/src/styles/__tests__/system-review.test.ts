@@ -18,6 +18,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import config from '../../../tailwind.config';
 import { Button } from '@/components/primitives/controls';
+import { SearchField } from '@/components/menu/menu';
 import { defaultNumeralsFor, readNumerals } from '@/i18n/preferences';
 
 const SRC = resolve(__dirname, '../..');
@@ -116,5 +117,13 @@ describe('numerals (T1)', () => {
 
   it('are worked out from the language in the provider', () => {
     expect(read('i18n/I18nProvider.tsx')).toMatch(/numeralsChoice \?\? defaultNumeralsFor\(locale\)/);
+  });
+});
+
+describe('the till’s search field (found re-measuring)', () => {
+  it('takes a tap anywhere in its box, and its input fills the box', () => {
+    const html = renderToStaticMarkup(createElement(SearchField, { placeholder: 'x' }));
+    expect(html).toMatch(/^<label class="[^"]*\bmin-h-control-md\b/);
+    expect(html).toMatch(/<input class="[^"]*\bself-stretch\b/);
   });
 });

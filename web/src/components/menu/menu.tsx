@@ -22,17 +22,20 @@ export function SearchField({ icon, className, ...rest }: SearchFieldProps) {
   // It becomes the accessible name unless the caller gives one (batch 15).
   const named = rest['aria-label'] ?? (typeof rest.placeholder === 'string' ? rest.placeholder : undefined);
   return (
-    <div className="flex min-h-control-md flex-1 items-center gap-10 rounded-md border border-line bg-bg px-14">
+    // A label, so a tap anywhere in the field, its icon included, focuses
+    // it; and the input fills the field's height. The input alone was a 26px
+    // target inside a 46px box (found re-measuring batch 32).
+    <label className="flex min-h-control-md flex-1 cursor-text items-center gap-10 rounded-md border border-line bg-bg px-14">
       {icon ? <span className="text-text-muted">{icon}</span> : null}
       <input
         className={cn(
-          'w-full bg-transparent text-ar-base text-text outline-none placeholder:text-text-muted',
+          'w-full self-stretch bg-transparent text-ar-base text-text outline-none placeholder:text-text-muted',
           className,
         )}
         {...rest}
         aria-label={named}
       />
-    </div>
+    </label>
   );
 }
 

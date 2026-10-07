@@ -243,6 +243,14 @@ Neither documented scale matches the screens. See [Q2](#q2--type-scale-documente
 
 ---
 
+### 2.4 Numerals (batch 32)
+
+One rule, everywhere:
+
+- **Amounts, quantities and counts** follow the reader's numeral setting. Until someone chooses, the setting follows the language: Arabic-Indic (٠١٢٣) in Arabic, Western in English. It used to default to Arabic-Indic whatever the language, so English read «٢ delivery orders».
+- **Western always:** clock times, dates, phone numbers, order numbers (`9P-1048`, `#1001`) and anything typed into a field.
+- **Never a «·» beside a number.** Next to Arabic-Indic digits, the dot reads as the zero «٠»: «دورك الآن · ٢» read as «٢٠». A heading's count is a `CountBadge`, and a sentence uses «،».
+
 ## 3. Spacing
 
 **Documented in `1a`:** *"4px base. 8/12/16 inside components, 24/32 between blocks, 48 between
@@ -279,6 +287,13 @@ refuses it. Boxes from 16px up are sized by a named dimension (`size-thumb-sm`,
 ---
 
 ## 4. Radius, borders, shadows
+
+> **Rules from the review (batch 32).**
+> - **Corners:** controls (buttons, fields, chips) take `md` (10px). Cards, panels and callouts take `lg` (12px). Sheets and dialogs take `xl` (14px). Anything round takes `full`. `pill` was a second name for round and is gone.
+> - **Borders:** a bare `border` takes the palette's border colour (`borderColor.DEFAULT`). `border-strong` is the 2px *width* for a focused or selected control or a critical callout, never a colour. Written alone it left Tailwind's grey `#E5E7EB` on ten screens. A test now refuses it without a colour.
+> - **Text is never dimmed with opacity.** A token says its colour. Counts at 70% opacity read 3.19:1. Disabled controls may still fade.
+> - **Tokens:** `bg-rail` was `ink` in both themes and `surface-quiet` was `surface-3` but for a shade; both are gone. `bg-sunken` stays: it equals `surface-2` in light but is darker than `surface` in dark, where the side menus sit below the content.
+
 
 ### Radius (by frequency)
 

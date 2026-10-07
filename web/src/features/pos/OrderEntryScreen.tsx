@@ -212,7 +212,7 @@ export function OrderEntryScreen() {
               disabled={!hasLines || kitchenChanges === 0}
               title={hasLines ? undefined : i18n.t('pos.cart.nothingToSend')}
               onClick={send}
-              className="inline-flex min-h-control-2xl items-center justify-center rounded-lg border border-strong text-ar-lg font-medium text-text outline-none transition-colors hover:bg-surface-2 active:bg-surface-3 disabled:cursor-not-allowed disabled:border-line disabled:text-text-disabled disabled:hover:bg-transparent"
+              className="inline-flex min-h-control-2xl items-center justify-center rounded-lg border border-line-strong text-ar-lg font-medium text-text outline-none transition-colors hover:bg-surface-2 active:bg-surface-3 disabled:cursor-not-allowed disabled:border-line disabled:text-text-disabled disabled:hover:bg-transparent"
             >
               {sendLabel}
             </button>
@@ -220,7 +220,7 @@ export function OrderEntryScreen() {
               type="button"
               disabled={!hasLines}
               onClick={() => router.push('/pos/payment')}
-              className="inline-flex min-h-control-2xl flex-col items-center justify-center rounded-lg bg-accent text-text-on-accent outline-none transition-colors hover:bg-accent-hover active:bg-accent-pressed disabled:bg-surface-quiet disabled:text-text-disabled"
+              className="inline-flex min-h-control-2xl flex-col items-center justify-center rounded-lg bg-accent text-text-on-accent outline-none transition-colors hover:bg-accent-hover active:bg-accent-pressed disabled:bg-surface-3 disabled:text-text-disabled"
             >
               <span className="text-ar-lg font-semibold">{i18n.t('pos.cart.pay')}</span>
               <Numeric className="text-num-base">{i18n.money(order.total())}</Numeric>

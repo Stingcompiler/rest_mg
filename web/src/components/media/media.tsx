@@ -29,7 +29,7 @@ export function ImageSlot({ src, alt, placeholder, className, rounded = true }: 
   return (
     <div
       className={cn(
-        'flex items-center justify-center border border-dashed border-strong bg-surface-2 text-ar-base text-text-muted',
+        'flex items-center justify-center border-strong border-dashed border-line-strong bg-surface-2 text-ar-base text-text-muted',
         rounded && 'rounded-lg',
         className,
       )}

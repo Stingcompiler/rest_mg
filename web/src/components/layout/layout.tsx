@@ -94,7 +94,7 @@ export function NavRail({ children, footer, header }: NavRailProps) {
       className={cn(
         // Mobile: a fixed bottom bar — thumb-reachable, the phone convention.
         'fixed inset-x-0 bottom-0 z-30 flex h-mobile-nav w-full flex-none flex-row items-stretch',
-        'gap-2 border-t border-ink-2 bg-bg-rail px-8',
+        'gap-2 border-t border-ink-2 bg-ink px-8',
         // Desktop: the vertical rail on the start edge, as before.
         'md:static md:h-auto md:w-rail md:flex-col md:items-center md:gap-6 md:border-s md:border-t-0 md:px-0 md:py-12',
       )}

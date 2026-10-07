@@ -42,7 +42,7 @@ export function CartTabs({ tabs, activeId, onSelect, onAdd, addLabel }: CartTabs
             )}
           >
             <span>{tab.label}</span>
-            <Numeric className="text-num-xs opacity-75">{tab.total}</Numeric>
+            <Numeric className="text-num-xs">{tab.total}</Numeric>
           </button>
         );
       })}

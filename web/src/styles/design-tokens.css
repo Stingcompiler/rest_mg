@@ -26,13 +26,11 @@
 
   /* Surfaces */
   --color-bg: #F6F1E8;
-  --color-bg-rail: #16130F;
   --color-bg-sunken: #F0E9DD;
   --color-surface: #FFFCF7;
   --color-surface-rgb: 255 252 247; /* the same colour as channels, for opacity modifiers */
   --color-surface-2: #EFE8DC;
   --color-surface-3: #E6DDCD;
-  --color-surface-quiet: #E9E1D3;
 
   /* Lines */
   --color-border: #DCD2C1;
@@ -107,13 +105,11 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --color-bg: #12100D;
-    --color-bg-rail: #0C0A08;
     --color-bg-sunken: #16130F;
     --color-surface: #1B1814;
     --color-surface-rgb: 27 24 20; /* the same colour as channels, for opacity modifiers */
     --color-surface-2: #24201A;
     --color-surface-3: #2E2921;
-    --color-surface-quiet: #28241E;
 
     --color-border: #3A342B;
     --color-border-rgb: 58 52 43; /* the same colour as channels, for opacity modifiers */
@@ -171,13 +167,11 @@
 
 [data-theme='dark'] {
   --color-bg: #12100D;
-  --color-bg-rail: #0C0A08;
   --color-bg-sunken: #16130F;
   --color-surface: #1B1814;
   --color-surface-rgb: 27 24 20; /* the same colour as channels, for opacity modifiers */
   --color-surface-2: #24201A;
   --color-surface-3: #2E2921;
-  --color-surface-quiet: #28241E;
 
   --color-border: #3A342B;
   --color-border-rgb: 58 52 43; /* the same colour as channels, for opacity modifiers */
@@ -380,7 +374,6 @@
   --radius-md: 10px;  /* buttons, chips, list rows */
   --radius-lg: 12px;  /* cards, panels, callouts */
   --radius-xl: 14px;  /* screen frame, in-cart badge */
-  --radius-pill: 999px;
 
   --border-width: 1px;
   --border-width-strong: 2px; /* focused / selected control, critical callout */

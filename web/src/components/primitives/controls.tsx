@@ -22,9 +22,11 @@ const BUTTON_BASE =
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent text-text-on-accent hover:bg-accent-hover active:bg-accent-pressed disabled:bg-surface-quiet disabled:text-text-disabled',
+    'bg-accent text-text-on-accent hover:bg-accent-hover active:bg-accent-pressed disabled:bg-surface-3 disabled:text-text-disabled',
   secondary:
-    'border border-strong text-text hover:bg-surface-2 disabled:text-text-disabled disabled:border-line',
+    // border-line-strong, not border-strong: that is the 2px width for a
+    // focused or selected control, and alone it left the border grey (batch 32).
+    'border border-line-strong text-text hover:bg-surface-2 disabled:text-text-disabled disabled:border-line',
   danger: 'border border-danger text-danger hover:bg-danger-tint disabled:text-text-disabled',
   credit: 'bg-credit-tint border border-credit text-credit-text',
   accentOutline: 'bg-surface-2 border border-accent text-accent hover:bg-accent-tint',
@@ -154,14 +156,14 @@ export function Toggle({ checked, onChange, label, disabled }: ToggleProps) {
         // flex-none: in a crowded row it was squeezed to 36px wide on a
         // phone. The after: box stretches the target to 46px tall without
         // changing how the switch looks (batch 31).
-        'relative inline-flex h-toggle-h w-toggle-w flex-none items-center rounded-pill p-4 outline-none transition-colors after:absolute after:inset-x-0 after:-inset-y-6',
+        'relative inline-flex h-toggle-h w-toggle-w flex-none items-center rounded-full p-4 outline-none transition-colors after:absolute after:inset-x-0 after:-inset-y-6',
         // Off is the strong line colour (3:1 against the surface, WCAG 1.4.11).
         // It was `bg-border`, which is not a colour here, so the track had none.
         checked ? 'justify-end bg-accent-pressed' : 'justify-start bg-line-strong',
         disabled && 'opacity-60',
       )}
     >
-      <span className="size-knob rounded-pill bg-toggle-knob" />
+      <span className="size-knob rounded-full bg-toggle-knob" />
     </button>
   );
 }
@@ -208,7 +210,7 @@ export function SegmentedControl<T extends string>({
           >
             <span>{option.label}</span>
             {option.count ? (
-              <span className="numeric text-num-xs opacity-70">{option.count}</span>
+              <span className="numeric text-num-xs">{option.count}</span>
             ) : null}
           </button>
         );

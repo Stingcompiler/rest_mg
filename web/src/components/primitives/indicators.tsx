@@ -27,7 +27,7 @@ const DOT_TONES: Record<Tone, string> = {
 };
 
 export function ConnectionDot({ tone = 'neutral' }: { tone?: Tone }) {
-  return <span className={cn('inline-block size-dot rounded-pill', DOT_TONES[tone])} />;
+  return <span className={cn('inline-block size-dot rounded-full', DOT_TONES[tone])} />;
 }
 
 export interface StatusChipProps {
@@ -96,12 +96,12 @@ export function ProgressBar({ percent, tone = 'accent', size = 'thick' }: Progre
       aria-valuemin={0}
       aria-valuemax={100}
       className={cn(
-        'w-full overflow-hidden rounded-pill bg-surface-3',
+        'w-full overflow-hidden rounded-full bg-surface-3',
         size === 'thick' ? 'h-12' : 'h-6',
       )}
     >
       <div
-        className={cn('h-full rounded-pill', DOT_TONES[tone])}
+        className={cn('h-full rounded-full', DOT_TONES[tone])}
         style={{ inlineSize: `${clamped}%` }}
       />
     </div>

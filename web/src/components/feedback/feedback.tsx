@@ -168,7 +168,7 @@ function ConfirmPanel({
                 placeholder={otherReason!.placeholder}
                 aria-label={otherReason!.label}
                 maxLength={200}
-                className="min-h-control-xl rounded-md border border-strong bg-surface px-14 text-ar-md text-text outline-none"
+                className="min-h-control-xl rounded-md border border-line-strong bg-surface px-14 text-ar-md text-text outline-none"
               />
             ) : null}
           </div>

@@ -222,7 +222,7 @@ export function ShiftCloseScreen() {
                 {blocking.includes('open_orders') ? (
                   <li>
                     {i18n.t('pos.shift.blockedOpenOrders')}{' '}
-                    <button type="button" onClick={() => router.push('/pos/orders')} className="font-medium text-accent underline">
+                    <button type="button" onClick={() => router.push('/pos/orders')} className="inline-flex min-h-control-stepper items-center font-medium text-accent underline">
                       {i18n.t('pos.shift.openOrdersList', {
                         numbers: openOrders.map((order) => `#${order.toSnapshot().number}`).join(' · '),
                       })}

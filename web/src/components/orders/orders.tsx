@@ -73,7 +73,7 @@ export function OrderCard({
         <button
           type="button"
           onClick={onResume}
-          className="inline-flex min-h-control-lg flex-1 items-center justify-center rounded-md bg-accent text-ar-md font-semibold text-text-on-accent outline-none"
+          className="inline-flex min-h-control-lg flex-1 items-center justify-center rounded-md bg-accent text-ar-md font-semibold text-text-on-accent outline-none transition hover:bg-accent-hover active:bg-accent-pressed"
         >
           {resumeLabel}
         </button>

@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BellRing, Banknote, Clock, MapPin, Phone, StickyNote, Truck, X } from 'lucide-react';
 
-import { BrandMark, Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
+import { BrandMark, Button, ConfirmDialog, CountBadge, EmptyState, ErrorState, IconButton, LoadingList, Pager, SettingsMenu, StatusChip } from '@/components';
 import { describeError } from '@/lib/describeError';
 import { formatTime, useI18n } from '@/i18n';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -170,8 +170,10 @@ export function DeliveriesScreen() {
 
             {mine.length ? (
               <section className="flex flex-col gap-10">
-                <h2 className="text-ar-md font-medium">
-                  {i18n.t('deliveries.yourTurn')} · {i18n.int(mine.length)}
+                {/* The count as a badge: «· ٢» read as «٢٠», the dot beside an
+                    Arabic-Indic digit looking like its zero (batch 31). */}
+                <h2 className="flex items-center gap-8 text-ar-md font-medium">
+                  {i18n.t('deliveries.yourTurn')} <CountBadge count={i18n.int(mine.length)} />
                 </h2>
                 <div className="grid grid-cols-1 gap-14 lg:grid-cols-2">
                   {mine.map((order) => (
@@ -183,8 +185,8 @@ export function DeliveriesScreen() {
 
             {theirs.length ? (
               <section className="flex flex-col gap-10">
-                <h2 className="text-ar-md font-medium text-text-muted">
-                  {i18n.t('deliveries.withKitchen')} · {i18n.int(theirs.length)}
+                <h2 className="flex items-center gap-8 text-ar-md font-medium text-text-muted">
+                  {i18n.t('deliveries.withKitchen')} <CountBadge count={i18n.int(theirs.length)} />
                 </h2>
                 <div className="grid grid-cols-1 gap-14 lg:grid-cols-2">
                   {theirs.map((order) => (
@@ -269,7 +271,9 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
         <span className="numeric text-num-lg font-bold" dir="ltr">#{order.number}</span>
         <div className="flex items-center gap-6">
           {/* What the kitchen reports, shown but never editable here. */}
-          {order.kitchen_status && !terminal ? (
+          {/* Not before confirmation: the kitchen has not got the order, and
+              «المطبخ: بالانتظار» beside «قيد الانتظار» read as two waits (batch 31). */}
+          {order.kitchen_status && !terminal && ds !== 'pending' ? (
             <span className="rounded-full bg-surface-2 px-8 py-2 text-ar-xs text-text-muted">
               {i18n.t('deliveries.kitchen')}: {i18n.t(KITCHEN_KEY[order.kitchen_status] ?? 'deliveries.kitchen')}
             </span>
@@ -283,7 +287,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
       {/* Customer details — the point of a delivery order. */}
       <div className="flex flex-col gap-6 rounded-md bg-surface-2 p-12 text-ar-sm">
         <span className="text-ar-base font-semibold">{order.customer_name}</span>
-        <a href={`tel:${order.customer_phone}`} className="flex items-center gap-6 text-accent">
+        <a href={`tel:${order.customer_phone}`} className="flex min-h-control-stepper items-center gap-6 text-accent">
           <Phone size={14} />
           <span className="numeric" dir="ltr">{order.customer_phone}</span>
         </a>

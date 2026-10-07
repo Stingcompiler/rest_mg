@@ -151,7 +151,10 @@ export function Toggle({ checked, onChange, label, disabled }: ToggleProps) {
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
       className={cn(
-        'inline-flex h-toggle-h w-toggle-w items-center rounded-pill p-4 outline-none transition-colors',
+        // flex-none: in a crowded row it was squeezed to 36px wide on a
+        // phone. The after: box stretches the target to 46px tall without
+        // changing how the switch looks (batch 31).
+        'relative inline-flex h-toggle-h w-toggle-w flex-none items-center rounded-pill p-4 outline-none transition-colors after:absolute after:inset-x-0 after:-inset-y-6',
         // Off is the strong line colour (3:1 against the surface, WCAG 1.4.11).
         // It was `bg-border`, which is not a colour here, so the track had none.
         checked ? 'justify-end bg-accent-pressed' : 'justify-start bg-line-strong',

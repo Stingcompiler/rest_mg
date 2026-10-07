@@ -191,10 +191,23 @@ export function homeForRole(role: StaffRole): string {
  * It also has to be a plain in-app path: anything scheme- or host-shaped is an
  * open redirect waiting to happen, so it is refused.
  */
+/**
+ * The screens each role works in. Delivery orders and the catalogue are the
+ * cashier's as much as the till is: a cashier sent to sign in from
+ * /deliveries/ used to land back on the till (batch 31).
+ */
+const AREAS_FOR_ROLE: Record<StaffRole, string[]> = {
+  owner: ['/manager/'],
+  manager: ['/manager/'],
+  cashier: ['/pos/', '/deliveries/', '/catalog/'],
+  kitchen: ['/kitchen/'],
+};
+
 export function destinationAfterLogin(next: string | null, role: StaffRole): string {
   const home = homeForRole(role);
   if (!next) return home;
   // Relative, single-slash paths only — no "//evil.com", no "https://…".
   if (!next.startsWith('/') || next.startsWith('//')) return home;
-  return next.startsWith(home) ? next : home;
+  const areas = AREAS_FOR_ROLE[role] ?? [home];
+  return areas.some((area) => next.startsWith(area)) ? next : home;
 }

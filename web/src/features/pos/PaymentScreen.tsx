@@ -132,6 +132,32 @@ export function PaymentScreen() {
     else setEntered((current) => (current + value).replace(/^0+(?=\d)/, ''));
   };
 
+  // A note handed over, taken in one tap as cash (batch 31). The quick-cash
+  // buttons used to set an amount and wait for a second tap on «نقدًا», which
+  // sits above them on the screen; the order of the taps was the reverse of
+  // the order on the screen.
+  const payCash = (tendered: bigint) => {
+    if (due <= 0n) {
+      setFeedback({ tone: 'ok', text: i18n.t('pos.payment.settledAlready') });
+      return;
+    }
+    const amount = tendered > due ? due : tendered;
+    try {
+      pos.addPayment({ method: 'cash', amountMinor: amount, tenderedMinor: tendered });
+      setEntered('');
+      const stillDue = order.amountDue();
+      setFeedback({
+        tone: 'ok',
+        text:
+          stillDue <= 0n
+            ? i18n.t('pos.payment.settled')
+            : i18n.t('pos.payment.added', { method: i18n.t(METHOD_LABEL_KEY.cash), amount: i18n.money(amount) }),
+      });
+    } catch (error) {
+      setFeedback({ tone: 'error', text: describe(error) });
+    }
+  };
+
   // A domain rule violation carries a stable code; the catalogue turns it into a
   // sentence in the cashier's language. Anything else is reported generically
   // rather than swallowed.
@@ -289,9 +315,11 @@ export function PaymentScreen() {
               <span className="truncate text-ar-xs text-text-muted">
                 {due <= 0n
                   ? i18n.t('pos.payment.settledAlready')
-                  : enteredMinor > 0n
-                    ? i18n.t('pos.payment.partial')
-                    : i18n.t('pos.payment.splitHint')}
+                  : enteredMinor >= due
+                    ? i18n.t('pos.payment.changePreview', { change: i18n.money(enteredMinor - due) })
+                    : enteredMinor > 0n
+                      ? i18n.t('pos.payment.partial')
+                      : i18n.t('pos.payment.splitHint')}
               </span>
             </div>
             <div className="flex flex-none items-center gap-10">
@@ -312,18 +340,22 @@ export function PaymentScreen() {
             <PaymentMethodCard label={i18n.t('pos.payment.wallet')} icon={<Smartphone size={24} />} disabled={due <= 0n} onClick={() => pay('wallet')} />
             <PaymentMethodCard label={i18n.t('pos.payment.credit')} hint={i18n.t('pos.payment.creditNote')} tone="credit" icon={<Clock3 size={24} />} disabled={due <= 0n} onClick={() => pay('credit')} />
           </div>
-          <div className="flex flex-wrap gap-10">
-            {/* The notes a customer hands over for this bill: the next round
-                amounts above it. These were fixed at 5,000 to 20,000, all
-                below a typical bill, so a tap made a partial payment. */}
-            {quickCashOptions(due).map((amount) => (
-              <QuickCashButton
-                key={amount.toString()}
-                label={i18n.money(amount)}
-                onClick={() => setEntered(amount.toString())}
-              />
-            ))}
-            <QuickCashButton label={i18n.t('pos.payment.fullAmount')} onClick={() => setEntered(due.toString())} />
+          <div className="flex flex-col gap-6">
+            <span className="text-ar-sm text-text-muted">{i18n.t('pos.payment.quickCash')}</span>
+            <div className="flex flex-wrap gap-10">
+              {/* The notes a customer hands over for this bill: the next round
+                  amounts above it. These were fixed at 5,000 to 20,000, all
+                  below a typical bill, so a tap made a partial payment. Each
+                  takes the cash in one tap (batch 31). */}
+              {quickCashOptions(due).map((amount) => (
+                <QuickCashButton
+                  key={amount.toString()}
+                  label={i18n.money(amount)}
+                  onClick={() => payCash(amount)}
+                />
+              ))}
+              <QuickCashButton label={i18n.t('pos.payment.exactCash')} onClick={() => payCash(due)} />
+            </div>
           </div>
           <Keypad keys={keys} onPress={press} />
         </div>
@@ -367,20 +399,18 @@ export function PaymentScreen() {
               </div>
             ))}
           </div>
-          <CalloutPanel title={i18n.t('pos.payment.remaining')} tone="neutral">
+          <CalloutPanel title={i18n.t('pos.payment.balance')} tone="neutral">
             {/* Whichever matters now is the big number: what is still owed, or,
-                once paid, the change to hand back. */}
+                once paid, the change to hand back. Only that one: the panel
+                was titled «المتبقي» over a row of the same name, and showed
+                «الباقي للعميل ٠» while money was still owed (batch 31). */}
             {due > 0n || order.changeDue() === 0n ? (
-              <>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-ar-base text-text-muted">{i18n.t('pos.payment.change')}</span>
-                  <Numeric className="text-num-md text-text-muted">{i18n.money(order.changeDue())}</Numeric>
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.remaining')}</span>
-                  <Numeric className="text-num-5xl font-bold text-warning">{i18n.money(due)}</Numeric>
-                </div>
-              </>
+              <div className="flex items-baseline justify-between">
+                <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.remaining')}</span>
+                <Numeric className={due > 0n ? 'text-num-5xl font-bold text-warning' : 'text-num-5xl font-bold text-success'}>
+                  {i18n.money(due)}
+                </Numeric>
+              </div>
             ) : (
               <div className="flex items-baseline justify-between">
                 <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.change')}</span>

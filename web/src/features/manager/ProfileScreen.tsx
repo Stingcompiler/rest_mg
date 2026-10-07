@@ -187,7 +187,7 @@ function HoursEditor({
                     aria-pressed={on}
                     onClick={() => change(index, { days: on ? days.filter((d) => d !== day) : [...days, day] })}
                     className={cn(
-                      'min-h-control-sm rounded-md border px-10 text-ar-sm transition',
+                      'min-h-control-stepper rounded-md border px-10 text-ar-sm transition',
                       on ? 'border-accent bg-accent text-text-on-accent' : 'border-line bg-surface-2 text-text-muted hover:text-text',
                     )}
                   >

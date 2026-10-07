@@ -83,7 +83,9 @@ export function MenuManagementScreen() {
           </nav>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex flex-none items-center gap-12 border-b border-line bg-surface px-16 py-14">
+            {/* Wraps on a narrow screen: in one row it ran off a phone and a
+                1024px tablet, the apply button out of reach (batch 31). */}
+            <div className="flex flex-none flex-wrap items-center gap-12 border-b border-line bg-surface px-16 py-14">
               <span className="text-ar-base text-text-muted">{i18n.t('pos.menu.bulkChange')}</span>
               <div className="flex gap-8">
                 {PERCENTS.map((value) => (
@@ -123,8 +125,10 @@ export function MenuManagementScreen() {
                     const editing = edits[item.id];
                     const priceText = editing ?? i18n.money(item.priceMinor);
                     return (
-                      <div key={item.id} className="flex items-center gap-16 rounded-lg border border-line bg-surface p-14">
-                        <span className={item.isAvailable() ? 'flex-1 text-ar-md font-medium text-text' : 'flex-1 text-ar-md font-medium text-text-disabled'}>
+                      // The name on its own line on a phone, so the switch stays
+                      // inside the card; one line from 640px (found verifying batch 31).
+                      <div key={item.id} className="flex flex-wrap items-center gap-x-16 gap-y-10 rounded-lg border border-line bg-surface p-14">
+                        <span className={item.isAvailable() ? 'min-w-0 flex-1 basis-full text-ar-md font-medium text-text sm:basis-0' : 'min-w-0 flex-1 basis-full text-ar-md font-medium text-text-disabled sm:basis-0'}>
                           {snapshot.nameAr}
                         </span>
                         <input
@@ -136,14 +140,16 @@ export function MenuManagementScreen() {
                           onFocus={() => setEdits((current) => ({ ...current, [item.id]: fromMinor(item.priceMinor) }))}
                           onBlur={(event) => commitPrice(item.id, event.target.value)}
                         />
-                        <span className={item.isAvailable() ? 'w-price-field text-ar-sm text-text-muted' : 'w-price-field text-ar-sm text-warning'}>
+                        <span className={item.isAvailable() ? 'text-ar-sm text-text-muted sm:w-price-field' : 'text-ar-sm text-warning sm:w-price-field'}>
                           {item.isAvailable() ? i18n.t('pos.menu.available') : i18n.t('pos.menu.unavailable')}
                         </span>
-                        <Toggle
-                          checked={item.availableFlag}
-                          onChange={() => void pos.toggleItemAvailability(item.id)}
-                          label={snapshot.nameAr}
-                        />
+                        <span className="ms-auto flex sm:ms-0">
+                          <Toggle
+                            checked={item.availableFlag}
+                            onChange={() => void pos.toggleItemAvailability(item.id)}
+                            label={snapshot.nameAr}
+                          />
+                        </span>
                       </div>
                     );
                   })}

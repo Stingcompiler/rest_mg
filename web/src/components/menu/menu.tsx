@@ -110,7 +110,8 @@ export function MenuItemCard({
         // A floor, not a fixed height: a long name or description used to push
         // the price out of the card on a tablet (review, 1024×768). The text is
         // clamped so cards in a row stay close in size.
-        'relative flex min-h-item-card flex-col justify-between gap-8 rounded-lg border p-14 text-start shadow-card outline-none',
+        // A press that shows, on a touch screen (batch 31).
+        'relative flex min-h-item-card flex-col justify-between gap-8 rounded-lg border p-14 text-start shadow-card outline-none transition active:scale-[0.98]',
         // A dish already in the order is tinted, not only outlined: the corner
         // badge alone was easy to miss across a full menu (batch 21).
         inCart ? 'border-accent-pressed bg-accent-tint' : 'border-line bg-surface',
@@ -160,8 +161,11 @@ export function MenuManagementRow({
   onToggle,
 }: MenuManagementRowProps) {
   return (
-    <div className="flex items-center gap-16 rounded-lg border border-line bg-surface p-14">
-      <span className={cn('flex-1 text-ar-md font-medium', available ? 'text-text' : 'text-text-disabled')}>
+    // One line from 640px; on a phone the name takes its own line and the
+    // price, state and switch go under it. In one line the switch, which now
+    // keeps its size, ran past the card's edge (found verifying batch 31).
+    <div className="flex flex-wrap items-center gap-x-16 gap-y-10 rounded-lg border border-line bg-surface p-14">
+      <span className={cn('min-w-0 flex-1 basis-full text-ar-md font-medium sm:basis-0', available ? 'text-text' : 'text-text-disabled')}>
         {name}
       </span>
       <div className="flex min-h-control-lg w-price-field items-center justify-end rounded-md border border-line bg-surface-2 px-14">
@@ -169,10 +173,12 @@ export function MenuManagementRow({
           {price}
         </Numeric>
       </div>
-      <span className={cn('w-price-field text-ar-sm', available ? 'text-text-muted' : 'text-warning')}>
+      <span className={cn('text-ar-sm sm:w-price-field', available ? 'text-text-muted' : 'text-warning')}>
         {stateLabel}
       </span>
-      <Toggle checked={available} onChange={onToggle} label={toggleLabel} />
+      <span className="ms-auto flex sm:ms-0">
+        <Toggle checked={available} onChange={onToggle} label={toggleLabel} />
+      </span>
     </div>
   );
 }

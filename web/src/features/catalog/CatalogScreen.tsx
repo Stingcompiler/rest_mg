@@ -85,7 +85,7 @@ export function CatalogScreen() {
                   >
                     {category.name_ar}
                   </button>
-                  <IconButton variant="quiet" label={i18n.t('catalog.editCategory')} onClick={() => setEditingCategory(category)}>
+                  <IconButton variant="quiet" label={i18n.t('catalog.editCategoryNamed', { name: category.name_ar })} onClick={() => setEditingCategory(category)}>
                     <Pencil size={18} />
                   </IconButton>
                 </div>
@@ -212,7 +212,7 @@ function ItemCard({ item, onEdit }: { item: MenuItem; onEdit: () => void }) {
           {i18n.t('catalog.featured')}
         </label>
         <div className="ms-auto flex gap-4">
-          <IconButton variant="quiet" label={i18n.t('catalog.editItem')} onClick={onEdit}>
+          <IconButton variant="quiet" label={i18n.t('catalog.editItemNamed', { name: item.name_ar })} onClick={onEdit}>
             <Pencil size={18} />
           </IconButton>
           <IconButton variant="quiet" label={i18n.t('catalog.retire')} onClick={() => setConfirming(true)} className="text-danger">
@@ -357,15 +357,9 @@ function ItemEditor({
           </label>
         </div>
 
-        <Field label={i18n.t('catalog.name')}>
-          <TextField value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
-        </Field>
-        <Field label={i18n.t('catalog.nameEn')}>
-          <TextField value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
-        </Field>
-        <Field label={i18n.t('catalog.description')}>
-          <TextField value={descAr} onChange={(e) => setDescAr(e.target.value)} />
-        </Field>
+        <TextField label={i18n.t('catalog.name')} value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
+        <TextField label={i18n.t('catalog.nameEn')} value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
+        <TextField label={i18n.t('catalog.description')} value={descAr} onChange={(e) => setDescAr(e.target.value)} />
         <div className="grid grid-cols-2 gap-12">
           <Field label={i18n.t('catalog.category')}>
             <select
@@ -378,9 +372,7 @@ function ItemEditor({
               ))}
             </select>
           </Field>
-          <Field label={i18n.t('catalog.price')}>
-            <TextField inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} dir="ltr" className="text-end" />
-          </Field>
+          <TextField label={i18n.t('catalog.price')} inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} dir="ltr" className="text-end" />
         </div>
         <div className="flex gap-20">
           <label className="flex items-center gap-8 text-ar-base">
@@ -436,12 +428,8 @@ function CategoryEditor({ category, onClose }: { category: Category | null; onCl
   return (
     <Modal title={category ? i18n.t('catalog.editCategory') : i18n.t('catalog.addCategory')} onClose={onClose}>
       <div className="flex flex-col gap-12">
-        <Field label={i18n.t('catalog.categoryName')}>
-          <TextField value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
-        </Field>
-        <Field label={i18n.t('catalog.categoryNameEn')}>
-          <TextField value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
-        </Field>
+        <TextField label={i18n.t('catalog.categoryName')} value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
+        <TextField label={i18n.t('catalog.categoryNameEn')} value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
         {error ? (
           <span role="alert" className="text-ar-sm text-danger">
             {error}

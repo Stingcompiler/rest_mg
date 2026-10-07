@@ -8,7 +8,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { MenuItemCard } from '@/components/menu/menu';
+import { MenuItemCard, MenuManagementRow } from '@/components/menu/menu';
 import { OrderCard } from '@/components/orders/orders';
 import { Toggle } from '@/components/primitives/controls';
 import { destinationAfterLogin } from '@/lib/http';
@@ -93,6 +93,19 @@ describe('the catalogue for a screen reader (U10, U11)', () => {
 describe('the menu screen on a phone (K1)', () => {
   it('wraps its bulk-price bar instead of running off the screen', () => {
     expect(menu).toMatch(/className="flex flex-none flex-wrap items-center gap-12 border-b border-line bg-surface px-16 py-14"/);
+  });
+});
+
+describe('a menu row on a phone (found verifying batch 31)', () => {
+  it('puts the name on its own line, so the switch stays inside the card', () => {
+    const html = renderToStaticMarkup(
+      createElement(MenuManagementRow, { name: 'كبدة إسكندراني', price: '15,000', stateLabel: 'متاح', available: true, toggleLabel: 'x', onToggle: () => {} } as never),
+    );
+    expect(classes(html)).toMatch(/\bflex-wrap\b/);
+    expect(html).toMatch(/class="[^"]*\bbasis-full\b[^"]*\bsm:basis-0\b/);
+    // The till's own menu screen draws its rows itself, editable price and all.
+    expect(menu).toMatch(/className="flex flex-wrap items-center gap-x-16 gap-y-10 rounded-lg border border-line bg-surface p-14"/);
+    expect(menu).toMatch(/'min-w-0 flex-1 basis-full text-ar-md font-medium text-text sm:basis-0'/);
   });
 });
 

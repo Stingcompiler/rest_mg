@@ -6,8 +6,9 @@ import { direction, type Direction, type Locale, type Numerals } from './config'
 import { plural, translate, type MessageKey, type TranslateParams } from './catalog';
 import { formatInteger, formatMoney } from './format';
 import {
+  defaultNumeralsFor,
   readLocale,
-  readNumerals,
+  readStoredNumerals,
   writeLocale,
   writeNumerals,
 } from './preferences';
@@ -37,7 +38,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   // Initialised from localStorage on the first client render, matching what the
   // pre-paint bootstrap already applied to <html>.
   const [locale, setLocaleState] = useState<Locale>(() => readLocale());
-  const [numerals, setNumeralsState] = useState<Numerals>(() => readNumerals());
+  // A choice once made stands; until then the digits follow the language
+  // (batch 32).
+  const [numeralsChoice, setNumeralsChoice] = useState<Numerals | null>(() => readStoredNumerals());
+  const numerals = numeralsChoice ?? defaultNumeralsFor(locale);
 
   // Keep <html lang/dir> tied to the locale React actually rendered with.
   //
@@ -60,7 +64,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setNumerals = useCallback((next: Numerals) => {
-    setNumeralsState(next);
+    setNumeralsChoice(next);
     writeNumerals(next);
   }, []);
 

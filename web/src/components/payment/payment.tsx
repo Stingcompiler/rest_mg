@@ -51,7 +51,7 @@ export function PaymentMethodCard({
       {icon ? <span>{icon}</span> : null}
       <div className="flex flex-col gap-2">
         <span className="text-ar-lg font-semibold">{label}</span>
-        {hint ? <span className="text-ar-sm opacity-85">{hint}</span> : null}
+        {hint ? <span className="text-ar-sm">{hint}</span> : null}
       </div>
     </button>
   );

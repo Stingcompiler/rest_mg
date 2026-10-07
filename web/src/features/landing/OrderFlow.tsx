@@ -657,7 +657,7 @@ function ClosedNotice() {
         ? label('landing.closed.opensTomorrow', { time: state.opens })
         : label('landing.closed.opensOn', { day: dayName(state.when, 'ar'), time: state.opens });
   return (
-    <p role="note" className="flex items-start gap-8 rounded-md border border-warning bg-warning-tint px-12 py-10 text-ar-sm text-text">
+    <p role="note" className="flex items-start gap-8 rounded-lg border border-warning bg-warning-tint px-12 py-10 text-ar-sm text-text">
       <Clock size={18} className="mt-2 flex-none text-warning" />
       <span>{label('landing.closedNotice', { when })}</span>
     </p>

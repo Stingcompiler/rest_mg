@@ -271,7 +271,7 @@ function Landing({ data }: { data: Landing }) {
       {/* Order CTA + contact */}
       <section id="order" className="scroll-mt-header border-t border-line">
         <div className="mx-auto max-w-6xl px-16 py-40 sm:px-24">
-          <div className="ember flex animate-ember flex-col items-center gap-16 rounded-md p-24 text-center text-on-ink sm:p-40">
+          <div className="ember flex animate-ember flex-col items-center gap-16 rounded-lg p-24 text-center text-on-ink sm:p-40">
             <h2 className="max-w-2xl font-display text-ar-2xl font-semibold sm:text-ar-3xl">{label('landing.orderCtaTitle')}</h2>
             <p className="max-w-xl text-ar-base text-on-ink-muted">{label('landing.orderCtaSubtitle')}</p>
             <div className="flex flex-wrap justify-center gap-12">
@@ -703,7 +703,7 @@ function ItemCard({ item }: { item: LandingItem }) {
     // hairline; a card from 640px up (batch 19). The whole dish opens its
     // details, through the name's button stretched over it; the "+" sits
     // above that stretch, so it still adds (batch 20).
-    <article className="group relative flex flex-row gap-12 border-b border-line py-16 sm:flex-col sm:gap-0 sm:overflow-hidden sm:rounded-md sm:border sm:bg-bg sm:py-0 sm:shadow-card sm:transition sm:hover:shadow-raised">
+    <article className="group relative flex flex-row gap-12 border-b border-line py-16 sm:flex-col sm:gap-0 sm:overflow-hidden sm:rounded-lg sm:border sm:bg-bg sm:py-0 sm:shadow-card sm:transition sm:hover:shadow-raised">
       <DishPhoto item={item} className="order-last size-row-image rounded-md sm:order-first sm:h-card-image sm:w-full sm:rounded-none" />
       <div className="flex min-w-0 flex-1 flex-col gap-6 sm:p-18">
         <div className="flex items-start justify-between gap-8">
@@ -850,7 +850,7 @@ function FeaturedCard({ item }: { item: LandingItem }) {
   const cart = useCart();
   const [open, setOpen] = useState(false);
   return (
-    <article className="group relative flex h-full w-[15rem] flex-none flex-col overflow-hidden rounded-md border border-line bg-surface shadow-card transition hover:shadow-raised sm:w-[16.5rem]">
+    <article className="group relative flex h-full w-[15rem] flex-none flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-card transition hover:shadow-raised sm:w-[16.5rem]">
       <DishPhoto item={item} className="h-[10rem]" />
       <div className="flex flex-1 flex-col gap-6 p-18">
         <div className="flex items-center justify-between gap-8">
@@ -942,7 +942,7 @@ function LandingSkeleton() {
         <div className="h-8 w-thumb-w animate-pulse rounded-xs bg-surface-2" />
         <div className="mt-18 grid grid-cols-1 gap-14 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-card-skeleton animate-pulse rounded-md bg-surface-2" />
+            <div key={i} className="h-card-skeleton animate-pulse rounded-lg bg-surface-2" />
           ))}
         </div>
       </div>

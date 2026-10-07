@@ -132,6 +132,7 @@ describe('details', () => {
 
   it("shapes the landing skeleton like the cards it stands in for", () => {
     const skeleton = /function LandingSkeleton[\s\S]*?\n\}/.exec(landing)?.[0] ?? '';
-    expect(skeleton).toMatch(/h-card-skeleton[^"]*\brounded-md\b/);
+    // The card corner is 12px since batch 32.
+    expect(skeleton).toMatch(/h-card-skeleton[^"]*\brounded-lg\b/);
   });
 });

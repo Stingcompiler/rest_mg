@@ -48,9 +48,23 @@ export function writeLocale(locale: Locale): void {
   write(STORAGE_KEYS.locale, locale);
 }
 
-export function readNumerals(): Numerals {
+/**
+ * The digits a language reads in until someone chooses (batch 32): Arabic-
+ * Indic in Arabic, Western in English. The setting used to default to
+ * Arabic-Indic whatever the language, so English read «٢ delivery orders».
+ */
+export function defaultNumeralsFor(locale: Locale): Numerals {
+  return locale === 'en' ? 'western' : DEFAULT_NUMERALS;
+}
+
+/** The numerals someone chose, or null if they never did. */
+export function readStoredNumerals(): Numerals | null {
   const stored = read(STORAGE_KEYS.numerals);
-  return isNumerals(stored) ? stored : DEFAULT_NUMERALS;
+  return isNumerals(stored) ? stored : null;
+}
+
+export function readNumerals(locale: Locale = readLocale()): Numerals {
+  return readStoredNumerals() ?? defaultNumeralsFor(locale);
 }
 
 export function writeNumerals(numerals: Numerals): void {

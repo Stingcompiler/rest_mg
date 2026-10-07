@@ -22,14 +22,12 @@ const config: Config = {
       colors: {
         bg: {
           DEFAULT: 'var(--color-bg)',
-          rail: 'var(--color-bg-rail)',
           sunken: 'var(--color-bg-sunken)',
         },
         surface: {
           DEFAULT: 'rgb(var(--color-surface-rgb) / <alpha-value>)',
           2: 'var(--color-surface-2)',
           3: 'var(--color-surface-3)',
-          quiet: 'var(--color-surface-quiet)',
         },
         line: {
           DEFAULT: 'rgb(var(--color-border-rgb) / <alpha-value>)',
@@ -238,7 +236,12 @@ const config: Config = {
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
         xl: 'var(--radius-xl)',
-        pill: 'var(--radius-pill)',
+      },
+
+      // A bare `border` takes the palette's border colour, never Tailwind's
+      // default grey #E5E7EB (batch 32).
+      borderColor: {
+        DEFAULT: 'var(--color-border)',
       },
 
       borderWidth: {

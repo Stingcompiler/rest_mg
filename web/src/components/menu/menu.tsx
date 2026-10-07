@@ -57,7 +57,8 @@ export function CategoryTab({ label, count, active, onClick }: CategoryTabProps)
       )}
     >
       <span>{label}</span>
-      {count ? <Numeric className="text-num-xs opacity-70">{count}</Numeric> : null}
+      {/* Full colour: at 70% opacity an unselected tab's count read 3.19:1 (batch 32). */}
+      {count ? <Numeric className="text-num-xs">{count}</Numeric> : null}
     </button>
   );
 }

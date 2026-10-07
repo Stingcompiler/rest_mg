@@ -24,10 +24,13 @@ import ar from '../../../i18n/messages/ar.json';
 const flow = readFileSync(resolve(__dirname, '../OrderFlow.tsx'), 'utf-8');
 const landing = readFileSync(resolve(__dirname, '../LandingClient.tsx'), 'utf-8');
 
+/** A top-level function's text: from its name up to the next top-level function. */
 function fn(name: string, source: string): string {
-  const body = new RegExp(`function ${name}\\b[\\s\\S]*?\\n\\}`).exec(source)?.[0];
-  expect(body, `function ${name}`).toBeDefined();
-  return body!;
+  const start = source.search(new RegExp(`(?:^|\\n)(?:export )?function ${name}\\b`));
+  expect(start, `function ${name}`).toBeGreaterThanOrEqual(0);
+  const rest = source.slice(start + 1);
+  const next = rest.search(/\n(?:export )?function [A-Za-z]/);
+  return next === -1 ? rest : rest.slice(0, next);
 }
 
 describe('a pickup order', () => {
@@ -64,7 +67,7 @@ describe('totals', () => {
 
 describe('the confirmation', () => {
   it('says it once: the header names the step, the body says it went through', () => {
-    expect(flow).toMatch(/step === 'done' \? label\('landing\.confirm\.header'\)/);
+    expect(flow).toMatch(/step === 'done'\s*\?\s*label\('landing\.confirm\.header'\)/);
     expect(fn('DoneStep', flow)).toMatch(/label\('landing\.confirm\.title'\)/);
   });
 });
@@ -84,7 +87,8 @@ describe('one counter', () => {
 describe('the footer', () => {
   it('gives every link a target of 44px or more', () => {
     const footer = fn('Footer', landing);
-    const links = [...footer.matchAll(/<(?:button|a)\b[^>]*className="([^"]*)"/g)].map((m) => m[1]!);
+    // Each <button> or <a>, and the first className after it.
+    const links = [...footer.matchAll(/<(?:button|a)\b[\s\S]{0,300}?className="([^"]*)"/g)].map((m) => m[1]!);
     expect(links.length).toBeGreaterThanOrEqual(3);
     for (const classes of links) expect(classes).toMatch(/\bmin-h-control-stepper\b/);
   });

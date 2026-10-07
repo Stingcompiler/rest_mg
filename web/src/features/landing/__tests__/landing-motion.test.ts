@@ -109,7 +109,8 @@ describe('the header', () => {
 
 describe('answers to a tap', () => {
   it('pops the counter each time it changes', () => {
-    expect(fn('AddControl')).toMatch(/key=\{qty\}[^>]*className="[^"]*\banimate-pop\b/);
+    // The counter is the shared QtyPill since batch 30.
+    expect(flow.slice(flow.indexOf('export function QtyPill'))).toMatch(/key=\{qty\}[^>]*className="[^"]*\banimate-pop\b/);
   });
 
   it('slides the cart bar in', () => {

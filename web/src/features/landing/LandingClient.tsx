@@ -38,7 +38,7 @@ import { prefersReducedMotion, scrollBehavior } from '@/lib/motion';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { browserStorage } from './browserStorage';
 import { forgetOrder, recallOrder, type PlacedOrder } from './lastOrder';
-import { CartProvider, ORDER_PLACED_EVENT, useCart } from './OrderFlow';
+import { CartProvider, ORDER_PLACED_EVENT, QtyPill, useCart } from './OrderFlow';
 import { activeSection, readingLine } from './menuSpy';
 import { pageLoadFailure, type PageLoadFailure } from './pageLoad';
 import { FINISHED_STATUSES, customerStatusKey } from './statusText';
@@ -174,6 +174,7 @@ function Landing({ data }: { data: Landing }) {
       slug={data.slug}
       menu={allItems}
       pickupAddress={data.address_ar || undefined}
+      hours={data.hours}
     >
       <main dir="rtl" lang="ar" className="min-h-screen bg-bg text-text">
       <TopBar data={data} ordering={ordering} onOrder={() => scrollTo(ordering ? 'menu' : 'order')} />
@@ -690,32 +691,8 @@ function AddControl({ item }: { item: LandingItem }) {
       </IconButton>
     );
   }
-  return (
-    <div className="flex flex-none items-center gap-2 rounded-full border border-accent p-2">
-      <IconButton
-        variant="accent"
-        label={label('pos.cart.qtyLess', { name: item.name_ar })}
-        onClick={() => cart.setQty(item.id, qty - 1)}
-        shape="circle"
-      >
-        <Minus size={18} />
-      </IconButton>
-      <span className="numeric min-w-icon-lg text-center text-num-base font-semibold text-accent" aria-live="polite">
-        {/* Re-mounted on every change, so it pops each time (batch 28). */}
-        <span key={qty} className="inline-block animate-pop">
-          {int(qty)}
-        </span>
-      </span>
-      <IconButton
-        variant="accent"
-        label={label('pos.cart.qtyMore', { name: item.name_ar })}
-        onClick={() => cart.add(item)}
-        shape="circle"
-      >
-        <Plus size={18} />
-      </IconButton>
-    </div>
-  );
+  // The same pill as in the cart (batch 30).
+  return <QtyPill qty={qty} name={item.name_ar} onLess={() => cart.setQty(item.id, qty - 1)} onMore={() => cart.add(item)} />;
 }
 
 function ItemCard({ item }: { item: LandingItem }) {
@@ -924,10 +901,10 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
 
         <div className="flex flex-col gap-8">
           <span className="font-display text-ar-md font-semibold">{label('landing.footerLinks')}</span>
-          <button type="button" onClick={() => onNavigate('menu')} className="text-start text-ar-sm text-on-ink-muted hover:text-on-ink">
+          <button type="button" onClick={() => onNavigate('menu')} className="inline-flex min-h-control-stepper items-center text-start text-ar-sm text-on-ink-muted hover:text-on-ink">
             {label('landing.ourMenu')}
           </button>
-          <button type="button" onClick={() => onNavigate('order')} className="text-start text-ar-sm text-on-ink-muted hover:text-on-ink">
+          <button type="button" onClick={() => onNavigate('order')} className="inline-flex min-h-control-stepper items-center text-start text-ar-sm text-on-ink-muted hover:text-on-ink">
             {label('landing.orderNow')}
           </button>
         </div>
@@ -935,7 +912,7 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
         <div className="flex flex-col gap-8">
           <span className="font-display text-ar-md font-semibold">{label('landing.footerContact')}</span>
           {data.phone ? (
-            <a href={`tel:${data.phone}`} className="flex items-center gap-8 text-ar-sm text-on-ink-muted hover:text-on-ink">
+            <a href={`tel:${data.phone}`} className="flex min-h-control-stepper items-center gap-8 text-ar-sm text-on-ink-muted hover:text-on-ink">
               <Phone size={15} />
               <span className="numeric" dir="ltr">{data.phone}</span>
             </a>

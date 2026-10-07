@@ -91,7 +91,8 @@ describe('a round IconButton', () => {
 
 describe('the public page stepper', () => {
   it('holds its round buttons inside its border', () => {
-    const landing = readFileSync(resolve(__dirname, '../../features/landing/LandingClient.tsx'), 'utf-8');
-    expect(landing).toMatch(/<div className="flex flex-none items-center gap-2 rounded-full border border-accent p-2">/);
+    // The shared QtyPill since batch 30.
+    const flow = readFileSync(resolve(__dirname, '../../features/landing/OrderFlow.tsx'), 'utf-8');
+    expect(flow).toMatch(/<div className="flex flex-none items-center gap-2 rounded-full border border-accent p-2">/);
   });
 });

@@ -81,8 +81,10 @@ describe('a dish', () => {
     const control = fn('AddControl');
     expect(control).toMatch(/cart\.lines\.find/);
     expect(control).toMatch(/<Plus\b/);
-    expect(control).toMatch(/<Minus\b/);
     expect(control).toMatch(/cart\.setQty/);
+    // The counter is the shared QtyPill since batch 30, with its own "−" and "+".
+    expect(control).toMatch(/<QtyPill\b/);
+    expect(flow.slice(flow.indexOf('export function QtyPill'))).toMatch(/<Minus\b[\s\S]*<Plus\b/);
     expect(fn('ItemCard')).toMatch(/<AddControl\b/);
   });
 });

@@ -14,9 +14,9 @@
  * a full sheet, which walks cart → form → confirmation in place.
  */
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2, Loader2 } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Trash2, X, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 
-import { formatInteger, formatMoney, t } from '@/i18n';
+import { TIME_ZONE, formatInteger, formatMoney, t } from '@/i18n';
 import { IconButton } from '@/components/primitives/controls';
 import { normalizeSudanPhone } from '@/lib/phone';
 import { browserStorage } from './browserStorage';
@@ -25,6 +25,7 @@ import { rememberOrder } from './lastOrder';
 import { validateOrderForm, type Fulfilment, type OrderField } from './orderForm';
 import { uuid4 } from '@/lib/uuid';
 import { useModalDialog } from '@/lib/useModalDialog';
+import { dayName, openState, type HoursRow } from '@/lib/hours';
 
 const LOCALE = 'ar' as const;
 const NUMERALS = 'arabic-indic' as const;
@@ -54,6 +55,8 @@ interface CartApi {
   slug?: string;
   /** Where a pickup is collected from: the restaurant's address. */
   pickupAddress?: string;
+  /** The opening hours, to say when an order sent while closed is confirmed (batch 30). */
+  hours: HoursRow[];
   lines: CartLine[];
   count: number;
   subtotalMinor: bigint;
@@ -81,11 +84,13 @@ export function CartProvider({
   slug,
   menu,
   pickupAddress,
+  hours = [],
 }: {
   children: React.ReactNode;
   ordering: boolean;
   slug?: string;
   pickupAddress?: string;
+  hours?: HoursRow[];
   /** Every dish on the page, to rebuild a saved cart from (batch 14). */
   menu?: OrderableItem[];
 }) {
@@ -106,6 +111,7 @@ export function CartProvider({
       ordering,
       slug,
       pickupAddress,
+      hours,
       lines,
       count,
       subtotalMinor,
@@ -135,7 +141,7 @@ export function CartProvider({
         setSheetOpen(true);
       },
     };
-  }, [lines, ordering, slug, pickupAddress]);
+  }, [lines, ordering, slug, pickupAddress, hours]);
 
   return (
     <CartContext.Provider value={api}>
@@ -168,7 +174,10 @@ function CartBar({ onOpen }: { onOpen: () => void }) {
         </span>
         {label('landing.cart.view')}
       </span>
-      <span className="numeric text-num-lg font-bold">{money(cart.subtotalMinor)}</span>
+      <span>
+        <span className="numeric text-num-lg font-bold">{money(cart.subtotalMinor)}</span>{' '}
+        <span className="text-ar-sm text-on-ink-muted">{label('landing.currency')}</span>
+      </span>
     </button>
   );
 }
@@ -196,7 +205,13 @@ function OrderSheet({ onClose }: { onClose: () => void }) {
       >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
           <span id="order-sheet-title" className="text-ar-lg font-bold">
-            {step === 'done' ? label('landing.confirm.title') : step === 'form' ? label('landing.form.title') : label('landing.cart.title')}
+            {/* The step's name; the body says what happened (batch 30: the
+                confirmation said «تم استلام طلبك بنجاح» twice). */}
+            {step === 'done'
+              ? label('landing.confirm.header')
+              : step === 'form'
+                ? draft.fulfilment === 'pickup' ? label('landing.form.titlePickup') : label('landing.form.title')
+                : label('landing.cart.title')}
           </span>
           <IconButton variant="quiet" label={label('landing.confirm.close')} onClick={onClose}>
             <X size={22} />
@@ -247,24 +262,17 @@ function CartStep({ onCheckout }: { onCheckout: () => void }) {
                 {/* Two lines, not an ellipsis: the steppers are thumb-sized now and
                     leave a phone little width for the name. */}
                 <span className="line-clamp-2 text-ar-base font-medium leading-snug">{item.name_ar}</span>
-                <span className="numeric text-num-sm text-text-muted">{money(BigInt(item.price_minor))}</span>
+                <span className="text-ar-sm text-text-muted">
+                  <span className="numeric">{money(BigInt(item.price_minor))}</span> {label('landing.currency')}
+                </span>
               </div>
               <div className="flex flex-none items-center gap-4">
-                <IconButton
-                  label={label('pos.cart.qtyLess', { name: item.name_ar })}
-                  onClick={() => cart.setQty(item.id, qty - 1)}
-                  shape="circle"
-                >
-                  <Minus size={16} />
-                </IconButton>
-                <span className="numeric min-w-icon-lg text-center text-num-base font-semibold">{int(qty)}</span>
-                <IconButton
-                  label={label('pos.cart.qtyMore', { name: item.name_ar })}
-                  onClick={() => cart.setQty(item.id, qty + 1)}
-                  shape="circle"
-                >
-                  <Plus size={16} />
-                </IconButton>
+                <QtyPill
+                  qty={qty}
+                  name={item.name_ar}
+                  onLess={() => cart.setQty(item.id, qty - 1)}
+                  onMore={() => cart.setQty(item.id, qty + 1)}
+                />
                 <IconButton
                   variant="quiet"
                   label={label('landing.cart.remove')}
@@ -279,14 +287,19 @@ function CartStep({ onCheckout }: { onCheckout: () => void }) {
         </div>
       </div>
       <div className="flex flex-none flex-col gap-12 border-t border-line bg-surface-2 p-16">
+        <ClosedNotice />
         <div className="flex items-center justify-between text-ar-lg font-bold">
           <span>{label('landing.cart.total')}</span>
-          <span className="numeric text-accent">{money(cart.subtotalMinor)}</span>
+          {/* Gold, like every price on the page, and with its currency (batch 30). */}
+          <span>
+            <span className="numeric text-gold">{money(cart.subtotalMinor)}</span>{' '}
+            <span className="text-ar-sm font-medium text-text-muted">{label('landing.currency')}</span>
+          </span>
         </div>
         <button
           type="button"
           onClick={onCheckout}
-          className="inline-flex min-h-control-xl items-center justify-center gap-8 rounded-full bg-accent text-ar-md font-semibold text-text-on-accent transition hover:opacity-90"
+          className="inline-flex min-h-control-xl items-center justify-center gap-8 rounded-md bg-accent text-ar-md font-semibold text-text-on-accent transition hover:bg-accent-hover"
         >
           <ShoppingBag size={20} />
           {label('landing.cart.checkout')}
@@ -511,10 +524,14 @@ function FormStep({
           <textarea className={`${inputClass} py-10`} value={draft.notes} onChange={(e) => set('notes')(e.target.value)} rows={2} />
         </Field>
 
+        <ClosedNotice />
         <div className="flex flex-col gap-6 rounded-md bg-surface-2 p-12">
           <div className="flex items-center justify-between text-ar-base font-semibold">
             <span>{label('landing.cart.total')}</span>
-            <span className="numeric text-gold">{money(cart.subtotalMinor)}</span>
+            <span>
+              <span className="numeric text-gold">{money(cart.subtotalMinor)}</span>{' '}
+              <span className="text-ar-sm font-medium text-text-muted">{label('landing.currency')}</span>
+            </span>
           </div>
           <span className="text-ar-sm text-text-muted">
             {label(draft.fulfilment === 'pickup' ? 'landing.form.payAtCounter' : 'landing.form.payOnDelivery')}
@@ -535,7 +552,7 @@ function FormStep({
             className="inline-flex min-h-control-xl flex-1 items-center justify-center gap-8 rounded-md bg-accent text-ar-md font-semibold text-text-on-accent transition hover:bg-accent-hover disabled:opacity-60"
           >
             {sending ? <Loader2 size={20} className="animate-spin" /> : <ShoppingBag size={20} />}
-            {sending ? label('landing.form.sending') : label('landing.form.submit')}
+            {sending ? label('landing.form.sending') : label(draft.fulfilment === 'pickup' ? 'landing.form.submitPickup' : 'landing.form.submit')}
           </button>
           <button type="button" onClick={onBack} disabled={sending} className="inline-flex min-h-control-xl items-center justify-center rounded-md border border-line px-18 text-ar-sm text-text-muted">
             {label('landing.form.back')}
@@ -565,7 +582,10 @@ function DoneStep({ placed, onClose }: { placed: PlacedSummary | null; onClose: 
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-ar-sm text-text-muted">{label('landing.confirm.total')}</span>
-            <span className="numeric text-num-lg font-semibold text-gold">{money(placed.totalMinor)}</span>
+            <span>
+              <span className="numeric text-num-lg font-semibold text-gold">{money(placed.totalMinor)}</span>{' '}
+              <span className="text-ar-sm text-text-muted">{label('landing.currency')}</span>
+            </span>
           </div>
         </div>
       ) : null}
@@ -586,4 +606,60 @@ function DoneStep({ placed, onClose }: { placed: PlacedSummary | null; onClose: 
     </div>
   );
 
+}
+
+/**
+ * The counter for a dish: "−", how many, "+", in one pill (batch 30). The dish
+ * card and the cart use this one; the cart had grey framed circles of its own.
+ * The number pops each time it changes (batch 28).
+ */
+export function QtyPill({
+  qty,
+  name,
+  onLess,
+  onMore,
+}: {
+  qty: number;
+  name: string;
+  onLess: () => void;
+  onMore: () => void;
+}) {
+  return (
+    <div className="flex flex-none items-center gap-2 rounded-full border border-accent p-2">
+      <IconButton variant="accent" shape="circle" label={label('pos.cart.qtyLess', { name })} onClick={onLess}>
+        <Minus size={18} />
+      </IconButton>
+      <span className="numeric min-w-icon-lg text-center text-num-base font-semibold text-accent" aria-live="polite">
+        <span key={qty} className="inline-block animate-pop">
+          {int(qty)}
+        </span>
+      </span>
+      <IconButton variant="accent" shape="circle" label={label('pos.cart.qtyMore', { name })} onClick={onMore}>
+        <Plus size={18} />
+      </IconButton>
+    </div>
+  );
+}
+
+/**
+ * Said in the cart and on the form when the restaurant is closed: the order
+ * still goes through, and is confirmed once it opens (batch 30). The page
+ * said «مغلق الآن» at the top and took the order without a word about when.
+ */
+function ClosedNotice() {
+  const cart = useCart();
+  const state = openState(cart.hours, new Date(), TIME_ZONE);
+  if (!state || state.open) return null;
+  const when =
+    state.when === 'today'
+      ? label('landing.closed.opensToday', { time: state.opens })
+      : state.when === 'tomorrow'
+        ? label('landing.closed.opensTomorrow', { time: state.opens })
+        : label('landing.closed.opensOn', { day: dayName(state.when, 'ar'), time: state.opens });
+  return (
+    <p role="note" className="flex items-start gap-8 rounded-md border border-warning bg-warning-tint px-12 py-10 text-ar-sm text-text">
+      <Clock size={18} className="mt-2 flex-none text-warning" />
+      <span>{label('landing.closedNotice', { when })}</span>
+    </p>
+  );
 }

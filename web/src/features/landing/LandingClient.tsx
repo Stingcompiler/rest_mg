@@ -18,13 +18,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ChevronDown,
-  Clock,
   MapPin,
   Minus,
   Phone,
   Plus,
   ShoppingBag,
-  Sparkles,
   Utensils,
   X,
 } from 'lucide-react';
@@ -269,12 +267,15 @@ function Landing({ data }: { data: Landing }) {
       <InfoBand data={data} ordering={ordering} className="lg:hidden" />
 
       {/* Order CTA + contact */}
-      <section id="order" className="scroll-mt-header border-t border-line">
-        <div className="mx-auto max-w-6xl px-16 py-40 sm:px-24">
-          <div className="ember flex animate-ember flex-col items-center gap-16 rounded-lg p-24 text-center text-on-ink sm:p-40">
-            <h2 className="max-w-2xl font-display text-ar-2xl font-semibold sm:text-ar-3xl">{label('landing.orderCtaTitle')}</h2>
+      {/* A band across the page, the type set to the start (batch 35): it was
+          a rounded ember box in the middle of the page with a stock line. */}
+      <section id="order" className="scroll-mt-header bg-ink ember animate-ember text-on-ink">
+        <div className="mx-auto flex max-w-6xl flex-col gap-24 px-16 py-40 sm:px-24 lg:flex-row lg:items-end lg:justify-between lg:py-56">
+          <div className="flex max-w-2xl flex-col gap-12">
+            <h2 className="font-display text-ar-2xl font-semibold sm:text-ar-3xl">{label('landing.orderCtaTitle')}</h2>
             <p className="max-w-xl text-ar-base text-on-ink-muted">{label('landing.orderCtaSubtitle')}</p>
-            <div className="flex flex-wrap justify-center gap-12">
+          </div>
+          <div className="flex flex-none flex-wrap gap-12">
               {data.whatsapp ? (
                 <a
                   href={`https://wa.me/${data.whatsapp.replace(/[^\d]/g, '')}`}
@@ -293,7 +294,6 @@ function Landing({ data }: { data: Landing }) {
                   {label('landing.call')}
                 </a>
               ) : null}
-            </div>
           </div>
         </div>
       </section>
@@ -435,7 +435,7 @@ function DishMarquee({ menu }: { menu: LandingCategory[] }) {
             {names.map((name, index) => (
               <span key={index} className="flex items-center gap-24 px-12 font-display text-ar-lg font-semibold sm:text-ar-xl">
                 {name}
-                <Sparkles size={16} className="text-gold-soft" />
+                <span className="size-6 rotate-45 bg-gold-soft" />
               </span>
             ))}
           </div>
@@ -613,10 +613,10 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
                     className="scroll-mt-menu pt-28 lg:scroll-mt-header-gap lg:pt-0 lg:[&:not(:first-child)]:pt-40"
                   >
                     <h3 className="font-display text-ar-xl font-semibold">{category.name_ar}</h3>
-                    <div className="mt-8 grid grid-cols-1 sm:mt-16 sm:grid-cols-2 sm:gap-18 xl:grid-cols-3">
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 sm:gap-x-40 sm:mt-16">
                       {category.items.map((item, index) => (
-                        // A row at a time, the cards of a row a beat apart.
-                        <Reveal key={item.id} delay={(index % 3) * 80} className="grid">
+                        // A row at a time, its two dishes a beat apart.
+                        <Reveal key={item.id} delay={(index % 2) * 80} className="grid">
                           <ItemCard item={item} />
                         </Reveal>
                       ))}
@@ -699,16 +699,17 @@ function ItemCard({ item }: { item: LandingItem }) {
   const cart = useCart();
   const [open, setOpen] = useState(false);
   return (
-    // A row on a phone, text first and the photo beside it, divided by a
-    // hairline; a card from 640px up (batch 19). The whole dish opens its
-    // details, through the name's button stretched over it; the "+" sits
-    // above that stretch, so it still adds (batch 20).
-    <article className="group relative flex flex-row gap-12 border-b border-line py-16 sm:flex-col sm:gap-0 sm:overflow-hidden sm:rounded-lg sm:border sm:bg-bg sm:py-0 sm:shadow-card sm:transition sm:hover:shadow-raised">
-      <DishPhoto item={item} className="order-last size-row-image rounded-md sm:order-first sm:h-card-image sm:w-full sm:rounded-none" />
-      <div className="flex min-w-0 flex-1 flex-col gap-6 sm:p-18">
-        <div className="flex items-start justify-between gap-8">
+    // A line of a printed menu, at every size (batch 35): the name, a dotted
+    // leader, the price; the description under them; a hairline between
+    // dishes. It was a filled, bordered, shadowed card from 640px, the box
+    // every generated page repeats. The whole dish opens its details, through
+    // the name's button stretched over it; the "+" sits above that stretch,
+    // so it still adds (batch 20).
+    <article className="group relative flex flex-row items-start gap-14 border-b border-line py-18">
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <div className="flex items-baseline gap-8">
           {/* Under its category's h3 (batch 19). */}
-          <h4 className="text-ar-md font-semibold">
+          <h4 className="min-w-0 text-ar-md font-semibold transition group-hover:text-accent">
             <button
               type="button"
               onClick={() => setOpen(true)}
@@ -720,15 +721,19 @@ function ItemCard({ item }: { item: LandingItem }) {
             </button>
           </h4>
           {item.is_available ? null : <SoldOut />}
-        </div>
-        {item.description_ar ? (
-          <p className="line-clamp-2 text-ar-sm text-text-muted">{item.description_ar}</p>
-        ) : null}
-        <div className="mt-auto flex items-center justify-between gap-8 pt-4">
+          <span aria-hidden="true" className="flex-1 border-b border-dotted border-line-strong" />
           <Price minor={item.price_minor} />
-          <div className="relative z-10">{cart.ordering ? <AddControl item={item} /> : null}</div>
+        </div>
+        <div className="flex items-start justify-between gap-12">
+          {item.description_ar ? (
+            <p className="line-clamp-2 text-ar-sm text-text-muted">{item.description_ar}</p>
+          ) : (
+            <span />
+          )}
+          <div className="relative z-10 flex-none">{cart.ordering ? <AddControl item={item} /> : null}</div>
         </div>
       </div>
+      <DishPhoto item={item} className="size-row-image rounded-md" />
       {open ? <DishDetails item={item} onClose={() => setOpen(false)} /> : null}
     </article>
   );
@@ -792,10 +797,12 @@ function InfoBand({ data, ordering, className }: { data: Landing; ordering: bool
   return (
     <section aria-label={label('landing.info.title')} className={className}>
       <div className="border-b border-line bg-surface">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-18 px-16 py-24 sm:px-24 lg:grid-cols-3 lg:gap-24 lg:py-28">
+        {/* Labelled columns between rules, as a menu's back page sets them
+            (batch 35); an icon in a circle headed each, the stock pattern. */}
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-18 px-16 py-24 sm:px-24 lg:grid-cols-3 lg:gap-0 lg:divide-x lg:divide-line lg:divide-x-reverse lg:py-28">
           {hours.length ? (
-            <Reveal>
-              <Fact icon={<Clock size={20} />} title={label('landing.hours')}>
+            <Reveal className="lg:px-24 lg:first:ps-0">
+              <Fact title={label('landing.hours')}>
                 {hours.map((row, index) => (
                   <span key={index} className="flex justify-between gap-12">
                     <span>{row.day_ar}</span>
@@ -808,15 +815,15 @@ function InfoBand({ data, ordering, className }: { data: Landing; ordering: bool
             </Reveal>
           ) : null}
           {ordering ? (
-            <Reveal delay={90}>
-              <Fact icon={<ShoppingBag size={20} />} title={label('landing.info.orderTitle')}>
+            <Reveal delay={90} className="lg:px-24 lg:first:ps-0">
+              <Fact title={label('landing.info.orderTitle')}>
                 <span>{label('landing.info.orderBody')}</span>
               </Fact>
             </Reveal>
           ) : null}
           {data.address_ar ? (
-            <Reveal delay={180}>
-              <Fact icon={<MapPin size={20} />} title={label('landing.info.whereTitle')}>
+            <Reveal delay={180} className="lg:px-24 lg:first:ps-0">
+              <Fact title={label('landing.info.whereTitle')}>
                 <span>{data.address_ar}</span>
                 {data.map_url ? (
                   <a href={data.map_url} className="w-fit font-medium text-accent">
@@ -832,16 +839,11 @@ function InfoBand({ data, ordering, className }: { data: Landing; ordering: bool
   );
 }
 
-function Fact({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function Fact({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-12">
-      <span className="flex size-control-md flex-none items-center justify-center rounded-full border border-gold-soft text-gold">
-        {icon}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-4 text-ar-sm text-text-muted">
-        <h3 className="text-ar-base font-semibold text-text">{title}</h3>
-        {children}
-      </div>
+    <div className="flex min-w-0 flex-col gap-6 text-ar-sm text-text-muted">
+      <h3 className="text-ar-sm font-semibold text-gold">{title}</h3>
+      {children}
     </div>
   );
 }
@@ -850,28 +852,25 @@ function FeaturedCard({ item }: { item: LandingItem }) {
   const cart = useCart();
   const [open, setOpen] = useState(false);
   return (
-    <article className="group relative flex h-full w-[15rem] flex-none flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-card transition hover:shadow-raised sm:w-[16.5rem]">
-      <DishPhoto item={item} className="h-[10rem]" />
-      <div className="flex flex-1 flex-col gap-6 p-18">
+    // The photo carries the pick, the words sit under it (batch 35). A box
+    // with a sparkles "featured" chip said what the section's title says.
+    <article className="group relative flex h-full w-[15rem] flex-none flex-col gap-12 sm:w-[16.5rem]">
+      <DishPhoto item={item} className="h-[10rem] rounded-lg" />
+      <div className="flex flex-1 flex-col gap-6 border-t border-gold-soft pt-12">
         <div className="flex items-center justify-between gap-8">
-          {/* The featured mark: gold on ink. */}
-          <span className="inline-flex items-center gap-4 rounded-sm bg-ink px-10 py-2 text-ar-xs font-semibold text-gold-soft">
-            <Sparkles size={13} />
-            {label('landing.featured')}
-          </span>
+          <h3 className="truncate font-display text-ar-lg font-semibold transition group-hover:text-accent">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-haspopup="dialog"
+              aria-label={label('landing.dishDetails', { name: item.name_ar })}
+              className="text-start after:absolute after:inset-0"
+            >
+              {item.name_ar}
+            </button>
+          </h3>
           {item.is_available ? null : <SoldOut />}
         </div>
-        <h3 className="truncate font-display text-ar-lg font-semibold">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-haspopup="dialog"
-            aria-label={label('landing.dishDetails', { name: item.name_ar })}
-            className="text-start after:absolute after:inset-0"
-          >
-            {item.name_ar}
-          </button>
-        </h3>
         {item.description_ar ? (
           <p className="line-clamp-1 text-ar-sm text-text-muted">{item.description_ar}</p>
         ) : null}

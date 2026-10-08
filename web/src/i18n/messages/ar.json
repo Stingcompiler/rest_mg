@@ -769,5 +769,18 @@
   "deliveries.kind.delivery": "توصيل",
   "deliveries.overdue": "ينتظر منذ أكثر من ساعة",
   "deliveries.reason.noShow": "لم يحضر الزبون",
-  "deliveries.awaitingKitchenPickup": "بانتظار المطبخ — يصير جاهزًا للاستلام عندما يُنهيه المطبخ"
+  "deliveries.awaitingKitchenPickup": "بانتظار المطبخ — يصير جاهزًا للاستلام عندما يُنهيه المطبخ",
+  "settings.password": "كلمة المرور",
+  "auth.changePassword": "تغيير كلمة المرور",
+  "auth.currentPassword": "كلمة المرور الحالية",
+  "auth.newPassword": "كلمة المرور الجديدة",
+  "auth.repeatPassword": "أعد كتابة الجديدة",
+  "auth.passwordsDiffer": "الكلمتان الجديدتان غير متطابقتين.",
+  "auth.passwordChanged": "تغيّرت كلمة المرور، وخرجت الأجهزة الأخرى. هذا الجهاز ما زال مسجّلًا.",
+  "manager.staff.ownPasswordInSettings": "كلمة مرورك تُغيَّر من الإعدادات، بكلمتك الحالية.",
+  "error.wrong_password": "كلمة المرور الحالية غير صحيحة.",
+  "error.weak_password": "كلمة المرور الجديدة ضعيفة: ٨ أحرف على الأقل، وألا تكون شائعة.",
+  "error.same_password": "الكلمة الجديدة هي نفسها الحالية.",
+  "error.use_change_password": "كلمة مرورك تُغيَّر من الإعدادات، بكلمتك الحالية.",
+  "manager.audit.passwordChanged": "غيّر كلمة مروره بنفسه"
 }

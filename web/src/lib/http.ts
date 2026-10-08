@@ -162,6 +162,12 @@ export const authApi = {
   /** End every session of the signed-in person, on every device. */
   logoutAll: () => request<void>('auth/logout-all', { method: 'POST' }),
   me: () => request<StaffUser>('auth/me'),
+  /** Change your own password. Every other session ends; this one is renewed. */
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<StaffUser>('auth/password', {
+      method: 'POST',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    }),
 };
 
 /** Where a role belongs after signing in. One place decides this. */

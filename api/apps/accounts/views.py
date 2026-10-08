@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.middleware.csrf import get_token
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -18,7 +20,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.models import Device, ManagerUser
 from apps.accounts.permissions import IsManager, IsStaff
-from apps.accounts.throttles import LOGIN_THROTTLES
+from apps.accounts.throttles import LOGIN_THROTTLES, PASSWORD_CHANGE_THROTTLES
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
 from apps.accounts.tokens import issue_tokens, session_is_current
 from apps.core.models import Branch
 from apps.core.scoping import visible
@@ -27,6 +31,15 @@ from apps.core.scoping import visible
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(trim_whitespace=False)
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField(trim_whitespace=False)
+    new_password = serializers.CharField(trim_whitespace=False)
+
+
+def _refused(code: str, message: str) -> Response:
+    return Response({"error": {"code": code, "message": message}}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ManagerUserSerializer(serializers.Serializer):
@@ -159,6 +172,47 @@ class AuthViewSet(viewsets.ViewSet):
         """
         request.user.end_all_sessions()
         return _clear_auth_cookies(Response(status=status.HTTP_204_NO_CONTENT))
+
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="password",
+        permission_classes=[IsStaff],
+        throttle_classes=PASSWORD_CHANGE_THROTTLES,
+    )
+    def password(self, request):
+        """Change your own password, knowing the current one.
+
+        Every other session ends — a password that may have leaked must not
+        leave a stolen session alive — and this device is signed in again, so
+        the person who changed it carries on where they were.
+        """
+        payload = PasswordChangeSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        user = request.user
+        current = payload.validated_data["current_password"]
+        new = payload.validated_data["new_password"]
+
+        if not user.check_password(current):
+            return _refused("wrong_password", "The current password is incorrect.")
+        if new == current:
+            return _refused("same_password", "The new password is the current one.")
+        try:
+            validate_password(new, user)
+        except DjangoValidationError as error:
+            return _refused("weak_password", " ".join(error.messages))
+
+        user.set_password(new)  # raises session_version: every session ends
+        user.save()
+        audit.record(
+            action=AuditLog.Action.STAFF_UPDATED,
+            actor=user,
+            target=user,
+            metadata={"password": ["changed", None]},
+        )
+        response = Response(ManagerUserSerializer(user).data)
+        get_token(request)
+        return _set_auth_cookies(response, issue_tokens(user))
 
     @action(detail=False, methods=["get"], permission_classes=[IsStaff])
     def me(self, request):

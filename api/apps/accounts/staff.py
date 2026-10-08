@@ -129,6 +129,19 @@ class StaffViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Your own password is changed at /auth/password/, which asks for the
+        # current one; set here, it would skip that check and end this session.
+        if data.get("password") and person.id == request.user.id:
+            return Response(
+                {
+                    "error": {
+                        "code": "use_change_password",
+                        "message": "Change your own password from settings, with your current one.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         changes: dict[str, list] = {}
         was_active = person.is_active
         for field in ("username", "display_name", "role", "is_active"):

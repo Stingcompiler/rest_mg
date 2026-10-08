@@ -50,3 +50,26 @@ class LoginAccountHourThrottle(_LoginAccountThrottle):
 
 
 LOGIN_THROTTLES = [LoginAddressThrottle, LoginAccountMinuteThrottle, LoginAccountHourThrottle]
+
+
+class _PasswordChangeThrottle(_LoginAccountThrottle):
+    """Changing a password asks for the current one, so it is a second door for
+    guessing it: counted per signed-in account at the sign-in rates."""
+
+    def get_cache_key(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return None
+        return self.cache_format % {"scope": self.scope, "ident": request.user.pk}
+
+
+class PasswordChangeMinuteThrottle(_PasswordChangeThrottle):
+    scope = "password_change_minute"
+    rate_name = "account_minute"
+
+
+class PasswordChangeHourThrottle(_PasswordChangeThrottle):
+    scope = "password_change_hour"
+    rate_name = "account_hour"
+
+
+PASSWORD_CHANGE_THROTTLES = [LoginAddressThrottle, PasswordChangeMinuteThrottle, PasswordChangeHourThrottle]

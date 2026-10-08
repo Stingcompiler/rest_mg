@@ -11,7 +11,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Settings as SettingsIcon } from 'lucide-react';
 
-import { IconButton } from '../primitives/controls';
+import { Button, IconButton, TextField } from '../primitives/controls';
+import { authApi } from '@/lib/http';
+import { describeError } from '@/lib/describeError';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useI18n, type Locale, type Numerals } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -137,6 +139,8 @@ export function SettingsMenu() {
             ))}
           </Row>
 
+          {auth.user ? <ChangePassword /> : null}
+
           {auth.user ? <SignOutEverywhere onDone={() => setOpen(false)} /> : null}
         </div>
       ) : null}
@@ -195,6 +199,104 @@ function SignOutEverywhere({ onDone }: { onDone: () => void }) {
         {failed ? (
           <span role="alert" className="text-ar-sm text-danger">
             {i18n.t('auth.signOutEverywhereFailed')}
+          </span>
+        ) : null}
+      </div>
+    </Row>
+  );
+}
+
+/**
+ * Changing your own password, with the current one. The server ends every other
+ * session and renews this one, so the person carries on where they were.
+ */
+function ChangePassword() {
+  const i18n = useI18n();
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [repeat, setRepeat] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    if (next !== repeat) {
+      setError(i18n.t('auth.passwordsDiffer'));
+      return;
+    }
+    setPending(true);
+    try {
+      await authApi.changePassword(current, next);
+      setDone(true);
+      setOpen(false);
+      setCurrent('');
+      setNext('');
+      setRepeat('');
+    } catch (caught) {
+      setError(i18n.t(describeError(caught)));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <Row label={i18n.t('settings.password')}>
+      <div className="flex flex-1 flex-col gap-8">
+        {open ? (
+          <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-8">
+            <TextField
+              type="password"
+              label={i18n.t('auth.currentPassword')}
+              value={current}
+              onChange={(event) => setCurrent(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <TextField
+              type="password"
+              label={i18n.t('auth.newPassword')}
+              value={next}
+              onChange={(event) => setNext(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+            <TextField
+              type="password"
+              label={i18n.t('auth.repeatPassword')}
+              value={repeat}
+              onChange={(event) => setRepeat(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+            {error ? (
+              <span role="alert" className="text-ar-sm text-danger">
+                {error}
+              </span>
+            ) : null}
+            <Button type="submit" variant="primary" disabled={pending || !current || !next || !repeat}>
+              {i18n.t('auth.changePassword')}
+            </Button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(true);
+              setDone(false);
+            }}
+            className="min-h-control-sm rounded-md border border-line bg-surface-2 px-12 text-ar-sm text-text"
+          >
+            {i18n.t('auth.changePassword')}
+          </button>
+        )}
+        {done ? (
+          <span role="status" className="text-ar-sm text-success">
+            {i18n.t('auth.passwordChanged')}
           </span>
         ) : null}
       </div>

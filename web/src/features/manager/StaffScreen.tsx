@@ -20,6 +20,7 @@ import { ActivityLog } from './ActivityLog';
 import { useCreateStaff, useDeactivateStaff, useEditStaff, useStaff } from './hooks';
 import type { StaffAccount } from './api';
 import { describeError } from '@/lib/describeError';
+import { useAuth } from '@/features/auth/AuthProvider';
 
 const ROLES = ['cashier', 'kitchen', 'manager'] as const;
 
@@ -194,6 +195,9 @@ function StaffRow({ person }: { person: StaffAccount }) {
 function EditStaffRow({ person, onDone }: { person: StaffAccount; onDone: () => void }) {
   const i18n = useI18n();
   const edit = useEditStaff();
+  const auth = useAuth();
+  // Your own password is changed from settings, with the current one.
+  const isSelf = auth.user?.id === person.id;
   const [displayName, setDisplayName] = useState(person.display_name);
   const [username, setUsername] = useState(person.username);
   const [role, setRole] = useState<string>(person.role);
@@ -238,16 +242,20 @@ function EditStaffRow({ person, onDone }: { person: StaffAccount; onDone: () => 
           {i18n.t('manager.staff.role')}
           <RoleSelect value={role} onChange={setRole} />
         </label>
-        <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
-          {i18n.t('manager.staff.password')}
-          <TextField
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            placeholder={i18n.t('manager.staff.passwordHint')}
-          />
-        </label>
+        {isSelf ? (
+          <p className="self-end text-ar-sm text-text-muted">{i18n.t('manager.staff.ownPasswordInSettings')}</p>
+        ) : (
+          <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
+            {i18n.t('manager.staff.password')}
+            <TextField
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              placeholder={i18n.t('manager.staff.passwordHint')}
+            />
+          </label>
+        )}
       </div>
       {error ? <span className="text-ar-sm text-danger">{error}</span> : null}
       <div className="flex gap-8">

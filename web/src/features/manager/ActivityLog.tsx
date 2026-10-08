@@ -120,7 +120,8 @@ function Changes({ entry }: { entry: AuditEntry }) {
         if (field === 'password') {
           return (
             <li key={field} className="text-ar-sm text-text-muted">
-              {i18n.t('manager.audit.passwordReset')}
+              {/* Changed by its owner, with the current one; or reset by a manager. */}
+              {i18n.t(before === 'changed' ? 'manager.audit.passwordChanged' : 'manager.audit.passwordReset')}
             </li>
           );
         }

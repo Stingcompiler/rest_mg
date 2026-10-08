@@ -769,5 +769,18 @@
   "deliveries.kind.delivery": "Delivery",
   "deliveries.overdue": "Waiting over an hour",
   "deliveries.reason.noShow": "The customer did not come",
-  "deliveries.awaitingKitchenPickup": "Waiting on the kitchen — it becomes ready for pickup when the kitchen finishes it"
+  "deliveries.awaitingKitchenPickup": "Waiting on the kitchen — it becomes ready for pickup when the kitchen finishes it",
+  "settings.password": "Password",
+  "auth.changePassword": "Change password",
+  "auth.currentPassword": "Current password",
+  "auth.newPassword": "New password",
+  "auth.repeatPassword": "Repeat the new password",
+  "auth.passwordsDiffer": "The two new passwords do not match.",
+  "auth.passwordChanged": "Password changed. Other devices were signed out; this one stays signed in.",
+  "manager.staff.ownPasswordInSettings": "Change your own password from settings, with your current one.",
+  "error.wrong_password": "The current password is incorrect.",
+  "error.weak_password": "The new password is too weak: at least 8 characters, and not a common one.",
+  "error.same_password": "The new password is the current one.",
+  "error.use_change_password": "Change your own password from settings, with your current one.",
+  "manager.audit.passwordChanged": "Changed their own password"
 }

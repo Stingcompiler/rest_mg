@@ -55,6 +55,12 @@ describe('the staff screen', () => {
   });
 });
 
+describe('the activity log', () => {
+  it('says the person changed their own password, not that it was reset', () => {
+    expect(read('features/manager/ActivityLog.tsx')).toMatch(/before === 'changed' \? 'manager\.audit\.passwordChanged'/);
+  });
+});
+
 describe('the words', () => {
   const keys = [
     'settings.password',
@@ -69,6 +75,7 @@ describe('the words', () => {
     'error.weak_password',
     'error.same_password',
     'error.use_change_password',
+    'manager.audit.passwordChanged',
   ];
 
   it('exist in both languages', () => {

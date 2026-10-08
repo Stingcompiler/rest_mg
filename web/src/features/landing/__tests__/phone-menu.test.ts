@@ -66,9 +66,10 @@ describe('a dish', () => {
     expect(landing).not.toMatch(/function ItemImage\b/);
   });
 
-  it('is a compact row on a phone and a card from 640px up', () => {
+  it('is a compact row on a phone, and stays one: a line of the menu (batch 35)', () => {
     const card = fn('ItemCard');
-    expect(card).toMatch(/<article className="[^"]*\bflex-row\b[^"]*\bsm:flex-col\b/);
+    expect(card).toMatch(/<article className="[^"]*\bflex-row\b/);
+    expect(card).not.toMatch(/sm:flex-col/);
   });
 
   it('shows its price with the currency', () => {

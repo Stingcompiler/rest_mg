@@ -89,12 +89,10 @@ describe('corners (K4)', () => {
   });
 
   it('give every card the card corner, 12px', () => {
+    // The landing page's dishes stopped being cards in batch 35: a printed
+    // menu's lines, and a featured dish's photo, which keeps the card corner.
     const landing = read('features/landing/LandingClient.tsx');
-    const card = /<article className="group relative flex flex-row[^"]*"/.exec(landing)?.[0] ?? '';
-    expect(card).toMatch(/\bsm:rounded-lg\b/);
-    expect(card).not.toMatch(/rounded-md/);
-    const featured = /<article className="group relative flex h-full[^"]*"/.exec(landing)?.[0] ?? '';
-    expect(featured).toMatch(/\brounded-lg\b/);
+    expect(landing).toMatch(/<DishPhoto item=\{item\} className="[^"]*\brounded-lg\b/);
     expect(read('components/report/report.tsx')).toMatch(/flex flex-col gap-8 rounded-lg border border-line/);
   });
 });

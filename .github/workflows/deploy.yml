@@ -1,0 +1,75 @@
+# Merging to main deploys to orderak.stingdev.pro (batch 37).
+#
+# It runs when CI finishes on a push to main and deploys only if CI passed, the
+# very commit CI checked. The release (api/ and the built web/out) is streamed
+# to the server over SSH with a key of its own, which the server lets run one
+# command: receive a release (deploy/vps/deploy-entry.sh). The server checks
+# it, migrates, switches, and rolls back if the new release does not answer
+# its health check (deploy/vps/receive-release.sh). The runbook is
+# docs/DEPLOY.ar.md, the VPS section.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build the web app
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Package the release
+        run: |
+          SHA=$(git rev-parse --short=12 HEAD)
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
+          mkdir -p release/web
+          git archive HEAD api | tar -x -C release
+          cp -R web/out release/web/out
+          tar -czf release.tgz -C release api web
+
+      - name: Hand it to the server
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pinned: the server's own host key, never fetched at deploy time.
+          echo "57.129.162.57 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB47+7Uf067sbJXm687LAl7lCcnPbEda4gpVkg97BNny" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts \
+            orderak-deploy@57.129.162.57 "deploy $SHA" < release.tgz
+
+      - name: Check the live site
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if curl -sf https://orderak.stingdev.pro/healthz; then exit 0; fi
+            sleep 5
+          done
+          echo "orderak.stingdev.pro does not answer /healthz" >&2
+          exit 1

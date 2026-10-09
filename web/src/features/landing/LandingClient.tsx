@@ -19,6 +19,7 @@ import { createPortal } from 'react-dom';
 import {
   ChevronDown,
   MapPin,
+  MessageCircle,
   Minus,
   Phone,
   Plus,
@@ -35,6 +36,7 @@ import { cn } from '@/lib/cn';
 import { prefersReducedMotion, scrollBehavior } from '@/lib/motion';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { browserStorage } from './browserStorage';
+import { orderingClosedKey, phoneHref, whatsappHref, type Contact } from './contact';
 import { forgetOrder, recallOrder, type PlacedOrder } from './lastOrder';
 import { CartProvider, ORDER_PLACED_EVENT, QtyPill, useCart } from './OrderFlow';
 import { activeSection, readingLine } from './menuSpy';
@@ -262,7 +264,7 @@ function Landing({ data }: { data: Landing }) {
       ) : null}
 
       {/* The menu, with its category bar */}
-      <MenuSection menu={data.menu} />
+      <MenuSection menu={data.menu} contact={{ whatsapp: data.whatsapp, phone: data.phone }} />
 
       <InfoBand data={data} ordering={ordering} className="lg:hidden" />
 
@@ -276,18 +278,18 @@ function Landing({ data }: { data: Landing }) {
             <p className="max-w-xl text-ar-base text-on-ink-muted">{label('landing.orderCtaSubtitle')}</p>
           </div>
           <div className="flex flex-none flex-wrap gap-12">
-              {data.whatsapp ? (
+              {whatsappHref(data.whatsapp) ? (
                 <a
-                  href={`https://wa.me/${data.whatsapp.replace(/[^\d]/g, '')}`}
+                  href={whatsappHref(data.whatsapp)!}
                   className="inline-flex min-h-control-xl items-center gap-8 rounded-md bg-on-ink px-24 text-ar-md font-semibold text-ink shadow-raised transition hover:bg-surface-2"
                 >
                   <ShoppingBag size={20} />
                   {label('landing.whatsapp')}
                 </a>
               ) : null}
-              {data.phone ? (
+              {phoneHref(data.phone) ? (
                 <a
-                  href={`tel:${data.phone}`}
+                  href={phoneHref(data.phone)!}
                   className="inline-flex min-h-control-xl items-center gap-8 rounded-md border border-gold-soft px-24 text-ar-md font-semibold text-on-ink transition hover:bg-ink-2"
                 >
                   <Phone size={20} />
@@ -510,7 +512,7 @@ const sectionId = (id: string) => `menu-${id}`;
  * to a category and marks the one being read. The bar used to filter the menu
  * to one category, which hid the rest of it from anyone scrolling (batch 19).
  */
-function MenuSection({ menu }: { menu: LandingCategory[] }) {
+function MenuSection({ menu, contact }: { menu: LandingCategory[]; contact: Contact }) {
   const cart = useCart();
   const categories = useMemo(() => menu.filter((category) => category.items.length > 0), [menu]);
   const [activeId, setActiveId] = useState<string | null>(categories[0]?.id ?? null);
@@ -565,11 +567,7 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
     <section id="menu" className="scroll-mt-header border-y border-line bg-surface">
       <div className="mx-auto max-w-6xl px-16 pb-40 pt-24 sm:px-24 sm:py-56">
         <SectionHeading title={label('landing.ourMenu')} />
-        {cart.ordering ? null : (
-          <p role="note" className="mt-16 rounded-lg border border-line bg-surface-2 px-16 py-12 text-ar-base text-text-muted">
-            {label('landing.orderingClosed')}
-          </p>
-        )}
+        {cart.ordering ? null : <OrderingClosedNote contact={contact} />}
 
         {categories.length === 0 ? (
           <p className="mt-24 text-ar-base text-text-muted">{label('landing.menuEmpty')}</p>
@@ -629,6 +627,44 @@ function MenuSection({ menu }: { menu: LandingCategory[] }) {
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * The page takes no orders: say so above the menu, name only the ways the
+ * restaurant actually offers, and put those buttons right here (batch 36).
+ * The note promised WhatsApp and a call whatever was filled in, and left the
+ * visitor to find the buttons at the foot of the page.
+ */
+function OrderingClosedNote({ contact }: { contact: Contact }) {
+  const whatsapp = whatsappHref(contact.whatsapp);
+  const phone = phoneHref(contact.phone);
+  return (
+    <div role="note" className="mt-16 flex flex-col gap-12 rounded-lg border border-line bg-surface-2 px-16 py-14 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-ar-base text-text">{label(orderingClosedKey(contact))}</p>
+      {whatsapp || phone ? (
+        <div className="flex flex-none flex-wrap gap-8">
+          {whatsapp ? (
+            <a
+              href={whatsapp}
+              className="inline-flex min-h-control-md items-center gap-8 rounded-md bg-accent px-16 text-ar-sm font-semibold text-text-on-accent transition hover:bg-accent-hover"
+            >
+              <MessageCircle size={18} />
+              {label('landing.whatsapp')}
+            </a>
+          ) : null}
+          {phone ? (
+            <a
+              href={phone}
+              className="inline-flex min-h-control-md items-center gap-8 rounded-md border border-line-strong bg-surface px-16 text-ar-sm font-semibold text-text transition hover:bg-surface-3"
+            >
+              <Phone size={18} />
+              {label('landing.call')}
+            </a>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -910,8 +946,8 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
 
         <div className="flex flex-col gap-8">
           <span className="font-display text-ar-md font-semibold">{label('landing.footerContact')}</span>
-          {data.phone ? (
-            <a href={`tel:${data.phone}`} className="flex min-h-control-stepper items-center gap-8 text-ar-sm text-on-ink-muted hover:text-on-ink">
+          {phoneHref(data.phone) ? (
+            <a href={phoneHref(data.phone)!} className="flex min-h-control-stepper items-center gap-8 text-ar-sm text-on-ink-muted hover:text-on-ink">
               <Phone size={15} />
               <span className="numeric" dir="ltr">{data.phone}</span>
             </a>

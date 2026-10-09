@@ -1,0 +1,10 @@
+[Unit]
+Description=Orderak off-site backup, nightly after the local one (03:50)
+
+[Timer]
+OnCalendar=*-*-* 04:20:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

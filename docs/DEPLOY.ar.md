@@ -163,3 +163,25 @@ sudo ln -sfn /opt/orderak/releases/<commit> /opt/orderak/current && sudo systemc
 الرجوع لا يعيد ترقيات قاعدة البيانات. إذا كان الإصدار الجديد قد رقّاها، فراجع التوافق قبل الرجوع.
 
 **إن فشل النشر:** افتح تشغيل «Deploy» في GitHub Actions. سطر `[deploy <commit>]` يذكر الخطوة التي توقف عندها، والإصدار الحي يبقى كما كان.
+
+**المراقبة (الدفعة ٣٩):** يعمل [`orderak-healthcheck`](../deploy/vps/orderak-healthcheck.sh) كل خمس دقائق، ويفحص:
+- أن خدمة `orderak-web` تعمل.
+- أن التطبيق يجيب على `/healthz` محليًا ومن الإنترنت.
+- أن آخر نسخة احتياطية محلية، وآخر نسخة خارجية، عمرها أقل من ٣٠ ساعة.
+
+إذا فشل أي فحص، يرسل تنبيهًا إلى Telegram عبر سكربت التنبيه الموجود على الخادم (`vezano-telegram-alert`) برسالة تبدأ بـ «Orderak». ويذكّر كل ساعة ما دامت المشكلة قائمة، ويرسل رسالة حين تنتهي. حالة الفحص في `/var/lib/orderak/health.state`، والسجل في `journalctl -t orderak-healthcheck`.
+
+**النسخ خارج الخادم (الدفعة ٣٩):** كل ليلة الساعة 04:20، بعد النسخة المحلية، يرفع `orderak-offsite-backup` مجلد `/srv/backups/orderak` مشفّرًا بـ restic إلى Cloudflare R2:
+- المستودع خاص بـ Orderak، في الدلو نفسه الذي يستعمله Vezano.
+- يُحتفظ بنسخ ١٤ يومًا، و٨ أسابيع، و١٢ شهرًا.
+- الإعدادات في `/etc/orderak/restic/r2.env`، وكلمة التشفير في `/etc/orderak/restic/password`، وكلاهما لـ root فقط.
+
+> **احفظ كلمة التشفير خارج الخادم** (في مدير كلمات المرور). إذا ضاع الخادم وضاعت معه هذه الكلمة، لا يمكن فتح النسخ الخارجية أبدًا.
+
+**الاستعادة من R2:**
+```bash
+sudo bash -c 'set -a; . /etc/orderak/restic/r2.env; set +a; restic snapshots; restic restore latest --target /tmp/orderak-restore'
+```
+ثم `pg_restore` كما في القسم ٥.
+
+ملفات المراقبة والنسخ الخارجي في `deploy/vps/`، لكنها تُثبَّت على الخادم يدويًا، ولا ينشرها النشر التلقائي. إذا عدّلت أحدها، فثبّته من جديد بـ `install` ثم `systemctl daemon-reload`.

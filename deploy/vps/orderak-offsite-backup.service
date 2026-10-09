@@ -1,0 +1,24 @@
+# Orderak's nightly backups, encrypted, off the server (batch 39).
+#
+# A restic repository of its own in the same R2 bucket as Vezano's, with its
+# own password (/etc/orderak/restic/password — keep a copy off the server: the
+# backups cannot be read without it). /etc/orderak/restic/r2.env holds
+# RESTIC_REPOSITORY, RESTIC_PASSWORD_FILE and the R2 key, root only.
+[Unit]
+Description=Orderak encrypted off-site backup to Cloudflare R2
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=/etc/orderak/restic/r2.env
+Environment=RESTIC_CACHE_DIR=/var/cache/orderak-restic
+ExecStart=/usr/bin/restic backup /srv/backups/orderak --tag orderak-production --host ovh-prod-01
+ExecStart=/usr/bin/restic forget --host ovh-prod-01 --tag orderak-production --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune
+ExecStartPost=/usr/bin/touch /var/lib/orderak/offsite-backup.last-success
+TimeoutStartSec=0
+UMask=0077
+PrivateTmp=true
+NoNewPrivileges=true

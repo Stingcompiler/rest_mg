@@ -785,5 +785,7 @@
   "error.weak_password": "The new password is too weak: at least 8 characters, and not a common one.",
   "error.same_password": "The new password is the current one.",
   "error.use_change_password": "Change your own password from settings, with your current one.",
-  "manager.audit.passwordChanged": "Changed their own password"
+  "manager.audit.passwordChanged": "Changed their own password",
+  "manager.dashboard.nothingYet": "Nothing yet",
+  "manager.money.openTitle": "Not settled yet"
 }

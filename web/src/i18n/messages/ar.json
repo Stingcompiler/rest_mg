@@ -785,5 +785,7 @@
   "error.weak_password": "كلمة المرور الجديدة ضعيفة: ٨ أحرف على الأقل، وألا تكون شائعة.",
   "error.same_password": "الكلمة الجديدة هي نفسها الحالية.",
   "error.use_change_password": "كلمة مرورك تُغيَّر من الإعدادات، بكلمتك الحالية.",
-  "manager.audit.passwordChanged": "غيّر كلمة مروره بنفسه"
+  "manager.audit.passwordChanged": "غيّر كلمة مروره بنفسه",
+  "manager.dashboard.nothingYet": "لا شيء بعد",
+  "manager.money.openTitle": "ما لم يكتمل بعد"
 }

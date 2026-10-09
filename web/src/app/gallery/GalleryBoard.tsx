@@ -31,6 +31,7 @@ import {
   IconButton,
   Keypad,
   KpiCard,
+  KpiStrip,
   LoadingList,
   MenuItemCard,
   MenuManagementRow,
@@ -225,12 +226,12 @@ function Board() {
           </Section>
 
           <Section title="Reports">
-            <div className="grid grid-cols-4 gap-12">
-              <KpiCard label="الإيراد المحصّل" value="١٬٠٤٩٬٠٠٠" sub="بدون الذمم" tone="success" />
+            <KpiStrip columns={4}>
+              <KpiCard lead label="الإيراد المحصّل" value="١٬٠٤٩٬٠٠٠" sub="بدون الذمم" tone="success" />
               <KpiCard label="عدد الطلبات" value="٧٤" />
               <KpiCard label="متوسط الفاتورة" value="١٤٬١٧٦" />
               <KpiCard label="ذمم مفتوحة" value="١٤٠٬٠٠٠" tone="credit" />
-            </div>
+            </KpiStrip>
             <div className="h-item-card">
               <BarChart
                 bars={[18, 26, 52, 78, 96, 70, 44, 58].map((h, i) => ({

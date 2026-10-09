@@ -56,7 +56,7 @@ describe('a figure', () => {
 
 describe('the ledger', () => {
   it('is one band, its cells divided by hairlines', () => {
-    const html = renderToStaticMarkup(createElement(KpiStrip, { columns: 4 }, createElement(KpiCard, { label: 'a', value: '1' })));
+    const html = renderToStaticMarkup(createElement(KpiStrip, { columns: 4, children: createElement(KpiCard, { label: 'a', value: '1' }) }));
     expect(html).toMatch(/^<div class="[^"]*\bgap-px\b[^"]*\bbg-line\b/);
     expect(html).toMatch(/\blg:grid-cols-4\b/);
   });
@@ -65,6 +65,9 @@ describe('the ledger', () => {
     const html = renderToStaticMarkup(createElement(LedgerRow, { label: 'لم تُحصَّل بعد', value: '٤٤٬٥٠٠' }));
     expect(html).toMatch(/border-dotted/);
     expect(html).toContain('لم تُحصَّل بعد');
+    const empty = renderToStaticMarkup(createElement(LedgerRow, { label: 'x', value: '٠', zero: true }));
+    expect(empty).toContain('—');
+    expect(empty).not.toMatch(/>٠</);
   });
 });
 

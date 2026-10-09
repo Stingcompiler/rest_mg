@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Cloud, CloudOff, Printer } from 'lucide-react';
 
-import { AppHeader, BarChart, Button, EmptyState, KpiCard, LoadingList, Numeric, Pager } from '@/components';
+import { AppHeader, BarChart, Button, EmptyState, KpiCard, KpiStrip, LoadingList, Numeric, Pager } from '@/components';
 import { hydrateOrder, openDatabase, orderRepository, rejectedEntries, toMinor, type OrderRecord } from '@/db';
 import { TIME_ZONE, formatDate, formatTime, useI18n } from '@/i18n';
 import { clampOffset, pageLocal } from '@/lib/paging';
@@ -172,12 +172,13 @@ export function DailyReportScreen() {
             <EmptyState title={i18n.t('pos.report.empty')} icon={<BarChart3 size={30} />} />
           ) : (
             <div className="flex flex-col gap-14">
-              <div className="grid grid-cols-2 gap-12 lg:grid-cols-4">
-                <KpiCard label={i18n.t('pos.report.collected')} value={i18n.money(data.collected)} tone="success" />
-                <KpiCard label={i18n.t('pos.report.orderCount')} value={i18n.int(data.orderCount)} />
-                <KpiCard label={i18n.t('pos.report.averageTicket')} value={i18n.money(averageTicket)} />
-                <KpiCard label={i18n.t('pos.report.credit')} value={i18n.money(data.credit)} tone="credit" />
-              </div>
+              {/* One ledger band, as on the manager's overview (batch 40). */}
+              <KpiStrip columns={4}>
+                <KpiCard lead label={i18n.t('pos.report.collected')} value={i18n.money(data.collected)} unit={i18n.t('landing.currency')} tone="success" zero={data.collected === 0n} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
+                <KpiCard label={i18n.t('pos.report.orderCount')} value={i18n.int(data.orderCount)} zero={data.orderCount === 0} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
+                <KpiCard label={i18n.t('pos.report.averageTicket')} value={i18n.money(averageTicket)} unit={i18n.t('landing.currency')} zero={averageTicket === 0n} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
+                <KpiCard label={i18n.t('pos.report.credit')} value={i18n.money(data.credit)} unit={i18n.t('landing.currency')} tone="credit" zero={data.credit === 0n} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
+              </KpiStrip>
 
               <div className="flex min-h-0 flex-1 flex-col gap-14 lg:flex-row">
                 <div className="flex flex-1 flex-col gap-16 rounded-lg border border-line bg-surface p-18">

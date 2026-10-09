@@ -7,7 +7,9 @@ directory-style routes to their ``index.html`` — with two special cases:
 
   - every ``/r/<slug>`` serves the one landing shell, so any restaurant's public
     page works at runtime without a rebuild (the slug is read client-side);
-  - ``pos-sw.js`` carries the header that lets the service worker claim ``/pos/``.
+  - ``pos-sw.js`` carries the header that lets the service worker claim ``/pos/``;
+  - a screen's router payload (``…/index.txt``) loaded as a page redirects to
+    the screen (batch 41).
 
 For production the assets are better served by WhiteNoise or a CDN in front of
 this; for a single-restaurant self-hosted box, one process is the point.
@@ -18,7 +20,7 @@ import mimetypes
 from pathlib import Path
 
 from django.conf import settings
-from django.http import FileResponse, HttpResponse, HttpResponseNotFound
+from django.http import FileResponse, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 
 # Windows' registry can hand back odd types; pin the ones that matter.
 mimetypes.add_type("text/javascript", ".js")
@@ -63,6 +65,18 @@ def _resolve(rel: str) -> Path | None:
     return None
 
 
+def _is_page_load(request) -> bool:
+    """A browser loading an address as a page, not a script fetching it.
+
+    Fetch metadata says so where the browser sends it; otherwise a request that
+    is not the router's (no ``RSC`` header) and accepts HTML is a page load.
+    """
+    dest = request.headers.get("Sec-Fetch-Dest")
+    if dest:
+        return dest == "document"
+    return "RSC" not in request.headers and "text/html" in request.headers.get("Accept", "")
+
+
 def spa(request, path: str = ""):
     if not FRONTEND_DIR.exists():
         return HttpResponse(
@@ -72,6 +86,12 @@ def spa(request, path: str = ""):
         )
 
     rel = path.strip("/")
+
+    # The router fetches a screen's payload to move to it; a tab still on the
+    # build before a deploy cannot use it and loads its address as a page,
+    # which showed raw router data (batch 41). Send that load to the screen.
+    if (rel == "index.txt" or rel.endswith("/index.txt")) and _is_page_load(request):
+        return HttpResponseRedirect("/" + rel[: -len("index.txt")])
 
     # Off in production, and indistinguishable from a route that never existed.
     if _is_dev_only(rel) and not settings.DEBUG:

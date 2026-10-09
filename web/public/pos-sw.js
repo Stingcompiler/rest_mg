@@ -22,6 +22,8 @@
  *     never revalidated.
  */
 
+// Stamped with the build id after `next build` (scripts/stamp-worker.mjs), so
+// every deploy is a new worker that re-caches the till whole (batch 38).
 const VERSION = 'pos-shell-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
@@ -100,8 +102,12 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
+        // Every other build's caches go, by exact name ("…-new" must not keep
+        // "…-newer-shell"); caches that are not the till's are not ours to drop.
         Promise.all(
-          keys.filter((key) => !key.startsWith(VERSION)).map((key) => caches.delete(key)),
+          keys
+            .filter((key) => key.startsWith('pos-shell-') && key !== SHELL_CACHE && key !== ASSET_CACHE)
+            .map((key) => caches.delete(key)),
         ),
       )
       .then(() => self.clients.claim()),

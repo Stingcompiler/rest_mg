@@ -119,3 +119,47 @@ python manage.py expire_pickups --minutes 60
 ```
 
 لا داعي لخدمة Cron Job المدفوعة على Render.
+
+## ١١. الخادم الحالي والنشر التلقائي
+
+النظام منشور على `https://orderak.stingdev.pro`، على خادم OVH تعمل عليه مواقع أخرى. ما في هذا القسم يخص ذلك الخادم، وما سبقه عن Render ما زال صالحًا إن انتقل النظام إليه.
+
+**الترتيب على الخادم:**
+
+| المسار | ما فيه | المالك |
+|---|---|---|
+| `/opt/orderak/releases/<commit>` | كل إصدار في مجلده: `api/` و`web/out` | المجلد root، والإصدار `orderak` |
+| `/opt/orderak/current` | رابط للإصدار الحي | root |
+| `/opt/orderak/venv` | بيئة Python 3.12 | root |
+| `/opt/orderak/env` | الإعدادات والأسرار (`DJANGO_SECRET_KEY` و`DATABASE_URL`…) | root، ويقرؤه `orderak` |
+| `/opt/orderak/media` | الصور المرفوعة | `orderak` |
+| `/opt/orderak/bin` | `receive-release` و`deploy-entry` و`backup.sh` | root |
+
+- **التشغيل:** خدمة `orderak-web`، وهي gunicorn على `127.0.0.1:8200`، ويوصلها Caddy بالنطاق من `/etc/caddy/orderak.caddy`.
+- **النسخ الاحتياطي:** يوميًا الساعة 03:50 إلى `/srv/backups/orderak` عبر `orderak-backup.timer`، ويُحتفظ بالنسخ ١٤ يومًا.
+
+**النشر تلقائي بعد الدمج.** عند كل دمج في `main`:
+1. ينتهي CI.
+2. إن نجح، يبدأ [`deploy.yml`](../.github/workflows/deploy.yml) على الـ commit نفسه الذي فحصه CI.
+3. يبني الواجهة، ويرسل الإصدار إلى الخادم.
+4. على الخادم يتولى [`receive-release.sh`](../deploy/vps/receive-release.sh) ما يلي:
+   - يفحص الإصدار، ثم يثبّت الحزم.
+   - يشغّل `migrate` و`collectstatic` و`createcachetable` وفحص الفرع الواحد.
+   - إن نجح كل ذلك، يحوّل `current` إلى الإصدار الجديد ويعيد التشغيل.
+   - إن لم يُجب الإصدار الجديد على `/healthz` خلال ٣٠ ثانية، يعود إلى الإصدار السابق.
+   - يُبقي آخر خمسة إصدارات.
+
+**الأمان:**
+- **مفتاح خاص بالنشر:** يصل GitHub إلى الخادم بمفتاح خاص به، محفوظ في السر `DEPLOY_SSH_KEY` لبيئة `production`. البيئة لا تقبل إلا فرع `main`.
+- **صلاحية واحدة:** المفتاح للمستخدم `orderak-deploy`، والخادم لا يسمح له إلا بطلب واحد: `deploy <commit>`، والإصدار على المدخل القياسي ([`deploy-entry.sh`](../deploy/vps/deploy-entry.sh)). وsudo لا يسمح له إلا بـ `receive-release`.
+- **مفتاح الخادم مثبّت:** مفتاح الخادم (host key) مكتوب في سير العمل نفسه، ولا يُجلب وقت النشر.
+
+**الرجوع يدويًا لإصدار سابق** (الإصدارات في `/opt/orderak/releases`):
+
+```bash
+sudo ln -sfn /opt/orderak/releases/<commit> /opt/orderak/current && sudo systemctl restart orderak-web
+```
+
+الرجوع لا يعيد ترقيات قاعدة البيانات. إذا كان الإصدار الجديد قد رقّاها، فراجع التوافق قبل الرجوع.
+
+**إن فشل النشر:** افتح تشغيل «Deploy» في GitHub Actions. سطر `[deploy <commit>]` يذكر الخطوة التي توقف عندها، والإصدار الحي يبقى كما كان.

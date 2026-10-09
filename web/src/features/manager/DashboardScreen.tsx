@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 
-import { EmptyState, ErrorState, KpiCard, LoadingList, SegmentedControl, StackedShareBar } from '@/components';
+import { ErrorState, KpiCard, KpiStrip, LedgerRow, LoadingList, SegmentedControl, StackedShareBar } from '@/components';
 import { describeError } from '@/lib/describeError';
 import { AlertTriangle } from 'lucide-react';
 
@@ -106,111 +106,143 @@ function Dashboard({
     value: i18n.money(BigInt(value)),
   }));
 
+  const unit = i18n.t('landing.currency');
+  const nothingYet = i18n.t('manager.dashboard.nothingYet');
+  const money = (minor: string | number) => i18n.money(BigInt(minor));
+  const isZero = (minor: string | number) => BigInt(minor) === 0n;
+
   return (
-    <div className="flex flex-col gap-20">
-      <div className="grid grid-cols-2 gap-16 lg:grid-cols-4">
+    <div className="flex flex-col gap-32">
+      {/* One ledger band, the takings first and largest (batch 40): every
+          figure was a floating card with a gold top line, the template look,
+          and a quiet day read as seven dots («٠»). */}
+      <KpiStrip columns={4}>
         <KpiCard
+          lead
           label={i18n.t('pos.report.collected')}
-          value={i18n.money(BigInt(data.collected_minor))}
+          value={money(data.collected_minor)}
+          unit={unit}
           tone="success"
+          zero={isZero(data.collected_minor)}
+          zeroLabel={nothingYet}
           delta={compare(BigInt(data.collected_minor), before && BigInt(before.collected_minor))}
         />
         <KpiCard
           label={i18n.t('pos.report.orderCount')}
           value={i18n.int(data.order_count)}
+          zero={data.order_count === 0}
+          zeroLabel={nothingYet}
           delta={compare(data.order_count, before?.order_count)}
         />
         <KpiCard
           label={i18n.t('pos.report.averageTicket')}
-          value={i18n.money(BigInt(data.average_ticket_minor))}
+          value={money(data.average_ticket_minor)}
+          unit={unit}
+          zero={isZero(data.average_ticket_minor)}
+          zeroLabel={nothingYet}
           delta={compare(BigInt(data.average_ticket_minor), before && BigInt(before.average_ticket_minor))}
         />
         <KpiCard
           label={i18n.t('pos.report.credit')}
-          value={i18n.money(BigInt(data.credit_outstanding_minor))}
-          sub={i18n.t('manager.money.creditMovement', {
-            sales: i18n.money(BigInt(data.credit_sales_minor)),
-            repaid: i18n.money(BigInt(data.settlements_minor)),
-          })}
-          tone="credit"
-        />
-      </div>
-
-      {/* The money that has not finished moving. Reporting only what was
-          collected made a full kitchen look like a quiet day, and hid every
-          online delivery until a cashier settled it. */}
-      <div className="grid grid-cols-1 gap-16 lg:grid-cols-3">
-        <KpiCard
-          label={i18n.t('manager.money.unpaid')}
-          value={i18n.money(BigInt(data.unpaid_minor))}
+          value={money(data.credit_outstanding_minor)}
+          unit={unit}
+          zero={isZero(data.credit_outstanding_minor)}
+          zeroLabel={nothingYet}
           sub={
-            data.pending_delivery_count > 0
-              ? i18n.t('manager.money.pendingDelivery', { count: i18n.int(data.pending_delivery_count) })
-              : i18n.plural('manager.money.ordersCount', data.unpaid_order_count)
+            isZero(data.credit_sales_minor) && isZero(data.settlements_minor)
+              ? undefined
+              : i18n.t('manager.money.creditMovement', {
+                  sales: money(data.credit_sales_minor),
+                  repaid: money(data.settlements_minor),
+                })
           }
           tone="credit"
         />
-        <KpiCard
-          label={i18n.t('manager.money.discount')}
-          value={i18n.money(BigInt(data.discount_minor))}
-        />
-        <KpiCard
-          label={i18n.t('manager.money.void')}
-          value={i18n.money(BigInt(data.void_minor))}
-          sub={i18n.plural('manager.money.ordersCount', data.void_order_count)}
-        />
-      </div>
+      </KpiStrip>
 
-      <div className="grid grid-cols-1 gap-16 lg:grid-cols-2">
-        <div className="flex flex-col gap-12 rounded-lg border border-line bg-surface p-20">
-          <span className="text-ar-md text-text-muted">{i18n.t('manager.dashboard.payMix')}</span>
-          <StackedShareBar segments={segments} />
-        </div>
+      <div className="grid grid-cols-1 gap-32 lg:grid-cols-2">
+        {/* The money that has not finished moving. Reporting only what was
+            collected made a full kitchen look like a quiet day, and hid every
+            online delivery until a cashier settled it. Lines of a ledger, with
+            the dotted leaders of the public menu (batch 40). */}
+        <DashSection title={i18n.t('manager.money.openTitle')}>
+          <LedgerRow
+            label={i18n.t('manager.money.unpaid')}
+            value={money(data.unpaid_minor)}
+            unit={unit}
+            zero={isZero(data.unpaid_minor)}
+            tone={isZero(data.unpaid_minor) ? 'text' : 'credit'}
+            note={
+              data.pending_delivery_count > 0
+                ? i18n.t('manager.money.pendingDelivery', { count: i18n.int(data.pending_delivery_count) })
+                : data.unpaid_order_count > 0
+                  ? i18n.plural('manager.money.ordersCount', data.unpaid_order_count)
+                  : undefined
+            }
+          />
+          <LedgerRow label={i18n.t('manager.money.discount')} value={money(data.discount_minor)} unit={unit} zero={isZero(data.discount_minor)} />
+          <LedgerRow
+            label={i18n.t('manager.money.void')}
+            value={money(data.void_minor)}
+            unit={unit}
+            zero={isZero(data.void_minor)}
+            note={data.void_order_count > 0 ? i18n.plural('manager.money.ordersCount', data.void_order_count) : undefined}
+          />
+        </DashSection>
+
+        <DashSection title={i18n.t('manager.dashboard.payMix')}>
+          {totalPaid > 0n ? <StackedShareBar segments={segments} /> : <p className="text-ar-sm text-text-muted">{nothingYet}</p>}
+        </DashSection>
 
         {/* Where the money came from, in money rather than in counts. */}
-        <div className="flex flex-col gap-12 rounded-lg border border-line bg-surface p-20">
-          <span className="text-ar-md text-text-muted">{i18n.t('manager.money.byChannel')}</span>
-          <div className="flex flex-col gap-8">
-            {Object.entries(data.by_channel_minor).length === 0 ? (
-              <span className="text-ar-sm text-text-muted">—</span>
-            ) : (
-              Object.entries(data.by_channel_minor).map(([channel, value]) => (
-                <div key={channel} className="flex items-baseline justify-between">
-                  <span className="text-ar-base text-text-muted">
-                    {i18n.t(
-                      channel === 'online' ? 'manager.money.channel.online' : 'manager.money.channel.pos',
-                    )}
-                  </span>
-                  <span className="numeric text-num-base font-semibold">{i18n.money(BigInt(value))}</span>
-                </div>
-              ))
-            )}
-            <div className="mt-4 border-t border-line pt-8" />
-            <span className="text-ar-sm text-text-muted">{i18n.t('manager.money.byType')}</span>
-            {Object.entries(data.by_type_minor).map(([type, value]) => (
-              <div key={type} className="flex items-baseline justify-between">
-                <span className="text-ar-base text-text-muted">
-                  {i18n.t(
-                    type === 'delivery'
-                      ? 'pos.orderType.delivery'
-                      : type === 'takeaway'
-                        ? 'pos.orderType.takeaway'
-                        : 'pos.orderType.dineIn',
-                  )}
-                </span>
-                <span className="numeric text-num-base font-semibold">{i18n.money(BigInt(value))}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DashSection title={i18n.t('manager.money.byChannel')}>
+          {Object.entries(data.by_channel_minor).length === 0 ? (
+            <p className="text-ar-sm text-text-muted">{nothingYet}</p>
+          ) : (
+            Object.entries(data.by_channel_minor).map(([channel, value]) => (
+              <LedgerRow
+                key={channel}
+                label={i18n.t(channel === 'online' ? 'manager.money.channel.online' : 'manager.money.channel.pos')}
+                value={money(value)}
+                unit={unit}
+              />
+            ))
+          )}
+        </DashSection>
+
+        <DashSection title={i18n.t('manager.money.byType')}>
+          {Object.entries(data.by_type_minor).length === 0 ? (
+            <p className="text-ar-sm text-text-muted">{nothingYet}</p>
+          ) : (
+            Object.entries(data.by_type_minor).map(([type, value]) => (
+              <LedgerRow
+                key={type}
+                label={i18n.t(
+                  type === 'delivery' ? 'pos.orderType.delivery' : type === 'takeaway' ? 'pos.orderType.takeaway' : 'pos.orderType.dineIn',
+                )}
+                value={money(value)}
+                unit={unit}
+              />
+            ))
+          )}
+        </DashSection>
       </div>
 
       {/* Recent administrative activity — the tail of the log, so a manager sees
           who changed what without leaving the overview. */}
-      <div className="flex flex-col gap-8 rounded-lg border border-line bg-surface p-20">
-        <span className="text-ar-md text-text-muted">{i18n.t('manager.dashboard.recentActivity')}</span>
+      <DashSection title={i18n.t('manager.dashboard.recentActivity')}>
         <ActivityLog query={{ limit: 8 }} />
-      </div>
+      </DashSection>
     </div>
+  );
+}
+
+/** A part of the overview: a title over a rule, not another box (batch 40). */
+function DashSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-8 border-t-strong border-ink pt-12">
+      <h2 className="text-ar-md font-semibold text-text">{title}</h2>
+      <div className="flex flex-col">{children}</div>
+    </section>
   );
 }

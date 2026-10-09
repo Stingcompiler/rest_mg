@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Report components: KpiCard, BarChart, StackedShareBar.
+ * Report components: KpiCard and KpiStrip, LedgerRow, BarChart, StackedShareBar.
  *
  * The charts are drawn with plain flex boxes and token colours — no chart
  * library, nothing to load offline. A bar chart's axis runs LTR even in Arabic
@@ -33,6 +33,13 @@ export interface KpiCardProps {
   tone?: KpiTone;
   /** How the figure moved against the period before (batch 22). */
   delta?: KpiDelta;
+  /** Money's currency, set small after the figure (batch 40). */
+  unit?: string;
+  /** The figure the ledger opens with, set larger (batch 40). */
+  lead?: boolean;
+  /** Nothing yet: «—» with words, not «٠», a dot in Arabic-Indic digits (batch 40). */
+  zero?: boolean;
+  zeroLabel?: string;
 }
 
 const DELTA_TONE: Record<KpiDelta['direction'], string> = {
@@ -43,15 +50,72 @@ const DELTA_TONE: Record<KpiDelta['direction'], string> = {
 
 const DELTA_ICON = { up: TrendingUp, down: TrendingDown, flat: Minus } as const;
 
-export function KpiCard({ label, value, sub, tone = 'text', delta }: KpiCardProps) {
+/**
+ * A figure: a cell of a KpiStrip, not a box of its own (batch 40). Each figure
+ * was a floating card with a gold top line in an even grid, the pattern every
+ * generated dashboard repeats.
+ */
+export function KpiCard({ label, value, sub, tone = 'text', delta, unit, lead = false, zero = false, zeroLabel }: KpiCardProps) {
   return (
-    // A gold hairline on top: the manager's figures carry the same mark as the
-    // public page's titles (batch 13).
-    <div className="flex flex-col gap-8 rounded-lg border border-line border-t-strong border-t-gold-soft bg-surface p-18 shadow-card">
-      <span className="text-ar-base text-text-muted">{label}</span>
-      <Numeric className={cn('text-num-4xl font-semibold', KPI_TONES[tone])}>{value}</Numeric>
+    <div className="flex min-w-0 flex-col gap-6 bg-surface p-18">
+      <span className="text-ar-sm text-text-muted">{label}</span>
+      {zero ? (
+        <span className="flex items-baseline gap-8">
+          <span aria-hidden="true" className={cn('font-semibold text-text-muted', lead ? 'text-num-4xl' : 'text-num-2xl')}>
+            —
+          </span>
+          {zeroLabel ? <span className="text-ar-sm text-text-muted">{zeroLabel}</span> : null}
+        </span>
+      ) : (
+        <span className="flex items-baseline gap-6">
+          <Numeric className={cn('font-semibold', lead ? 'text-num-4xl' : 'text-num-2xl', KPI_TONES[tone])}>{value}</Numeric>
+          {unit ? <span className="text-ar-xs text-text-muted">{unit}</span> : null}
+        </span>
+      )}
       {delta ? <Delta delta={delta} /> : null}
       {sub ? <span className="text-ar-sm text-text-muted">{sub}</span> : null}
+    </div>
+  );
+}
+
+/**
+ * Figures as one ledger band: cells divided by hairlines (the band's colour
+ * showing through a 1px gap), in any number of rows, either direction.
+ */
+export function KpiStrip({ columns, children }: { columns: 2 | 3 | 4; children: React.ReactNode }) {
+  return (
+    <div
+      className={cn(
+        'grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line',
+        columns === 4 ? 'lg:grid-cols-4' : columns === 3 ? 'lg:grid-cols-3' : '',
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A line of a ledger: the label, a dotted leader, the figure; a note under it.
+ * The same line the public menu sets its dishes in (batch 35).
+ */
+export function LedgerRow({ label, value, unit, note, tone = 'text', zero = false }: { label: string; value: string; unit?: string; note?: string; tone?: KpiTone; zero?: boolean }) {
+  return (
+    <div className="flex flex-col gap-2 border-b border-line py-12 last:border-b-0">
+      <div className="flex items-baseline gap-8">
+        <span className="text-ar-base text-text">{label}</span>
+        <span aria-hidden="true" className="flex-1 border-b border-dotted border-line-strong" />
+        {zero ? (
+          // «٠» alone reads as a dot in Arabic-Indic digits.
+          <span className="text-num-lg font-semibold text-text-muted">—</span>
+        ) : (
+          <>
+            <Numeric className={cn('text-num-lg font-semibold', KPI_TONES[tone])}>{value}</Numeric>
+            {unit ? <span className="text-ar-xs text-text-muted">{unit}</span> : null}
+          </>
+        )}
+      </div>
+      {note ? <span className="text-ar-sm text-text-muted">{note}</span> : null}
     </div>
   );
 }

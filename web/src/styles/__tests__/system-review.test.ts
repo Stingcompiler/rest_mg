@@ -93,7 +93,8 @@ describe('corners (K4)', () => {
     // menu's lines, and a featured dish's photo, which keeps the card corner.
     const landing = read('features/landing/LandingClient.tsx');
     expect(landing).toMatch(/<DishPhoto item=\{item\} className="[^"]*\brounded-lg\b/);
-    expect(read('components/report/report.tsx')).toMatch(/flex flex-col gap-8 rounded-lg border border-line/);
+    // The report's figures share one ledger band since batch 40; the band keeps the card corner.
+    expect(read('components/report/report.tsx')).toMatch(/overflow-hidden rounded-lg border border-line bg-line/);
   });
 });
 

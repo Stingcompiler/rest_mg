@@ -179,7 +179,8 @@ export function useRetireCustomer() {
 export function useSettleCustomer() {
   const invalidate = useCustomerInvalidator();
   return useMutation({ meta: INLINE_ERROR,
-    mutationFn: ({ id, body }: { id: string; body: NewSettlement }) => customersApi.settle(id, body),
+    mutationFn: ({ id, body, attempt }: { id: string; body: NewSettlement; attempt: string }) =>
+      customersApi.settle(id, body, attempt),
     onSuccess: invalidate,
   });
 }

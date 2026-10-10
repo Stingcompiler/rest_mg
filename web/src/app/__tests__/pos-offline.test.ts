@@ -71,6 +71,13 @@ class FakeCacheStorage {
   async delete(name: string) {
     return this.caches.delete(name);
   }
+  async match(input: unknown) {
+    for (const cache of this.caches.values()) {
+      const hit = await cache.match(input);
+      if (hit) return hit;
+    }
+    return undefined;
+  }
   /** Every cached path, across caches. */
   paths(): string[] {
     return [...this.caches.values()].flatMap((cache) => [...cache.store.keys()]);
@@ -121,6 +128,7 @@ function boot() {
     Promise,
     Set,
     Map,
+    JSON,
     location: self.location,
     console,
   });

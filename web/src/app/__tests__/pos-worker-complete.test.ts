@@ -71,7 +71,7 @@ function harness(build: string, failing: (path: string) => boolean, storage = ne
     handlers[type]!({ waitUntil: (p: Promise<unknown>) => (done = p) });
     return done;
   };
-  const request = async (path: string) => {
+  const request = async (path: string): Promise<Response | null> => {
     let response: Promise<Response> | null = null;
     handlers.fetch!({ request: { url: `${ORIGIN}${path}`, method: 'GET', mode: 'cors' }, respondWith: (p: Promise<Response>) => (response = p) });
     return response;
@@ -107,6 +107,17 @@ describe('taking over from the build before', () => {
     const offline = harness('b2', () => true, old.storage);
     const response = await offline.request('/_next/static/chunks/main-b1.js');
     expect(await response!.text()).toContain('main-b1');
+  });
+
+  it('keeps the code of a worker that kept no history (the first upgrade)', async () => {
+    const storage = new Map<string, FakeCache>();
+    storage.set('pos-shell-v2-old-shell', new FakeCache());
+    storage.set('pos-shell-v2-old-assets', new FakeCache());
+    const next = harness('b2', () => false, storage);
+    await next.run('install');
+    await next.run('activate');
+    expect([...storage.keys()]).toContain('pos-shell-v2-old-assets');
+    expect([...storage.keys()]).not.toContain('pos-shell-v2-old-shell');
   });
 
   it('keeps no more than the build before', async () => {

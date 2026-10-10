@@ -27,6 +27,8 @@
 const VERSION = 'pos-shell-v2';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
+// Which builds' code is kept: this one and the one before (batch 44).
+const HISTORY_CACHE = 'pos-shell-history';
 
 // Every screen of the till. A test holds this to the pages under app/(pos)/pos.
 const POS_ROUTES = ['/pos/', '/pos/menu/', '/pos/orders/', '/pos/payment/', '/pos/report/', '/pos/shift-close/', '/pos/sync/'];
@@ -61,29 +63,31 @@ async function precache() {
   const shell = await caches.open(SHELL_CACHE);
   const assets = await caches.open(ASSET_CACHE);
   const named = new Set();
-  // One failure (a screen still deploying, a flaky line) must not stop the rest.
+  // All or nothing (review of 10 October, F04): a screen or a file that did
+  // not download fails the install, so the browser keeps the worker it has,
+  // with its caches, and tries again on a later visit. Skipping failures let a
+  // worker take over without the payment screen or its code.
   for (const route of POS_ROUTES) {
     for (const url of [route, payloadOf(route)]) {
-      try {
-        const response = await fetch(url, { cache: 'no-cache' });
-        if (!response.ok) continue;
-        const text = await response.clone().text();
-        await shell.put(url, response);
-        for (const asset of assetsNamedIn(text)) named.add(asset);
-      } catch {
-        // Offline install: what was cached before stays.
-      }
+      const response = await fetch(url, { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`${url} answered ${response.status}`);
+      const text = await response.clone().text();
+      await shell.put(url, response);
+      for (const asset of assetsNamedIn(text)) named.add(asset);
     }
   }
   await Promise.all(
     [...named].map(async (url) => {
-      try {
-        if (await assets.match(url)) return;
-        const response = await fetch(url);
-        if (response.ok) await assets.put(url, response);
-      } catch {
-        // Fetched on first sight later instead.
+      if (await assets.match(url)) return;
+      // A hashed file a build before already holds is the same file.
+      const earlier = await caches.match(url);
+      if (earlier) {
+        await assets.put(url, earlier);
+        return;
       }
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`${url} answered ${response.status}`);
+      await assets.put(url, response);
     }),
   );
   try {
@@ -97,21 +101,30 @@ self.addEventListener('install', (event) => {
   event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
+/**
+ * Taking over keeps this build's caches and the build before's code: a page
+ * opened before the deploy still runs that build and loads its chunks lazily
+ * (batch 44). Everything older goes, by exact name ("…-new" must not keep
+ * "…-newer-shell"), and caches that are not the till's are not ours to drop.
+ */
+async function takeOver() {
+  const history = await caches.open(HISTORY_CACHE);
+  const saved = await history.match('/history');
+  const keys = await caches.keys();
+  // A worker from before batch 44 kept no history: the code it left is the
+  // build before.
+  const before = saved
+    ? await saved.json()
+    : keys.filter((key) => key.startsWith('pos-shell-') && key.endsWith('-assets')).map((key) => key.slice(0, -'-assets'.length));
+  const kept = [VERSION, ...before.filter((version) => version !== VERSION)].slice(0, 2);
+  await history.put('/history', new Response(JSON.stringify(kept)));
+  const keep = new Set([HISTORY_CACHE, SHELL_CACHE, ...kept.map((version) => `${version}-assets`)]);
+  await Promise.all(keys.filter((key) => key.startsWith('pos-shell-') && !keep.has(key)).map((key) => caches.delete(key)));
+  await self.clients.claim();
+}
+
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        // Every other build's caches go, by exact name ("…-new" must not keep
-        // "…-newer-shell"); caches that are not the till's are not ours to drop.
-        Promise.all(
-          keys
-            .filter((key) => key.startsWith('pos-shell-') && key !== SHELL_CACHE && key !== ASSET_CACHE)
-            .map((key) => caches.delete(key)),
-        ),
-      )
-      .then(() => self.clients.claim()),
-  );
+  event.waitUntil(takeOver());
 });
 
 function isImmutableAsset(url) {
@@ -182,7 +195,8 @@ self.addEventListener('fetch', (event) => {
   if (isImmutableAsset(url)) {
     event.respondWith(
       caches.open(ASSET_CACHE).then(async (cache) => {
-        const cached = await cache.match(request);
+        // This build's file, or the build before's for a page still running it.
+        const cached = (await cache.match(request)) ?? (await caches.match(request));
         if (cached) return cached;
         const response = await fetch(request);
         if (response.ok) cache.put(request, response.clone());

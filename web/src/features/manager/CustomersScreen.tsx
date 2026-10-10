@@ -212,6 +212,10 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
   const settle = useSettleCustomer();
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('cash');
+  // One key per repayment being recorded: a retry of the same amount and
+  // method reuses it, so a repayment whose answer was lost is recorded once
+  // (batch 43); a recorded one, or a changed amount, starts a new attempt.
+  const attempt = useRef<{ what: string; key: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
@@ -226,10 +230,13 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
       setError(i18n.t('error.payment_invalid'));
       return;
     }
+    const what = `${customer.id}|${digits}|${method}`;
+    if (attempt.current?.what !== what) attempt.current = { what, key: crypto.randomUUID() };
     settle.mutate(
-      { id: customer.id, body: { amount_minor: digits, method } },
+      { id: customer.id, body: { amount_minor: digits, method }, attempt: attempt.current.key },
       {
         onSuccess: () => {
+          attempt.current = null;
           setAmount('');
           setDone(true);
         },

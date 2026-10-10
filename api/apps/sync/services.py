@@ -70,10 +70,22 @@ TERMINAL_ORDER_STATUSES = {Order.Status.CLOSED, Order.Status.VOID}
 
 
 def apply_record(record: dict, device, branch=None) -> RecordResult:
+    # An order is read, checked and written under one lock on its row: two
+    # tills collecting the same website order at once both passed the
+    # "already settled" check, and the second replaced the first's payment
+    # (review of 10 October, F02). The second now waits, then sees it settled.
+    if record["type"] == "order":
+        with transaction.atomic():
+            return _apply_record(record, device, branch, lock=True)
+    return _apply_record(record, device, branch, lock=False)
+
+
+def _apply_record(record: dict, device, branch, *, lock: bool) -> RecordResult:
     record_type, record_id = record["type"], record["id"]
     model = MODELS_BY_TYPE[record_type]
 
-    existing = model.objects.filter(id=record_id).first()
+    rows = model.objects.select_for_update() if lock else model.objects
+    existing = rows.filter(id=record_id).first()
     # A record already on the server belongs to its branch. A device or cashier
     # of another branch may not overwrite it, collect it or take it over — the
     # writer below would otherwise re-save it under the pusher's branch.

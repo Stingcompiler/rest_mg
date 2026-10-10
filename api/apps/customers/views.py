@@ -16,6 +16,7 @@ import uuid
 
 from django.db.models import BigIntegerField, F, OuterRef, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -297,17 +298,47 @@ class CustomerViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["post"])
     def settle(self, request, pk=None):
         """Record a repayment against the account."""
-        person = self._scope(request).filter(id=pk).first()
-        if person is None:
-            return Response(
-                {"error": {"code": "not_found", "message": "Unknown customer."}},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         payload = SettlementSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
 
+        # The till's attempt key (Idempotency-Key): a repayment sent again after
+        # its answer was lost is the same repayment (review F03).
+        raw_key = request.headers.get("Idempotency-Key")
+        try:
+            attempt = uuid.UUID(raw_key) if raw_key else None
+        except ValueError:
+            return Response(
+                {"error": {"code": "validation_error", "message": "Idempotency-Key must be a UUID."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            # Locked while the balance is read and the repayment written, so two
+            # at once cannot both fit under the same balance.
+            person = self._scope(request).select_for_update().filter(id=pk).first()
+            if person is None:
+                return Response(
+                    {"error": {"code": "not_found", "message": "Unknown customer."}},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            if attempt is not None:
+                earlier = CustomerSettlement.objects.filter(id=attempt).first()
+                if earlier is not None:
+                    same = (
+                        earlier.customer_id == person.id
+                        and earlier.amount_minor == data["amount_minor"]
+                        and earlier.method == data["method"]
+                    )
+                    if not same:
+                        return Response(
+                            {"error": {"code": "idempotency_conflict", "message": "That key was used for another repayment."}},
+                            status=status.HTTP_409_CONFLICT,
+                        )
+                    return Response(_as_dict(person), status=status.HTTP_200_OK)
+            return self._settle(request, person, data, attempt)
+
+    def _settle(self, request, person, data, attempt):
         outstanding = _owed(person) - _settled(person)
         if data["amount_minor"] > outstanding:
             # Taking more than is owed would turn the account negative and hide a
@@ -325,7 +356,7 @@ class CustomerViewSet(viewsets.ViewSet):
 
         now = timezone.now()
         CustomerSettlement.objects.create(
-            id=uuid.uuid4(),
+            id=attempt or uuid.uuid4(),
             branch=person.branch,
             customer=person,
             amount_minor=data["amount_minor"],

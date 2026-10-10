@@ -306,6 +306,11 @@ export const customersApi = {
   retire: (id: string) => request<Customer>(`customers/${id}`, { method: 'DELETE' }),
   statement: (id: string, query: PageQuery = {}) =>
     request<Statement>(`customers/${id}/statement${withPaging(new URLSearchParams(), query)}`),
-  settle: (id: string, body: NewSettlement) =>
-    request<Customer>(`customers/${id}/settle`, { method: 'POST', body: JSON.stringify(body) }),
+  /** `attempt` is the Idempotency-Key: the same repayment sent again is recorded once (batch 43). */
+  settle: (id: string, body: NewSettlement, attempt: string) =>
+    request<Customer>(`customers/${id}/settle`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: { 'Idempotency-Key': attempt },
+    }),
 };

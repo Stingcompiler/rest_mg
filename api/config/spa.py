@@ -9,14 +9,18 @@ directory-style routes to their ``index.html`` — with two special cases:
     page works at runtime without a rebuild (the slug is read client-side);
   - ``pos-sw.js`` carries the header that lets the service worker claim ``/pos/``;
   - a screen's router payload (``…/index.txt``) loaded as a page redirects to
-    the screen (batch 41).
+    the screen (batch 41);
+  - the public page carries the published restaurant in its HTML, and the
+    server answers ``robots.txt`` and ``sitemap.xml`` (batch 47).
 
 For production the assets are better served by WhiteNoise or a CDN in front of
 this; for a single-restaurant self-hosted box, one process is the point.
 """
 from __future__ import annotations
 
+import json
 import mimetypes
+from html import escape
 from pathlib import Path
 
 from django.conf import settings
@@ -65,6 +69,76 @@ def _resolve(rel: str) -> Path | None:
     return None
 
 
+# Staff screens are no search result.
+PRIVATE_PREFIXES = ("/pos/", "/manager/", "/kitchen/", "/catalog/", "/deliveries/", "/login/", "/api/", "/admin/")
+
+
+def _published(slug: str | None = None):
+    from apps.profiles.models import RestaurantProfile
+
+    published = RestaurantProfile.objects.filter(landing_page_enabled=True)
+    return published.filter(slug=slug).first() if slug else published.order_by("created_at").first()
+
+
+def _robots(request) -> HttpResponse:
+    lines = ["User-agent: *", "Allow: /"]
+    lines += [f"Disallow: {prefix}" for prefix in PRIVATE_PREFIXES]
+    lines.append(f"Sitemap: {request.build_absolute_uri('/sitemap.xml')}")
+    return HttpResponse("\n".join(lines) + "\n", content_type="text/plain; charset=utf-8")
+
+
+def _sitemap(request) -> HttpResponse:
+    from apps.profiles.models import RestaurantProfile
+
+    urls = [request.build_absolute_uri("/")]
+    for slug in RestaurantProfile.objects.filter(landing_page_enabled=True).order_by("created_at").values_list("slug", flat=True):
+        urls.append(request.build_absolute_uri(f"/r/{slug}/"))
+    body = "".join(f"<url><loc>{escape(url)}</loc></url>" for url in urls)
+    return HttpResponse(
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>',
+        content_type="application/xml; charset=utf-8",
+    )
+
+
+def _with_restaurant(request, html: str, profile) -> str:
+    """The published restaurant in the page's head, for link previews and search.
+
+    The name arrived only from the API, after the page ran: a link shared on
+    WhatsApp previewed as «اوردراك» with no description (review F13).
+    """
+    name = escape(profile.name_ar)
+    description = escape(profile.description_ar or profile.name_ar)
+    url = escape(request.build_absolute_uri(request.path))
+    tags = [
+        f"<title>{name}</title>",
+        f'<meta name="description" content="{description}"/>',
+        f'<meta property="og:title" content="{name}"/>',
+        f'<meta property="og:description" content="{description}"/>',
+        '<meta property="og:type" content="restaurant"/>',
+        f'<meta property="og:url" content="{url}"/>',
+        '<meta property="og:locale" content="ar_AR"/>',
+        f'<link rel="canonical" href="{url}"/>',
+    ]
+    if profile.hero_image:
+        image = escape(request.build_absolute_uri(profile.hero_image.url))
+        tags.append(f'<meta property="og:image" content="{image}"/>')
+    data = {"@context": "https://schema.org", "@type": "Restaurant", "name": profile.name_ar, "url": request.build_absolute_uri(request.path)}
+    if profile.phone:
+        data["telephone"] = profile.phone
+    if profile.address_ar:
+        data["address"] = profile.address_ar
+    if profile.description_ar:
+        data["description"] = profile.description_ar
+    # "<" escaped so no value can close the script element.
+    ld = json.dumps(data, ensure_ascii=False, indent=1).replace("<", "\\u003c")
+    tags.append(f'<script type="application/ld+json">{ld}</script>')
+    start, end = html.find("<title>"), html.find("</title>")
+    if start == -1 or end == -1:
+        return html.replace("</head>", "".join(tags) + "</head>", 1)
+    return html[:start] + "".join(tags) + html[end + len("</title>"):]
+
+
 def _is_page_load(request) -> bool:
     """A browser loading an address as a page, not a script fetching it.
 
@@ -99,7 +173,26 @@ def spa(request, path: str = ""):
         body = notfound.read_bytes() if notfound.is_file() else b"Not found"
         return HttpResponseNotFound(body)
 
+    if rel == "robots.txt":
+        return _robots(request)
+    if rel == "sitemap.xml":
+        return _sitemap(request)
+
     target = _resolve(rel)
+
+    # The public page: the root, or a restaurant's own /r/<slug>/.
+    public_slug = None
+    parts = rel.split("/")
+    if rel in ("", "index.html"):
+        public_slug = ""
+    elif len(parts) >= 2 and parts[0] == "r" and parts[1] not in ("", "_"):
+        public_slug = parts[1]
+    if target is not None and public_slug is not None and target.suffix == ".html":
+        profile = _published(public_slug or None)
+        if profile is not None:
+            html = _with_restaurant(request, target.read_text(encoding="utf-8"), profile)
+            return HttpResponse(html, content_type="text/html; charset=utf-8")
+
     if target is None:
         notfound = FRONTEND_DIR / "404.html"
         body = notfound.read_bytes() if notfound.is_file() else b"Not found"

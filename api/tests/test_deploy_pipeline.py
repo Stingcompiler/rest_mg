@@ -85,3 +85,29 @@ class ServerScriptTests(SimpleTestCase):
     def test_validates_the_release_name_before_using_it(self):
         receive = RECEIVE.read_text(encoding="utf-8")
         self.assertTrue(re.search(r'if ! \[\[ "\$REL" =~', receive))
+
+
+class ReleaseVenvTests(SimpleTestCase):
+    """Each release brings its own packages (batch 50).
+
+    Review of 10 October, F10: releases shared one venv, so a rollback switched
+    the code back but kept the new release's packages. Each release now has
+    its own venv, and the service runs the live release's.
+    """
+
+    def setUp(self):
+        self.receive = RECEIVE.read_text(encoding="utf-8")
+        self.unit = (ROOT / "deploy" / "vps" / "orderak-web.service").read_text(encoding="utf-8")
+
+    def test_each_release_gets_its_own_venv(self):
+        self.assertIn('python3.12 -m venv "$DIR/venv"', self.receive)
+        self.assertIn('"$DIR/venv/bin/pip" install', self.receive)
+        self.assertNotIn('"$BASE/venv/bin/pip"', self.receive)
+        self.assertIn("$DIR/venv/bin/python manage.py", self.receive)
+
+    def test_the_service_runs_the_live_release_s_venv(self):
+        self.assertIn("ExecStart=/opt/orderak/current/venv/bin/gunicorn", self.unit)
+        self.assertIn("WorkingDirectory=/opt/orderak/current/api", self.unit)
+
+    def test_a_rollback_target_must_have_its_venv(self):
+        self.assertRegex(self.receive, r'\[ -x "\$PREV/venv/bin/gunicorn" \]')

@@ -130,7 +130,7 @@ python manage.py expire_pickups --minutes 60
 |---|---|---|
 | `/opt/orderak/releases/<commit>` | كل إصدار في مجلده: `api/` و`web/out` | المجلد root، والإصدار `orderak` |
 | `/opt/orderak/current` | رابط للإصدار الحي | root |
-| `/opt/orderak/venv` | بيئة Python 3.12 | root |
+| `/opt/orderak/releases/<commit>/venv` | بيئة Python 3.12 لكل إصدار (الدفعة ٥٠)، فيرجع الرجوع بالحزم مع الكود | root |
 | `/opt/orderak/env` | الإعدادات والأسرار (`DJANGO_SECRET_KEY` و`DATABASE_URL`…) | root، ويقرؤه `orderak` |
 | `/opt/orderak/media` | الصور المرفوعة | `orderak` |
 | `/opt/orderak/bin` | `receive-release` و`deploy-entry` و`backup.sh` | root |
@@ -143,10 +143,10 @@ python manage.py expire_pickups --minutes 60
 2. إن نجح، يبدأ [`deploy.yml`](../.github/workflows/deploy.yml) على الـ commit نفسه الذي فحصه CI.
 3. يبني الواجهة، ويرسل الإصدار إلى الخادم.
 4. على الخادم يتولى [`receive-release.sh`](../deploy/vps/receive-release.sh) ما يلي:
-   - يفحص الإصدار، ثم يثبّت الحزم.
+   - يفحص الإصدار، ثم ينشئ له بيئة Python خاصة ويثبّت حزمه فيها.
    - يشغّل `migrate` و`collectstatic` و`createcachetable` وفحص الفرع الواحد.
    - إن نجح كل ذلك، يحوّل `current` إلى الإصدار الجديد ويعيد التشغيل.
-   - إن لم يُجب الإصدار الجديد على `/healthz` خلال ٣٠ ثانية، يعود إلى الإصدار السابق.
+   - إن لم يُجب الإصدار الجديد على `/healthz` خلال ٣٠ ثانية، يعود إلى الإصدار السابق بكوده وحزمه معًا. الخدمة تشغّل `current/venv/bin/gunicorn`، كما في [`orderak-web.service`](../deploy/vps/orderak-web.service).
    - يُبقي آخر خمسة إصدارات.
 
 **الأمان:**

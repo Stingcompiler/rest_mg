@@ -8,8 +8,9 @@
 #   receive-release <commit> < orderak-<commit>.tgz
 #
 # Layout (docs/DEPLOY.ar.md, the VPS section): each release in
-# /opt/orderak/releases/<commit>, `current` pointing at the live one, one venv,
-# one env file, media outside the releases. Every check runs before the switch;
+# /opt/orderak/releases/<commit> with its own venv (batch 50), `current`
+# pointing at the live one, one env file, media outside the releases. Code and
+# packages switch together, so a rollback brings back both. Every check runs before the switch;
 # after it, a release that does not answer /healthz is rolled back.
 set -euo pipefail
 
@@ -42,13 +43,15 @@ tar -xzf "$ARCHIVE" -C "$DIR.new" --no-same-owner
 [ -f "$DIR.new/api/manage.py" ] && [ -f "$DIR.new/web/out/index.html" ] || { echo "refused: archive lacks api/ or web/out" >&2; rm -rf "$DIR.new"; exit 2; }
 rm -rf "$DIR"
 mv "$DIR.new" "$DIR"
-chown -R orderak:orderak "$DIR"
-
-log "installing requirements"
-"$BASE/venv/bin/pip" install -q -r "$DIR/api/requirements.txt"
+log "installing requirements into the release's own venv"
+python3.12 -m venv "$DIR/venv"
+"$DIR/venv/bin/pip" install -q --upgrade pip
+"$DIR/venv/bin/pip" install -q -r "$DIR/api/requirements.txt"
+# The app writes only staticfiles under the release; the venv stays root's.
+chown -R orderak:orderak "$DIR/api" "$DIR/web"
 
 manage() {
-  sudo -u orderak bash -c "set -a; . $BASE/env; set +a; cd $DIR/api && $BASE/venv/bin/python manage.py $*"
+  sudo -u orderak bash -c "set -a; . $BASE/env; set +a; cd $DIR/api && $DIR/venv/bin/python manage.py $*"
 }
 log "checking and migrating"
 manage check --deploy --fail-level ERROR >/dev/null
@@ -74,7 +77,7 @@ done
 
 if ! $healthy; then
   log "health check failed — rolling back to ${PREV##*/}"
-  if [ -n "$PREV" ] && [ -d "$PREV" ]; then
+  if [ -n "$PREV" ] && [ -d "$PREV" ] && [ -x "$PREV/venv/bin/gunicorn" ]; then
     ln -sfn "$PREV" "$BASE/current"
     systemctl restart orderak-web
   fi

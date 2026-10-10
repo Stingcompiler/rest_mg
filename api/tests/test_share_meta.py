@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import uuid
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from apps.profiles.models import RestaurantProfile
 from tests.factories import make_branch
 
 
+@override_settings(ALLOWED_HOSTS=["orderak.example"])
 class ShareMetaTests(TestCase):
     def setUp(self):
         now = timezone.now()
@@ -30,7 +31,8 @@ class ShareMetaTests(TestCase):
     def page(self, path="/"):
         response = self.client.get(path, HTTP_HOST="orderak.example")
         self.assertEqual(response.status_code, 200)
-        return response.content.decode()
+        body = b"".join(response.streaming_content) if response.streaming else response.content
+        return body.decode()
 
     def test_the_home_page_names_the_restaurant(self):
         html = self.page()
@@ -62,6 +64,7 @@ class ShareMetaTests(TestCase):
         self.assertNotIn("og:title", self.page("/login/"))
 
 
+@override_settings(ALLOWED_HOSTS=["orderak.example"])
 class RobotsAndSitemapTests(TestCase):
     def setUp(self):
         now = timezone.now()

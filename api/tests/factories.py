@@ -31,6 +31,14 @@ def make_device(branch=None) -> tuple[Device, str]:
     return Device.enrol(label="تابلت الكاشير", branch=branch)
 
 
+def make_customer(branch=None, name: str = "أحمد"):
+    """A customer a branch may put a debt on (credit payments must name one, batch 48)."""
+    from apps.customers.models import Customer
+
+    now = timezone.now()
+    return Customer.objects.create(id=uuid.uuid4(), branch=branch, name=name, created_at=now, updated_at=now)
+
+
 def make_category(branch=None, **kwargs) -> Category:
     now = timezone.now()
     return Category.objects.create(

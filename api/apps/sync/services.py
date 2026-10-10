@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.catalog.models import AvailabilityChange, MenuItem, PriceChange
@@ -124,6 +125,8 @@ def _apply_record(record: dict, device, branch, *, lock: bool) -> RecordResult:
         try:
             with transaction.atomic():
                 _collect_online_order(serializer.validated_data, device, existing)
+        except RecordRefused as refusal:
+            return RecordResult(record_id, REJECTED, _refusal(refusal.code, str(refusal)))
         except Exception as exc:  # noqa: BLE001 - reported per record, never fatal to the batch
             return RecordResult(record_id, REJECTED, {"detail": str(exc)})
         return RecordResult(record_id, ACCEPTED)
@@ -252,7 +255,27 @@ def _collect_online_order(data: dict, device, existing: Order) -> Order:
     return existing
 
 
+def _assert_customer_in_scope(customer_id, branch) -> None:
+    """A debt goes to a customer that exists and is the branch's own or shared.
+
+    A credit payment's customer was only checked to be a UUID: a till of one
+    branch could charge another branch's customer, or a made-up one (review
+    of 10 October, F05).
+    """
+    if customer_id is None:
+        return
+    from apps.customers.models import Customer
+
+    customers = Customer.objects.filter(id=customer_id)
+    if branch is not None:
+        customers = customers.filter(Q(branch_id=branch.id) | Q(branch__isnull=True))
+    if not customers.exists():
+        raise RecordRefused("customer_out_of_scope", "That customer does not exist or belongs to another branch.")
+
+
 def _write_payments(order: Order, payments: list[dict]) -> None:
+    for payment in payments:
+        _assert_customer_in_scope(payment.get("customer_id"), order.branch)
     for payment in payments:
         Payment.objects.create(
             id=payment["id"],
@@ -291,6 +314,8 @@ def _write_order(data: dict, device, branch=None, existing: Order | None = None)
         # that field and the tablet knows nothing about it.
         existing.lines.all().hard_delete()
         existing.payments.all().hard_delete()
+
+    _assert_customer_in_scope(data.get("customer_id"), branch)
 
     order = Order(
         id=data["id"],

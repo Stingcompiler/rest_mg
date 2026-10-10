@@ -12,6 +12,7 @@ from apps.accounts.models import Device
 from apps.catalog.models import MenuItem, PriceChange
 from apps.orders.models import Order
 from tests.factories import (
+    make_customer,
     envelope,
     make_branch,
     make_category,
@@ -212,7 +213,7 @@ class OrderReadTests(ManagerTestCase):
                 "id": str(uuid.uuid4()),
                 "method": "credit",
                 "amount_minor": "40000",
-                "customer_id": str(uuid.uuid4()),
+                "customer_id": str(make_customer(self.branch).id),
                 "taken_at": timezone.now().isoformat(),
             }
         ]

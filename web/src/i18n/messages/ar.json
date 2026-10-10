@@ -789,5 +789,6 @@
   "manager.dashboard.nothingYet": "لا شيء بعد",
   "manager.money.openTitle": "ما لم يكتمل بعد",
   "error.owner_protected": "حساب المالك لا يعدّله إلا مالك.",
-  "error.last_owner": "لا يمكن تخفيض دور آخر مالك نشط أو إيقافه."
+  "error.last_owner": "لا يمكن تخفيض دور آخر مالك نشط أو إيقافه.",
+  "error.customer_out_of_scope": "هذا العميل غير موجود أو يتبع فرعًا آخر، فلا يُسجَّل عليه دين."
 }

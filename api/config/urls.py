@@ -7,6 +7,9 @@ Two audiences, two authentication schemes:
 """
 from __future__ import annotations
 
+from pathlib import Path
+
+from django.db import DatabaseError, connection
 from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
@@ -46,7 +49,22 @@ router.register("profile", RestaurantProfileViewSet, basename="profile")
 
 
 def health(_request):
-    return JsonResponse({"status": "ok"})
+    """Can this process serve? The database answers and the frontend is built.
+
+    The deploy rolls back on a failure here and the five-minute check alerts on
+    one (batch 45); "ok" without looking was a pass for a release with a dead
+    database or no web/out. Which part failed is said, never why.
+    """
+    parts = {"database": "ok", "frontend": "ok"}
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+    except DatabaseError:
+        parts["database"] = "unavailable"
+    if not (Path(settings.FRONTEND_DIR) / "index.html").is_file():
+        parts["frontend"] = "unavailable"
+    healthy = all(value == "ok" for value in parts.values())
+    return JsonResponse({"status": "ok" if healthy else "unavailable", **parts}, status=200 if healthy else 503)
 
 
 urlpatterns = [

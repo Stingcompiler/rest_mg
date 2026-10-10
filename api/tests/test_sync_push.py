@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from apps.orders.models import Order, Payment
 from apps.shifts.models import Shift
 from tests.factories import (
+    make_customer,
     envelope,
     make_device,
     order_payload,
@@ -113,7 +114,7 @@ class OrderRuleTests(PushTestCase):
                 "id": str(uuid.uuid4()),
                 "method": "credit",
                 "amount_minor": "25000",
-                "customer_id": str(uuid.uuid4()),
+                "customer_id": str(make_customer(self.device.branch).id),
                 "taken_at": timezone.now().isoformat(),
             }
         ]

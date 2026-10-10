@@ -28,6 +28,20 @@ ASSIGNABLE_ROLES = [
 ]
 
 
+def _owner_protected() -> Response:
+    return Response(
+        {"error": {"code": "owner_protected", "message": "Only an owner can change an owner's account."}},
+        status=status.HTTP_403_FORBIDDEN,
+    )
+
+
+def _is_last_active_owner(person: ManagerUser) -> bool:
+    return (
+        person.role == ManagerUser.Role.OWNER
+        and not ManagerUser.objects.filter(role=ManagerUser.Role.OWNER, is_active=True).exclude(id=person.id).exists()
+    )
+
+
 class StaffSerializer(serializers.Serializer):
     id = serializers.UUIDField(read_only=True)
     username = serializers.CharField(max_length=150)
@@ -105,6 +119,11 @@ class StaffViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # An owner's account is the owner's to manage (review F01): a manager
+        # could reset the owner's password, then demote the owner to cashier.
+        if person.role == ManagerUser.Role.OWNER and request.user.role != ManagerUser.Role.OWNER:
+            return _owner_protected()
+
         # partial=True: this is a PATCH-style edit; unsent fields are left alone.
         payload = StaffSerializer(data=request.data, partial=True)
         payload.is_valid(raise_exception=True)
@@ -142,6 +161,16 @@ class StaffViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # The last active owner stays one: nobody would be left to administer.
+        leaving = ("role" in data and data["role"] != ManagerUser.Role.OWNER) or (
+            "is_active" in data and not data["is_active"]
+        )
+        if leaving and _is_last_active_owner(person):
+            return Response(
+                {"error": {"code": "last_owner", "message": "The last active owner cannot be demoted or deactivated."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         changes: dict[str, list] = {}
         was_active = person.is_active
         for field in ("username", "display_name", "role", "is_active"):
@@ -176,6 +205,8 @@ class StaffViewSet(viewsets.ViewSet):
                 {"error": {"code": "not_found", "message": "Unknown account."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if person.role == ManagerUser.Role.OWNER and request.user.role != ManagerUser.Role.OWNER:
+            return _owner_protected()
         if person.id == request.user.id:
             return Response(
                 {
@@ -184,6 +215,11 @@ class StaffViewSet(viewsets.ViewSet):
                         "message": "You cannot deactivate your own account.",
                     }
                 },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if _is_last_active_owner(person):
+            return Response(
+                {"error": {"code": "last_owner", "message": "The last active owner cannot be demoted or deactivated."}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if person.is_active:

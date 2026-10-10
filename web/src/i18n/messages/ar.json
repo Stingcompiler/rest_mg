@@ -787,5 +787,7 @@
   "error.use_change_password": "كلمة مرورك تُغيَّر من الإعدادات، بكلمتك الحالية.",
   "manager.audit.passwordChanged": "غيّر كلمة مروره بنفسه",
   "manager.dashboard.nothingYet": "لا شيء بعد",
-  "manager.money.openTitle": "ما لم يكتمل بعد"
+  "manager.money.openTitle": "ما لم يكتمل بعد",
+  "error.owner_protected": "حساب المالك لا يعدّله إلا مالك.",
+  "error.last_owner": "لا يمكن تخفيض دور آخر مالك نشط أو إيقافه."
 }

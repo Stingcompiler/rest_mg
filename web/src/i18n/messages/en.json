@@ -787,5 +787,7 @@
   "error.use_change_password": "Change your own password from settings, with your current one.",
   "manager.audit.passwordChanged": "Changed their own password",
   "manager.dashboard.nothingYet": "Nothing yet",
-  "manager.money.openTitle": "Not settled yet"
+  "manager.money.openTitle": "Not settled yet",
+  "error.owner_protected": "Only an owner can change an owner's account.",
+  "error.last_owner": "The last active owner cannot be demoted or deactivated."
 }

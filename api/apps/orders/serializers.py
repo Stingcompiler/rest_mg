@@ -56,7 +56,13 @@ class PaymentSerializer(serializers.Serializer):
             )
         tendered = attrs.get("tendered_minor")
         if tendered is not None:
-            expected_change = max(tendered - attrs["amount_minor"], 0)
+            # Less handed over than paid is not a payment (review F06): the rule
+            # took max(tendered − amount, 0), so 1 tendered for 25,000 passed.
+            if tendered < attrs["amount_minor"]:
+                raise serializers.ValidationError(
+                    {"tendered_minor": "The cash handed over is less than the amount paid."}
+                )
+            expected_change = tendered - attrs["amount_minor"]
             if attrs.get("change_minor", 0) != expected_change:
                 raise serializers.ValidationError(
                     {"change_minor": f"Change must equal tendered − amount ({expected_change})."}

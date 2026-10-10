@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from apps.accounts.authentication import CookieJWTAuthentication
 from apps.accounts.permissions import IsManager
-from apps.core.query import parse_window
+from apps.core.query import parse_page, parse_window
 from apps.core.scoping import visible
 from apps.customers.models import CustomerSettlement
 from apps.orders.models import Order, Payment
@@ -24,7 +24,8 @@ class ShiftViewSet(viewsets.ViewSet):
         shifts = ShiftReadSerializer.queryset()
         if request.user.branch_id:
             shifts = shifts.filter(branch_id=request.user.branch_id)
-        limit = min(int(request.query_params.get("limit", 60)), 200)
+        # The shared parser: a nonsense limit falls back, never 500s (review F09).
+        limit, _ = parse_page(request.query_params, default=60, maximum=200)
         return Response(ShiftReadSerializer(shifts[:limit], many=True).data)
 
     def retrieve(self, request, pk=None):
@@ -143,7 +144,10 @@ class ReportViewSet(viewsets.ViewSet):
             live = live.filter(branch_id=request.user.branch_id)
         live_summary = live.aggregate(count=Count("id"), total=Sum("total_minor"))
         unpaid_count = live_summary["count"] or 0
-        unpaid = int(live_summary["total"] or 0)
+        # What is left to collect: the bills' totals less what was already paid
+        # on them. Summing totals counted a part-paid bill whole (review F07).
+        paid_on_live = Payment.objects.filter(order__in=live).aggregate(total=Sum("amount_minor"))["total"] or 0
+        unpaid = max(int(live_summary["total"] or 0) - int(paid_on_live), 0)
         pending_delivery = live.filter(
             channel=Order.Channel.ONLINE,
             delivery_status__in=[

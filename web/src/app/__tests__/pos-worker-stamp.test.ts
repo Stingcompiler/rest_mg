@@ -43,13 +43,14 @@ describe('stamping the worker', () => {
 });
 
 describe('a stamped worker taking over', () => {
-  it('drops every other build’s caches, keeps its own, and leaves caches not its kind alone', async () => {
+  it('drops other builds’ pages, keeps its own and the build before’s code, and leaves caches not its kind alone', async () => {
+    // Since batch 44 the build before's code stays, for pages still running it.
     // "newer" starts with "new": only exact names count as this build's.
     const names = new Set(['pos-shell-v2-shell', 'pos-shell-v2-old-shell', 'pos-shell-v2-old-assets', 'pos-shell-v2-newer-shell', 'pos-shell-v2-new-shell', 'pos-shell-v2-new-assets', 'other-app']);
     const caches = {
       keys: async () => [...names],
       delete: async (name: string) => names.delete(name),
-      open: async () => ({}),
+      open: async () => ({ match: async () => undefined, put: async () => {} }),
     };
     const handlers: Record<string, (event: unknown) => void> = {};
     vm.runInNewContext(stampWorker(WORKER, 'new'), {
@@ -63,6 +64,6 @@ describe('a stamped worker taking over', () => {
     let done: Promise<unknown> = Promise.resolve();
     handlers.activate!({ waitUntil: (p: Promise<unknown>) => (done = p) });
     await done;
-    expect([...names].sort()).toEqual(['other-app', 'pos-shell-v2-new-assets', 'pos-shell-v2-new-shell']);
+    expect([...names].sort()).toEqual(['other-app', 'pos-shell-v2-new-assets', 'pos-shell-v2-new-shell', 'pos-shell-v2-old-assets']);
   });
 });

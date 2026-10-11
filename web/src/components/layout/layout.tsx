@@ -20,10 +20,11 @@ export interface AppHeaderProps {
 
 export function AppHeader({ title, trailing, leading }: AppHeaderProps) {
   return (
-    <header className="flex h-header flex-none items-center justify-between gap-12 border-b border-line bg-surface px-20">
-      <div className="flex min-w-0 items-center gap-14">
+    <header className="flex h-header flex-none items-center justify-between gap-10 border-b border-line bg-surface px-16 sm:gap-12 sm:px-20">
+      <div className="flex min-w-0 items-center gap-10 sm:gap-14">
         {leading}
-        <div className="truncate text-ar-xl font-semibold text-text">{title}</div>
+        {/* A size smaller on a phone, so a title keeps its order number (batch 52). */}
+        <div className="truncate text-ar-lg font-semibold text-text sm:text-ar-xl">{title}</div>
       </div>
       {trailing ? <div className="flex flex-none items-center gap-10">{trailing}</div> : null}
     </header>

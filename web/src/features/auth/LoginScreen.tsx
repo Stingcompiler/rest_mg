@@ -61,12 +61,12 @@ export function LoginScreen() {
   // in flight, render nothing rather than flashing a form that is about to
   // vanish.
   if (auth.loading || signedInRole) {
-    return <main className="min-h-screen bg-bg" dir={i18n.dir} />;
+    return <main className="min-h-dvh bg-bg" dir={i18n.dir} />;
   }
 
   return (
     <main
-      className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-16 p-24"
+      className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-16 p-24"
       dir={i18n.dir}
     >
       {/* The product's name first, then what the screen is for. The gold rule

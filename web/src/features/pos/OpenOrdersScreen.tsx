@@ -76,7 +76,7 @@ export function OpenOrdersScreen() {
   );
 
   return (
-    <div className="flex h-screen bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh bg-bg text-text" dir={i18n.dir}>
       <PosRail active="orders" />
       <div className="flex min-w-0 flex-1 flex-col pb-mobile-nav md:pb-0">
         <AppHeader
@@ -87,14 +87,16 @@ export function OpenOrdersScreen() {
                   beside a title that says "open orders" read as "you have none"
                   whenever a filter happened to match nothing — which is exactly
                   how a cashier concludes the screen is broken. */}
-              <Numeric className="text-num-lg text-text-muted">
-                {filter === 'all'
-                  ? i18n.int(all.length)
-                  : i18n.t('pos.orders.shownOfTotal', {
-                      shown: i18n.int(orders.length),
-                      total: i18n.int(all.length),
-                    })}
-              </Numeric>
+              {all.length > 0 ? (
+                <Numeric className="text-num-lg text-text-muted">
+                  {filter === 'all'
+                    ? i18n.int(all.length)
+                    : i18n.t('pos.orders.shownOfTotal', {
+                        shown: i18n.int(orders.length),
+                        total: i18n.int(all.length),
+                      })}
+                </Numeric>
+              ) : null}
             </span>
           }
           trailing={

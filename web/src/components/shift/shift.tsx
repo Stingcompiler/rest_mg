@@ -17,10 +17,11 @@ export interface DenominationRowProps {
 
 export function DenominationRow({ note, stepper, sum }: DenominationRowProps) {
   return (
-    <div className="flex items-center gap-12 rounded-md border border-line bg-surface p-14">
+    // One column layout for every row, so the steppers line up (batch 52).
+    <div className="grid grid-cols-denomination items-center gap-12 rounded-md border border-line bg-surface p-14">
       <Numeric className="text-num-md font-semibold text-text">{note}</Numeric>
       {stepper}
-      <Numeric className="flex-1 text-end text-num-md font-semibold text-text-muted">{sum}</Numeric>
+      <Numeric className="text-end text-num-md font-semibold text-text-muted">{sum}</Numeric>
     </div>
   );
 }

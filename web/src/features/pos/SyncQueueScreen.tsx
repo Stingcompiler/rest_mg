@@ -125,14 +125,15 @@ export function SyncQueueScreen() {
   const refused = (entries ?? []).filter((entry) => entry.lastError !== null);
 
   return (
-    <div className="flex h-screen bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh bg-bg text-text" dir={i18n.dir}>
       <PosRail active="sync" />
       <div className="flex min-w-0 flex-1 flex-col pb-mobile-nav md:pb-0">
         <AppHeader
           title={
             <span className="flex items-baseline gap-8 text-ar-xl font-semibold">
               {i18n.t('pos.sync.title')}
-              <Numeric className="text-num-lg text-text-muted">{i18n.int(entries?.length ?? 0)}</Numeric>
+              {/* No count for an empty queue: «٠» reads as a dot (batch 52). */}
+              {entries?.length ? <Numeric className="text-num-lg text-text-muted">{i18n.int(entries.length)}</Numeric> : null}
             </span>
           }
           trailing={
@@ -148,12 +149,14 @@ export function SyncQueueScreen() {
           <div className="mx-auto flex max-w-3xl flex-col gap-14">
             <div className="flex flex-wrap items-center justify-between gap-12 rounded-lg border border-line bg-surface p-16">
               <div className="flex flex-col gap-4">
-                <span className="text-ar-base">
-                  {i18n.t('pos.sync.summary', {
-                    waiting: i18n.int(waiting.length),
-                    refused: i18n.int(refused.length),
-                  })}
-                </span>
+                {waiting.length > 0 || refused.length > 0 ? (
+                  <span className="text-ar-base">
+                    {i18n.t('pos.sync.summary', {
+                      waiting: i18n.int(waiting.length),
+                      refused: i18n.int(refused.length),
+                    })}
+                  </span>
+                ) : null}
                 {!pos.online ? (
                   <span className="flex items-center gap-6 text-ar-sm text-warning">
                     <CloudOff size={15} />

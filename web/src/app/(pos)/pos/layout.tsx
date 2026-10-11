@@ -30,7 +30,7 @@ export const dynamic = 'force-static';
 
 export default function PosLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-dvh bg-bg text-text">
       <ServiceWorkerRegistrar />
       {/* Each cashier signs in as themselves, so their shift and every order
           they take carry their name. The identity is cached locally, so a

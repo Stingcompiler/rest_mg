@@ -120,7 +120,7 @@ export function DeliveriesScreen() {
   });
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh flex-col bg-bg text-text" dir={i18n.dir}>
       <header className="flex h-header flex-none items-center justify-between gap-12 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex min-w-0 items-center gap-12">
           <IconButton variant="quiet" label={i18n.t('catalog.back')} onClick={goHome}>
@@ -128,7 +128,7 @@ export function DeliveriesScreen() {
           </IconButton>
           <span className="hidden border-e border-line pe-12 sm:flex"><BrandMark inline /></span>
           <h1 className="flex items-center gap-10 truncate text-ar-lg font-semibold sm:text-ar-xl">
-            <Truck size={22} className="text-accent" />
+            <Truck size={22} className="flex-none text-accent" />
             {i18n.t('deliveries.title')}
           </h1>
         </div>

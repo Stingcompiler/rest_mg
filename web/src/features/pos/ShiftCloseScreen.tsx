@@ -105,14 +105,15 @@ export function ShiftCloseScreen() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh flex-col bg-bg text-text" dir={i18n.dir}>
       <AppHeader
         leading={
           <IconButton label={i18n.t('common.cancel')} onClick={() => router.push('/pos')}>
             <ArrowRight size={22} />
           </IconButton>
         }
-        title={`${i18n.t('pos.shift.close')} · ${shift.toSnapshot().name}`}
+        // A shift without a name left a dangling «·» (batch 52).
+        title={shift.toSnapshot().name ? `${i18n.t('pos.shift.close')}، ${shift.toSnapshot().name}` : i18n.t('pos.shift.close')}
       />
 
       <div className="flex min-h-0 flex-1 flex-col gap-16 overflow-y-auto p-16 md:flex-row md:overflow-visible">
@@ -126,9 +127,11 @@ export function ShiftCloseScreen() {
                 <DenominationRow
                   key={key}
                   note={i18n.t('pos.shift.coins')}
-                  sum={i18n.money(amount)}
+                  sum={amount > 0n ? i18n.money(amount) : '—'}
                   stepper={
                     <TextField
+                      // As wide as an amount, not the browser's default field (batch 52).
+                      size={8}
                       inputMode="numeric"
                       dir="ltr"
                       aria-label={i18n.t('pos.shift.coinsAmount')}
@@ -147,7 +150,8 @@ export function ShiftCloseScreen() {
               <DenominationRow
                 key={key}
                 note={i18n.int(Number(denominationMinor))}
-                sum={i18n.money(denominationMinor * BigInt(count))}
+                // A row with nothing counted reads «—»: «٠» alone is a dot (batch 52).
+                sum={count > 0 ? i18n.money(denominationMinor * BigInt(count)) : '—'}
                 stepper={
                   <QtyStepper
                     qty={i18n.int(count)}
@@ -285,7 +289,7 @@ function ClosedShiftScreen({ shift, onNext }: { shift: Shift; onNext(): void }) 
   const [note, setNote] = useState<string | null>(null);
   const variance = shift.variance();
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-20 bg-bg p-24 text-text" dir={i18n.dir}>
+    <div className="flex h-dvh flex-col items-center justify-center gap-20 bg-bg p-24 text-text" dir={i18n.dir}>
       <CheckCircle2 size={44} className="text-success" />
       <h1 className="text-ar-2xl font-semibold" role="status">
         {i18n.t('pos.shift.closedOk')}

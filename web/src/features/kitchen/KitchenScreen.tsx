@@ -159,7 +159,7 @@ export function KitchenScreen() {
   return (
     // Dark whatever the rest of the app is set to: less glare in a lit kitchen,
     // and the age colours stand out on it (batch 21).
-    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir} data-screen="kitchen" data-theme="dark">
+    <div className="flex h-dvh flex-col bg-bg text-text" dir={i18n.dir} data-screen="kitchen" data-theme="dark">
       <header className="flex h-header flex-none items-center justify-between gap-10 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex items-baseline gap-12">
           <span className="hidden border-e border-line pe-12 sm:flex"><BrandMark inline /></span>

@@ -46,7 +46,7 @@ export function MenuManagementScreen() {
   };
 
   return (
-    <div className="flex h-screen bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh bg-bg text-text" dir={i18n.dir}>
       <PosRail active="menu" />
       <div className="flex min-w-0 flex-1 flex-col pb-mobile-nav md:pb-0">
         <AppHeader
@@ -87,7 +87,8 @@ export function MenuManagementScreen() {
                 1024px tablet, the apply button out of reach (batch 31). */}
             <div className="flex flex-none flex-wrap items-center gap-12 border-b border-line bg-surface px-16 py-14">
               <span className="text-ar-base text-text-muted">{i18n.t('pos.menu.bulkChange')}</span>
-              <div className="flex gap-8">
+              {/* The percentages wrap too: in one row they ran 136px off a 768px tablet (batch 52). */}
+              <div className="flex flex-wrap gap-8">
                 {PERCENTS.map((value) => (
                   <button
                     key={value}

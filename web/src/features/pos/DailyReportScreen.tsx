@@ -153,7 +153,7 @@ export function DailyReportScreen() {
   const unsyncedToday = closed.filter((record) => record.syncedAt === null).length;
 
   return (
-    <div className="flex h-screen bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh bg-bg text-text" dir={i18n.dir}>
       <PosRail active="reports" />
       <div className="flex min-w-0 flex-1 flex-col pb-mobile-nav md:pb-0">
         <AppHeader

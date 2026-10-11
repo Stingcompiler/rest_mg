@@ -228,6 +228,8 @@ const config: Config = {
         tickets: 'repeat(auto-fill, minmax(min(100%, max(var(--ticket-min-width), calc((100% - 3 * var(--space-14)) / 4))), 1fr))',
         // The public menu from 1024px: the categories, then the dishes (batch 20).
         'menu-page': 'var(--dim-menu-sidebar) minmax(0, 1fr)',
+        // A cash-count row: the note, its stepper, the row's sum (batch 52).
+        denomination: 'minmax(4.5rem, auto) auto minmax(0, 1fr)',
       },
 
       borderRadius: {

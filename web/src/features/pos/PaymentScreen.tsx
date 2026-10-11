@@ -111,7 +111,7 @@ export function PaymentScreen() {
 
   if (!order) {
     return (
-      <div className="flex h-screen items-center justify-center bg-bg text-text">
+      <div className="flex h-dvh items-center justify-center bg-bg text-text">
         <span className="text-ar-lg text-text-muted">{i18n.t('pos.orders.empty')}</span>
       </div>
     );
@@ -267,7 +267,7 @@ export function PaymentScreen() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh flex-col bg-bg text-text" dir={i18n.dir}>
       <AppHeader
         leading={
           <IconButton label={i18n.t('common.cancel')} onClick={() => router.push('/pos')}>
@@ -284,12 +284,14 @@ export function PaymentScreen() {
               tone={pos.online ? 'success' : 'warning'}
               dot
             />
-            <Numeric className="text-num-base">{formatTime(new Date())}</Numeric>
+            <Numeric className="hidden text-num-base sm:inline">{formatTime(new Date())}</Numeric>
           </>
         }
       />
 
-      <div className="flex min-h-0 flex-1 flex-col-reverse gap-16 overflow-y-auto p-16 md:flex-row md:overflow-visible">
+      {/* On a phone the bill comes first, then the keypad, in one scroll that opens at the top.
+          A reversed column opened at its end, with the bill and «إغلاق الفاتورة» above the screen (batch 52). */}
+      <div className="flex min-h-0 flex-1 flex-col gap-16 overflow-y-auto p-16 lg:flex-row lg:overflow-visible">
         <div className="flex min-w-0 flex-1 flex-col gap-14">
           {feedback ? (
             <div
@@ -360,7 +362,7 @@ export function PaymentScreen() {
           <Keypad keys={keys} onPress={press} />
         </div>
 
-        <aside className="flex w-full flex-none flex-col gap-12 rounded-xl border border-line bg-surface p-18 md:w-payment-panel">
+        <aside className="order-first flex w-full flex-none flex-col gap-12 rounded-xl border border-line bg-surface p-18 lg:order-none lg:w-payment-panel">
           <div className="flex items-baseline justify-between">
             <span className="text-ar-base text-text-muted">{i18n.t('pos.cart.total')}</span>
             <Numeric className="text-num-2xl font-semibold">{i18n.money(total)}</Numeric>
@@ -618,7 +620,7 @@ function ReferenceDialog({
 function ChangeDueScreen({ number, change, onDone }: { number: string; change: bigint; onDone(): void }) {
   const i18n = useI18n();
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-24 bg-bg p-24 text-center text-text" dir={i18n.dir}>
+    <div className="flex h-dvh flex-col items-center justify-center gap-24 bg-bg p-24 text-center text-text" dir={i18n.dir}>
       <CheckCircle2 size={48} className="text-success" />
       <div className="flex flex-col gap-8">
         <span className="text-ar-lg text-text-muted">{i18n.t('pos.payment.closedTitle', { number })}</span>

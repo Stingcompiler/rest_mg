@@ -111,7 +111,7 @@ export function ManagerShell({
   );
 
   return (
-    <div className="flex min-h-screen bg-bg text-text" dir={i18n.dir}>
+    <div className="flex min-h-dvh bg-bg text-text" dir={i18n.dir}>
       {/* The rail — from lg up only. */}
       <aside className="hidden w-manager-sidebar flex-none bg-ink p-14 lg:block">
         {nav}

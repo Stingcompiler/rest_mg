@@ -125,7 +125,7 @@ export function LandingClient() {
   if (state.status === 'loading') return <LandingSkeleton />;
   if (state.status === 'error') {
     return (
-      <main dir="rtl" lang="ar" className="flex min-h-screen flex-col items-center justify-center gap-16 bg-bg p-24 text-center text-text">
+      <main dir="rtl" lang="ar" className="flex min-h-dvh flex-col items-center justify-center gap-16 bg-bg p-24 text-center text-text">
         <span className="max-w-md text-ar-base text-text-muted">
           {label(state.failure === 'retry' ? 'landing.loadRetry' : 'landing.unavailable')}
         </span>
@@ -176,7 +176,7 @@ function Landing({ data }: { data: Landing }) {
       pickupAddress={data.address_ar || undefined}
       hours={data.hours}
     >
-      <main dir="rtl" lang="ar" className="min-h-screen bg-bg text-text">
+      <main dir="rtl" lang="ar" className="min-h-dvh bg-bg text-text">
       <TopBar data={data} ordering={ordering} onOrder={() => scrollTo(ordering ? 'menu' : 'order')} />
 
       <OrderStatus slug={data.slug ?? '_'} />
@@ -971,7 +971,7 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
 
 function LandingSkeleton() {
   return (
-    <main dir="rtl" lang="ar" className="min-h-screen bg-bg">
+    <main dir="rtl" lang="ar" className="min-h-dvh bg-bg">
       <div className="h-[68vh] animate-pulse bg-surface-2" />
       <div className="mx-auto max-w-6xl px-16 py-32 sm:px-24">
         <div className="h-8 w-thumb-w animate-pulse rounded-xs bg-surface-2" />

@@ -53,7 +53,7 @@ export function CatalogScreen() {
   const goHome = () => window.location.assign(homeForRole(auth.user?.role ?? 'cashier'));
 
   return (
-    <div className="flex h-screen flex-col bg-bg text-text" dir={i18n.dir}>
+    <div className="flex h-dvh flex-col bg-bg text-text" dir={i18n.dir}>
       <header className="flex h-header flex-none items-center justify-between gap-12 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex min-w-0 items-center gap-12">
           <IconButton variant="quiet" label={i18n.t('catalog.back')} onClick={goHome}>

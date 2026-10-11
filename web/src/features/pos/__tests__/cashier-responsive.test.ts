@@ -60,11 +60,22 @@ describe('the payment screen on a phone', () => {
 
   it('opens at the bill, not scrolled to the keypad', () => {
     expect(payment).not.toMatch(/flex-col-reverse/);
-    expect(payment).toMatch(/<aside className="[^"]*\border-first\b[^"]*\bmd:order-none\b/);
+    expect(payment).toMatch(/<aside className="[^"]*\border-first\b[^"]*\blg:order-none\b/);
+  });
+
+  it('puts the bill beside the keypad only from 1024px: at 768 the methods were squeezed to a word a line', () => {
+    expect(payment).toMatch(/lg:flex-row lg:overflow-visible/);
+    expect(payment).not.toMatch(/md:flex-row/);
   });
 
   it('gives the order number the room the clock took', () => {
     expect(payment).toMatch(/<Numeric className="hidden text-num-base sm:inline">\{formatTime\(new Date\(\)\)\}<\/Numeric>/);
+  });
+});
+
+describe('the header on a phone', () => {
+  it('sets the title a size smaller, with less padding', () => {
+    expect(read('components/layout/layout.tsx')).toMatch(/truncate text-ar-lg font-semibold text-text sm:text-ar-xl/);
   });
 });
 
@@ -79,16 +90,28 @@ describe('zeros that read as dots', () => {
   });
 
   it('say nothing of a queue that is empty', () => {
-    expect(read('features/pos/SyncQueueScreen.tsx')).toMatch(/waiting > 0 \|\| refused > 0 \?/);
+    expect(read('features/pos/SyncQueueScreen.tsx')).toMatch(/waiting\.length > 0 \|\| refused\.length > 0 \?/);
   });
 });
 
 describe('the cash count', () => {
+  it('reads «—» for a row with nothing counted, and sizes the coins field to an amount', () => {
+    const shift = read('features/pos/ShiftCloseScreen.tsx');
+    expect(shift).toMatch(/sum=\{count > 0 \? i18n\.money\(denominationMinor \* BigInt\(count\)\) : '—'\}/);
+    expect(shift).toMatch(/size=\{8\}/);
+  });
+
   it('lines every row’s stepper up in one column', () => {
     const columns = (config.theme?.extend?.gridTemplateColumns ?? {}) as Record<string, string>;
     expect(columns.denomination).toBeDefined();
     const html = renderToStaticMarkup(createElement(DenominationRow, { note: '5', stepper: createElement('span'), sum: '0' }));
     expect(html).toMatch(/^<div class="[^"]*\bgrid grid-cols-denomination\b/);
+  });
+});
+
+describe('the menu screen on a tablet', () => {
+  it('wraps its percentage buttons', () => {
+    expect(read('features/pos/MenuManagementScreen.tsx')).toMatch(/<div className="flex flex-wrap gap-8">\s*\{PERCENTS\.map/);
   });
 });
 

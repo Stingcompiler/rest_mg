@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Receipt, UserPlus, Wallet, X } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, IconButton, LoadingList, Pager, TextField } from '@/components';
+import { Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, TextField } from '@/components';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { formatDate, formatTime, useI18n } from '@/i18n';
 import { pageWindow } from '@/lib/paging';
@@ -167,6 +167,8 @@ function AddCustomerForm() {
 function CustomerRow({ person, onStatement }: { person: Customer; onStatement: () => void }) {
   const i18n = useI18n();
   const retire = useRetireCustomer();
+  // Stopping asks first: it is a quiet button now (batch 56), easy to press by mistake (batch 58).
+  const [confirming, setConfirming] = useState(false);
   const balance = BigInt(person.balance_minor);
 
   return (
@@ -192,11 +194,21 @@ function CustomerRow({ person, onStatement }: { person: Customer; onStatement: (
           </span>
         </Button>
         {person.is_active ? (
-          <Button variant="quietDanger" onClick={() => retire.mutate(person.id)} disabled={retire.isPending}>
+          <Button variant="quietDanger" onClick={() => setConfirming(true)} disabled={retire.isPending}>
             {i18n.t('customers.retire')}
           </Button>
         ) : null}
       </div>
+      <ConfirmDialog
+        open={confirming}
+        title={i18n.t('customers.retireTitle', { name: person.name })}
+        body={i18n.t('customers.retireBody')}
+        confirmLabel={i18n.t('customers.retire')}
+        cancelLabel={i18n.t('common.back')}
+        pending={retire.isPending}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => retire.mutate(person.id, { onSuccess: () => setConfirming(false) })}
+      />
     </div>
   );
 }

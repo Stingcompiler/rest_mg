@@ -790,5 +790,9 @@
   "manager.money.openTitle": "Not settled yet",
   "error.owner_protected": "Only an owner can change an owner's account.",
   "error.last_owner": "The last active owner cannot be demoted or deactivated.",
-  "error.customer_out_of_scope": "That customer does not exist or belongs to another branch, so no debt was recorded."
+  "error.customer_out_of_scope": "That customer does not exist or belongs to another branch, so no debt was recorded.",
+  "customers.retireTitle": "Stop {name}?",
+  "customers.retireBody": "They will leave the customer list; their bills, balance and statement stay as they are and nothing is deleted.",
+  "manager.staff.deactivateTitle": "Stop {name}?",
+  "manager.staff.deactivateBody": "They will not be able to sign in. Every order and shift stays recorded under their name and nothing is deleted. You can reactivate them later."
 }

@@ -78,9 +78,7 @@ export function StaffScreen() {
 
         <section className="flex flex-col gap-8">
           <h2 className="text-ar-md font-medium">{i18n.t('manager.audit.title')}</h2>
-          <div className="rounded-lg border border-line bg-surface px-16">
-            <ActivityLog query={{ action: 'staff', limit: 50 }} />
-          </div>
+          <ActivityLog query={{ action: 'staff', limit: 50 }} />
         </section>
       </div>
     </ManagerShell>

@@ -143,6 +143,7 @@ function Dashboard({
           delta={compare(BigInt(data.average_ticket_minor), before && BigInt(before.average_ticket_minor))}
         />
         <KpiCard
+          wide
           label={i18n.t('pos.report.credit')}
           value={money(data.credit_outstanding_minor)}
           unit={unit}

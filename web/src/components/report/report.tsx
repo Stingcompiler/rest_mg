@@ -37,6 +37,8 @@ export interface KpiCardProps {
   unit?: string;
   /** The figure the ledger opens with, set larger (batch 40). */
   lead?: boolean;
+  /** Takes a whole row on a phone: a last figure that would stand alone shows the band's colour in its empty neighbour (batch 56). */
+  wide?: boolean;
   /** Nothing yet: «—» with words, not «٠», a dot in Arabic-Indic digits (batch 40). */
   zero?: boolean;
   zeroLabel?: string;
@@ -55,11 +57,11 @@ const DELTA_ICON = { up: TrendingUp, down: TrendingDown, flat: Minus } as const;
  * was a floating card with a gold top line in an even grid, the pattern every
  * generated dashboard repeats.
  */
-export function KpiCard({ label, value, sub, tone = 'text', delta, unit, lead = false, zero = false, zeroLabel }: KpiCardProps) {
+export function KpiCard({ label, value, sub, tone = 'text', delta, unit, lead = false, wide = false, zero = false, zeroLabel }: KpiCardProps) {
   return (
     // The takings take the whole first row on a phone: «1,753,000» in Plex Mono
     // did not fit half the width and was cut off (batch 54).
-    <div className={cn('flex min-w-0 flex-col gap-6 bg-surface p-14 sm:p-18', lead && 'col-span-2 lg:col-span-1')}>
+    <div className={cn('flex min-w-0 flex-col gap-6 bg-surface p-14 sm:p-18', (lead || wide) && 'col-span-2 lg:col-span-1')}>
       <span className="text-ar-sm text-text-muted">{label}</span>
       {zero ? (
         <span className="flex items-baseline gap-8">

@@ -790,5 +790,9 @@
   "manager.money.openTitle": "ما لم يكتمل بعد",
   "error.owner_protected": "حساب المالك لا يعدّله إلا مالك.",
   "error.last_owner": "لا يمكن تخفيض دور آخر مالك نشط أو إيقافه.",
-  "error.customer_out_of_scope": "هذا العميل غير موجود أو يتبع فرعًا آخر، فلا يُسجَّل عليه دين."
+  "error.customer_out_of_scope": "هذا العميل غير موجود أو يتبع فرعًا آخر، فلا يُسجَّل عليه دين.",
+  "customers.retireTitle": "إيقاف {name}؟",
+  "customers.retireBody": "لن يظهر في قائمة العملاء، وتبقى فواتيره وذممه وكشف حسابه كما هي ولا يُحذف منها شيء.",
+  "manager.staff.deactivateTitle": "إيقاف {name}؟",
+  "manager.staff.deactivateBody": "لن يستطيع الدخول إلى النظام، وتبقى كل طلباته ورديّاته مسجّلة باسمه ولا تُحذف. ويمكنك إعادة تفعيله لاحقًا."
 }

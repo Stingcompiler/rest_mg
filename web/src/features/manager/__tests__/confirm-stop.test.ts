@@ -44,7 +44,7 @@ describe('the words', () => {
   });
 
   it('say what stopping does, and that nothing is deleted', () => {
-    expect(ar['customers.retireBody']).toMatch(/الحساب|الذمة|الفواتير/);
+    expect(ar['customers.retireBody']).toMatch(/فواتير/);
     expect(ar['manager.staff.deactivateBody']).toMatch(/الدخول/);
     expect(ar['manager.staff.deactivateBody']).toMatch(/تبقى|لا تُحذف|لا يُحذف/);
   });

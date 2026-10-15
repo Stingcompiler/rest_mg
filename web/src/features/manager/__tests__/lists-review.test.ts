@@ -39,7 +39,7 @@ describe('the customers screen', () => {
   });
 
   it('gives stopping a customer the quiet weight of a risky act', () => {
-    expect(customers).toMatch(/<Button variant="quietDanger" onClick=\{\(\) => retire\.mutate\(person\.id\)\}/);
+    expect(customers).toMatch(/<Button variant="quietDanger" onClick=\{\(\) => setConfirming\(true\)\}/) // asks first since batch 58;
   });
 });
 
@@ -60,7 +60,7 @@ describe('the staff screen', () => {
   });
 
   it('gives deactivating the quiet weight of a risky act', () => {
-    expect(staff).toMatch(/<Button variant="quietDanger" onClick=\{\(\) => deactivate\.mutate\(person\.id\)\}/);
+    expect(staff).toMatch(/<Button variant="quietDanger" onClick=\{\(\) => setConfirming\(true\)\}/) // asks first since batch 58;
   });
 });
 

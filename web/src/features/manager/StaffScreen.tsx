@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, LoadingList, TextField } from '@/components';
+import { Button, ConfirmDialog, EmptyState, ErrorState, LoadingList, TextField } from '@/components';
 import { useI18n } from '@/i18n';
 import { ManagerShell } from './ManagerShell';
 import { ActivityLog } from './ActivityLog';
@@ -154,6 +154,8 @@ function StaffRow({ person }: { person: StaffAccount }) {
   const edit = useEditStaff();
   const deactivate = useDeactivateStaff();
   const [editing, setEditing] = useState(false);
+  // Stopping asks first (batch 58).
+  const [confirming, setConfirming] = useState(false);
 
   if (editing) return <EditStaffRow person={person} onDone={() => setEditing(false)} />;
 
@@ -173,7 +175,7 @@ function StaffRow({ person }: { person: StaffAccount }) {
             {i18n.t('manager.staff.edit')}
           </Button>
           {person.is_active ? (
-            <Button variant="quietDanger" onClick={() => deactivate.mutate(person.id)} disabled={deactivate.isPending}>
+            <Button variant="quietDanger" onClick={() => setConfirming(true)} disabled={deactivate.isPending}>
               {i18n.t('manager.staff.deactivate')}
             </Button>
           ) : (
@@ -187,6 +189,16 @@ function StaffRow({ person }: { person: StaffAccount }) {
           )}
         </div>
       ) : null}
+      <ConfirmDialog
+        open={confirming}
+        title={i18n.t('manager.staff.deactivateTitle', { name: person.display_name || person.username })}
+        body={i18n.t('manager.staff.deactivateBody')}
+        confirmLabel={i18n.t('manager.staff.deactivate')}
+        cancelLabel={i18n.t('common.back')}
+        pending={deactivate.isPending}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => deactivate.mutate(person.id, { onSuccess: () => setConfirming(false) })}
+      />
     </div>
   );
 }

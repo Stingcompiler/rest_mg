@@ -72,12 +72,9 @@ describe('the kitchen board', () => {
     expect(kitchen).toMatch(/<div className="[^"]*" dir=\{i18n\.dir\} data-screen="kitchen" data-theme="dark">/);
   });
 
-  it("marks each ticket's age with a bar along its edge, readable from across the kitchen", () => {
-    expect(kitchen).toMatch(/const AGE_BAR: Record<'success' \| 'warning' \| 'danger', string> = \{/);
-    for (const tone of ['success', 'warning', 'danger']) {
-      expect(kitchen).toMatch(new RegExp(`${tone}: 'bg-${tone}'`));
-    }
+  it("marks each ticket's age in words, and outlines the late one whole (a strip down each edge said it twice, batch 55)", () => {
+    expect(kitchen).not.toMatch(/AGE_BAR/);
+    expect(kitchen).toMatch(/const LATE_OUTLINE = 'border-strong border-danger'/);
     expect(kitchen).toMatch(/data-age=\{tone\}/);
-    expect(kitchen).toMatch(/AGE_BAR\[tone\]/);
   });
 });

@@ -14,7 +14,7 @@ import { forwardRef } from 'react';
 
 import { cn } from '@/lib/cn';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'credit' | 'accentOutline';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'quietDanger' | 'credit' | 'accentOutline';
 type ButtonSize = 'md' | 'lg' | 'xl';
 
 const BUTTON_BASE =
@@ -28,6 +28,9 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
     // focused or selected control, and alone it left the border grey (batch 32).
     'border border-line-strong text-text hover:bg-surface-2 disabled:text-text-disabled disabled:border-line',
   danger: 'border border-danger text-danger hover:bg-danger-tint disabled:text-text-disabled',
+  // A risky act beside the main one: words in the danger colour, no outline, so
+  // it does not weigh as much as the action it sits next to (batch 55).
+  quietDanger: 'text-danger hover:bg-danger-tint disabled:text-text-disabled',
   credit: 'bg-credit-tint border border-credit text-credit-text',
   accentOutline: 'bg-surface-2 border border-accent text-accent hover:bg-accent-tint',
 };

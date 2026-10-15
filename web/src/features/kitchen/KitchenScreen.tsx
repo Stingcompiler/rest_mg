@@ -16,7 +16,7 @@
  * for a few seconds after it was served.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { BellRing } from 'lucide-react';
+import { BellRing, LogOut } from 'lucide-react';
 
 import { BrandMark, Button, EmptyState, ErrorState, Numeric, SettingsMenu, StatusChip, Toast } from '@/components';
 import { AlertBell } from '@/features/alerts/AlertBell';
@@ -33,12 +33,13 @@ import { nextKitchenStatus, previousKitchenStatus } from './steps';
 // somebody pressing "send" and the kitchen hearing about it.
 const POLL_MS = 5_000;
 
-/** The bar along a ticket's edge, in the colour of its age (batch 21). */
-const AGE_BAR: Record<'success' | 'warning' | 'danger', string> = {
-  success: 'bg-success',
-  warning: 'bg-warning',
-  danger: 'bg-danger',
-};
+/**
+ * A ticket that is late is outlined whole; the rest keep the plain border.
+ * A strip down every ticket's edge in the colour of its age (batch 21) said the
+ * age twice beside the words, the template look; the one that needs the eye
+ * now stands out by itself (batch 55).
+ */
+const LATE_OUTLINE = 'border-strong border-danger';
 
 /** How long a ticket has been waiting, and how alarmed to be about it. */
 function age(sentAt: string, now: number) {
@@ -163,7 +164,7 @@ export function KitchenScreen() {
       <header className="flex h-header flex-none items-center justify-between gap-10 border-b border-line bg-surface px-16 sm:px-20">
         <div className="flex items-baseline gap-12">
           <span className="hidden border-e border-line pe-12 sm:flex"><BrandMark inline /></span>
-          <h1 className="text-ar-lg font-semibold sm:text-ar-xl">{i18n.t('kitchen.title')}</h1>
+          <h1 className="whitespace-nowrap text-ar-lg font-semibold sm:text-ar-xl">{i18n.t('kitchen.title')}</h1>
           <Numeric className="text-num-base text-text-muted">
             {i18n.int(tickets?.length ?? 0)}
           </Numeric>
@@ -184,8 +185,10 @@ export function KitchenScreen() {
           <Numeric className="hidden text-num-base sm:inline">{formatTime(new Date(now))}</Numeric>
           <AlertBell muted={alert.muted} onMutedChange={alert.setMuted} />
           <SettingsMenu />
-          <Button variant="secondary" onClick={() => void auth.signOut()}>
-            {i18n.t('manager.logout')}
+          {/* Its icon alone on a phone: the words squeezed the header past the screen (batch 55). */}
+          <Button variant="secondary" onClick={() => void auth.signOut()} aria-label={i18n.t('manager.logout')} className="px-14 sm:px-20">
+            <LogOut size={18} className="sm:hidden" />
+            <span className="hidden sm:inline">{i18n.t('manager.logout')}</span>
           </Button>
         </div>
       </header>
@@ -226,10 +229,8 @@ export function KitchenScreen() {
                 <article
                   key={ticket.id}
                   data-age={tone}
-                  className="relative flex flex-col gap-12 overflow-hidden rounded-lg border border-line bg-surface p-16 ps-20"
+                  className={`flex flex-col gap-12 rounded-lg bg-surface p-16 ${tone === 'danger' ? LATE_OUTLINE : 'border border-line'}`}
                 >
-                  {/* Readable from across the kitchen, where the minutes are not. */}
-                  <span aria-hidden="true" className={`absolute inset-y-0 start-0 w-4 ${AGE_BAR[tone]}`} />
                   <div className="flex items-center justify-between">
                     <Numeric className="text-num-xl font-bold">{ticket.number}</Numeric>
                     <StatusChip

@@ -63,7 +63,8 @@ export function CustomersScreen() {
   return (
     <ManagerShell title={i18n.t('customers.title')} description={i18n.t('customers.pageDescription')}>
       <div className="flex flex-col gap-16">
-        <div className="flex flex-wrap items-center justify-between gap-12 rounded-lg border border-line bg-surface p-16">
+        {/* The total and its filters as the head of the list, not a box of their own (batch 56). */}
+        <div className="flex flex-wrap items-end justify-between gap-12 border-b border-line pb-16">
           <div className="flex flex-col gap-2">
             <span className="text-ar-sm text-text-muted">{i18n.t('customers.totalOutstanding')}</span>
             <span className="numeric text-num-2xl font-bold text-credit">{i18n.money(outstanding)}</span>
@@ -96,7 +97,7 @@ export function CustomersScreen() {
         ) : rows.length === 0 ? (
           <EmptyState title={i18n.t(owingOnly ? 'customers.noneOwing' : 'customers.empty')} icon={<Wallet size={30} />} />
         ) : (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col">
             {rows.map((person) => (
               <CustomerRow key={person.id} person={person} onStatement={() => setOpenStatement(person)} />
             ))}
@@ -143,7 +144,7 @@ function AddCustomerForm() {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-end gap-12 rounded-lg border border-line bg-surface p-16">
+    <form onSubmit={submit} className="flex flex-wrap items-end gap-12 border-b border-line pb-16">
       <label className="flex min-w-0 flex-1 flex-col gap-6 text-ar-sm text-text-muted">
         {i18n.t('customers.name')}
         <TextField value={name} onChange={(e) => setName(e.target.value)} />
@@ -169,9 +170,10 @@ function CustomerRow({ person, onStatement }: { person: Customer; onStatement: (
   const balance = BigInt(person.balance_minor);
 
   return (
-    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 rounded-lg border border-line bg-surface p-14">
+    // A line of a ledger, the whole name readable: it was a box and cut a long name to «…» (batch 56).
+    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-14">
       <div className="flex min-w-0 flex-1 basis-field-min flex-col">
-        <span className="truncate text-ar-base font-medium">{person.name}</span>
+        <span className="break-words text-ar-base font-medium">{person.name}</span>
         {person.phone ? (
           <span className="numeric text-ar-sm text-text-muted" dir="ltr">{person.phone}</span>
         ) : null}
@@ -190,7 +192,7 @@ function CustomerRow({ person, onStatement }: { person: Customer; onStatement: (
           </span>
         </Button>
         {person.is_active ? (
-          <Button variant="danger" onClick={() => retire.mutate(person.id)} disabled={retire.isPending}>
+          <Button variant="quietDanger" onClick={() => retire.mutate(person.id)} disabled={retire.isPending}>
             {i18n.t('customers.retire')}
           </Button>
         ) : null}

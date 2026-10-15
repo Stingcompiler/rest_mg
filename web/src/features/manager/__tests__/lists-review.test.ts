@@ -55,6 +55,10 @@ describe('the staff screen', () => {
     expect(staff).not.toMatch(/function StaffRow[\s\S]*?rounded-lg border border-line bg-surface p-14[\s\S]*?\n\}\n/);
   });
 
+  it('shows the activity log without a box around it', () => {
+    expect(staff).not.toMatch(/<div className="rounded-lg border border-line bg-surface px-16">\s*<ActivityLog/);
+  });
+
   it('gives deactivating the quiet weight of a risky act', () => {
     expect(staff).toMatch(/<Button variant="quietDanger" onClick=\{\(\) => deactivate\.mutate\(person\.id\)\}/);
   });

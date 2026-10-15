@@ -55,8 +55,6 @@ export function StaffScreen() {
   return (
     <ManagerShell title={i18n.t('manager.staff.title')} description={i18n.t('manager.staff.pageDescription')}>
       <div className="flex max-w-3xl flex-col gap-24">
-        <AddStaffForm />
-
         {staff.isLoading ? (
           <LoadingList rows={4} rowClassName="h-control-xl" />
         ) : staff.isError ? (
@@ -68,12 +66,15 @@ export function StaffScreen() {
           icon={<AlertTriangle size={30} />}
         />
         ) : (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col">
             {(staff.data ?? []).map((person) => (
               <StaffRow key={person.id} person={person} />
             ))}
           </div>
         )}
+
+        {/* After the people it is for, not before: it opened the screen with four empty fields (batch 56). */}
+        <AddStaffForm />
 
         <section className="flex flex-col gap-8">
           <h2 className="text-ar-md font-medium">{i18n.t('manager.audit.title')}</h2>
@@ -112,7 +113,7 @@ function AddStaffForm() {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-12 rounded-lg border border-line bg-surface p-16">
+    <form onSubmit={submit} className="flex flex-col gap-12 border-t border-line pt-16">
       <span className="text-ar-md font-medium">{i18n.t('manager.staff.add')}</span>
       <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
         <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
@@ -159,7 +160,7 @@ function StaffRow({ person }: { person: StaffAccount }) {
   if (editing) return <EditStaffRow person={person} onDone={() => setEditing(false)} />;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 rounded-lg border border-line bg-surface p-14">
+    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-14">
       <span className="min-w-0 flex-1 basis-32 text-ar-base font-medium">
         {person.display_name || person.username}
       </span>
@@ -174,7 +175,7 @@ function StaffRow({ person }: { person: StaffAccount }) {
             {i18n.t('manager.staff.edit')}
           </Button>
           {person.is_active ? (
-            <Button variant="danger" onClick={() => deactivate.mutate(person.id)} disabled={deactivate.isPending}>
+            <Button variant="quietDanger" onClick={() => deactivate.mutate(person.id)} disabled={deactivate.isPending}>
               {i18n.t('manager.staff.deactivate')}
             </Button>
           ) : (

@@ -30,6 +30,13 @@ describe('a figure on a phone', () => {
     expect(html).toMatch(/\btext-num-3xl\b[^"]*\bsm:text-num-4xl\b/);
   });
 
+  it('lets a last figure take a whole row too, so no empty cell shows the band’s colour', () => {
+    const html = renderToStaticMarkup(createElement(KpiCard, { label: 'x', value: '1', wide: true }));
+    expect(html).toMatch(/\bcol-span-2\b[^"]*\blg:col-span-1\b/);
+    expect(read('features/manager/DashboardScreen.tsx')).toMatch(/<KpiCard\s+wide\s+label=\{i18n\.t\('pos\.report\.credit'\)\}/);
+    expect(read('features/pos/DailyReportScreen.tsx')).toMatch(/<KpiCard wide label=\{i18n\.t\('pos\.report\.credit'\)\}/);
+  });
+
   it('lets a unit wrap under its figure rather than be clipped', () => {
     const html = renderToStaticMarkup(createElement(KpiCard, { label: 'x', value: '427,000', unit: 'SDG' }));
     expect(html).toMatch(/<span class="flex flex-wrap items-baseline gap-x-6">/);

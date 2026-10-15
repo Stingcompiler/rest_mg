@@ -130,9 +130,10 @@ describe('details', () => {
     expect(hits(/strokeWidth=\{/g)).toEqual([]);
   });
 
-  it("shapes the landing skeleton like the cards it stands in for", () => {
+  it('shapes the landing skeleton like the menu it stands in for: lines in two columns (batch 53)', () => {
     const skeleton = /function LandingSkeleton[\s\S]*?\n\}/.exec(landing)?.[0] ?? '';
-    // The card corner is 12px since batch 32.
-    expect(skeleton).toMatch(/h-card-skeleton[^"]*\brounded-lg\b/);
+    expect(skeleton).toMatch(/sm:grid-cols-2/);
+    expect(skeleton).toMatch(/border-b border-dotted/);
+    expect(skeleton).not.toMatch(/h-card-skeleton|rounded-lg/);
   });
 });

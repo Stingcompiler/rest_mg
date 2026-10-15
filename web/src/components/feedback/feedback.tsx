@@ -32,6 +32,7 @@ export function EmptyState({ title, hint, icon }: EmptyStateProps) {
 
 /** A shimmering placeholder block, sized by the caller via className. */
 export function Skeleton({ className }: { className?: string }) {
+  // ui-allow: a loading placeholder: motion marks a process that is running
   return <div className={cn('animate-pulse rounded-md bg-surface-2', className)} />;
 }
 

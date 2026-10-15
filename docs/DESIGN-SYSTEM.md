@@ -5,6 +5,16 @@ value is transcribed from the mockups, and everywhere the mockups disagree with 
 disagreement is recorded in [§10 Open questions](#10-open-questions--conflicts) instead of being
 silently resolved.
 
+## Read first: the UI rules
+
+Before building or changing a screen, read [`ui-profile.md`](ui-profile.md) (what is decided about this product's UI: platforms, languages, numerals, identity, the chosen direction, the documented exceptions) and the general rules in [`ui-cards-review-guide.md`](ui-cards-review-guide.md). The short version:
+
+- **Lines, not boxes.** Space, hairlines and rules separate; a box is for something a person acts on as a unit. No shadow or tint by default.
+- **No template patterns** — a coloured strip on a card's edge, an icon in a tinted circle, one stat card per number, equal three- or four-up rows by default, an icon on every heading, gradients on buttons or headings, continuous motion on still things, a card inside a card. Rebuild the layout; deleting or recolouring the offender is not enough. `npm run lint:ui` (in `web/`, and in CI) finds the known applications; an exception is a documented `ui-allow: reason` comment.
+- **State is said in words**, helped by an icon, backed by colour (never colour alone), and said once per card.
+- **A zero alone reads as a dot in Arabic-Indic digits** — write «—» with words, or nothing.
+- **Check the real states:** long names, large amounts, missing data, loading, empty, error, offline; 360px; both languages; both colour modes (`npm run shots -- <label>`).
+
 ---
 
 ## 0. Sources

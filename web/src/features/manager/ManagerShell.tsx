@@ -90,7 +90,9 @@ export function ManagerShell({
               // On ink (batch 13): ivory labels, the current page lifted with a
               // gold edge on its start side.
               active
+                // ui-allow: the current page’s edge on the manager rail (functional active indicator)
                 ? 'flex min-h-control-lg items-center gap-10 rounded-sm border-s-strong border-gold-soft bg-ink-2 px-14 text-ar-base font-medium text-on-ink'
+                // ui-allow: the same edge, transparent, so the label does not shift when a page becomes current
                 : 'flex min-h-control-lg items-center gap-10 rounded-sm border-s-strong border-transparent px-14 text-ar-base text-on-ink-muted hover:bg-ink-2 hover:text-on-ink'
             }
           >

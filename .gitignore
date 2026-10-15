@@ -32,3 +32,4 @@ api/media/
 
 # TypeScript's incremental build cache.
 *.tsbuildinfo
+web/shots/

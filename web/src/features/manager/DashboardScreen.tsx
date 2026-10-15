@@ -240,6 +240,7 @@ function Dashboard({
 /** A part of the overview: a title over a rule, not another box (batch 40). */
 function DashSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
+    // ui-allow: a rule over a section’s title, not a strip on a card: the overview’s sections are not boxes
     <section className="flex flex-col gap-8 border-t-strong border-ink pt-12">
       <h2 className="text-ar-md font-semibold text-text">{title}</h2>
       <div className="flex flex-col">{children}</div>

@@ -59,6 +59,10 @@ describe('a delivery ticket', () => {
     expect(deliveries).toMatch(/flex flex-col gap-6 border-t border-line pt-12 text-ar-sm/);
   });
 
+  it('sets the items off from the customer with a rule', () => {
+    expect(deliveries).toMatch(/<ul className="flex flex-col gap-4 border-t border-line pt-12 text-ar-base">/);
+  });
+
   it('names the kind only when it is not the page’s own: a pickup', () => {
     expect(deliveries).toMatch(/\{pickup \? <StatusChip label=\{i18n\.t\('deliveries\.kind\.pickup'\)\} tone="neutral" \/> : null\}/);
     expect(deliveries).not.toMatch(/deliveries\.kind\.delivery/);

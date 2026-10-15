@@ -279,13 +279,15 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
             </span>
           ) : null}
           {order.status === 'closed' ? <StatusChip label={i18n.t('deliveries.paid')} tone="success" /> : null}
-          <StatusChip label={i18n.t(pickup ? 'deliveries.kind.pickup' : 'deliveries.kind.delivery')} tone="neutral" />
+          {/* Only a pickup is named: on a page of deliveries «توصيل» said nothing (batch 55). */}
+          {pickup ? <StatusChip label={i18n.t('deliveries.kind.pickup')} tone="neutral" /> : null}
           <StatusChip label={i18n.t(STATUS_KEY[ds])} tone={TONE[ds]} dot />
         </div>
       </div>
 
-      {/* Customer details — the point of a delivery order. */}
-      <div className="flex flex-col gap-6 rounded-md bg-surface-2 p-12 text-ar-sm">
+      {/* Customer details — the point of a delivery order — as an open section
+          under a rule, not a tinted box inside the card (batch 55). */}
+      <div className="flex flex-col gap-6 border-t border-line pt-12 text-ar-sm">
         <span className="text-ar-base font-semibold">{order.customer_name}</span>
         <a href={`tel:${order.customer_phone}`} className="flex min-h-control-stepper items-center gap-6 text-accent">
           <Phone size={14} />
@@ -315,7 +317,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
       </div>
 
       {/* Items */}
-      <ul className="flex flex-col gap-4 text-ar-base">
+      <ul className="flex flex-col gap-4 border-t border-line pt-12 text-ar-base">
         {order.lines.map((line) => (
           <li key={line.id} className="flex justify-between">
             <span>
@@ -356,12 +358,12 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
           {waiting ? (
             /* Not an error and not a disabled button — simply not this role's
                turn, said plainly so nobody stands there clicking. */
-            <span className="flex items-center gap-6 rounded-md bg-surface-2 px-12 py-8 text-ar-sm text-text-muted">
+            <span className="flex items-center gap-6 text-ar-sm text-text-muted">
               <Clock size={16} />
               {i18n.t(pickup ? 'deliveries.awaitingKitchenPickup' : 'deliveries.awaitingKitchen')}
             </span>
           ) : null}
-          <Button variant="secondary" onClick={() => setConfirmingCancel(true)} disabled={setStatus.isPending}>
+          <Button variant="quietDanger" onClick={() => setConfirmingCancel(true)} disabled={setStatus.isPending}>
             <span className="flex items-center gap-6">
               <X size={16} />
               {i18n.t('deliveries.cancel')}

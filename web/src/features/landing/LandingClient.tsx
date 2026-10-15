@@ -191,12 +191,15 @@ function Landing({ data }: { data: Landing }) {
       >
         {heroImage ? (
           // A slow drift on the photo, so the hero is never a still (batch 28).
+          // ui-allow: hero drift, the owner’s landing-page motion brief (docs/LANDING-MOTION.ar.md); off under reduced motion
           <img src={heroImage} alt={data.name_ar} className="absolute inset-0 h-full w-full animate-kenburns object-cover" />
         ) : (
           // Without a photo: embers glowing over ink, for a grill (batch 28).
+          // ui-allow: hero embers without a photo, the owner’s landing-page motion brief; off under reduced motion
           <div className="absolute inset-0 ember animate-ember" />
         )}
         {/* Ink, not black: the overlay is part of the palette (batch 13). */}
+        {/* ui-allow: a scrim so the hero’s text reads over any photograph */}
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-ink/10" />
         <div className="relative mx-auto w-full max-w-6xl px-16 pb-32 pt-40 sm:px-24 sm:pb-40 sm:pt-56">
           <div className="flex max-w-2xl flex-col gap-16 text-on-ink">
@@ -237,6 +240,7 @@ function Landing({ data }: { data: Landing }) {
           </div>
         </div>
         {/* "There is more below": a cue that bobs at the hero's foot. */}
+        {/* ui-allow: "more below" cue, the owner’s landing-page motion brief; off under reduced motion */}
         <span aria-hidden="true" className="absolute inset-x-0 bottom-12 mx-auto hidden w-fit animate-bob text-on-ink-muted sm:block">
           <ChevronDown size={26} />
         </span>
@@ -271,6 +275,7 @@ function Landing({ data }: { data: Landing }) {
       {/* Order CTA + contact */}
       {/* A band across the page, the type set to the start (batch 35): it was
           a rounded ember box in the middle of the page with a stock line. */}
+      {/* ui-allow: the order band’s embers, the owner’s landing-page motion brief; off under reduced motion */}
       <section id="order" className="scroll-mt-header bg-ink ember animate-ember text-on-ink">
         <div className="mx-auto flex max-w-6xl flex-col gap-24 px-16 py-40 sm:px-24 lg:flex-row lg:items-end lg:justify-between lg:py-56">
           <div className="flex max-w-2xl flex-col gap-12">
@@ -431,6 +436,7 @@ function DishMarquee({ menu }: { menu: LandingCategory[] }) {
   if (names.length < 3) return null;
   return (
     <div aria-hidden="true" className="overflow-hidden border-b border-ink-2 bg-ink py-10 text-on-ink sm:py-14">
+      {/* ui-allow: the dish-name marquee, the owner’s landing-page motion brief; paused on hover and off under reduced motion */}
       <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">
         {[0, 1].map((copy) => (
           <div key={copy} className="flex flex-none items-center">
@@ -972,12 +978,24 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
 function LandingSkeleton() {
   return (
     <main dir="rtl" lang="ar" className="min-h-dvh bg-bg">
+      {/* ui-allow: loading placeholders: motion marks a process that is running */}
       <div className="h-[68vh] animate-pulse bg-surface-2" />
       <div className="mx-auto max-w-6xl px-16 py-32 sm:px-24">
+        {/* ui-allow: loading placeholders, as above */}
         <div className="h-8 w-thumb-w animate-pulse rounded-xs bg-surface-2" />
-        <div className="mt-18 grid grid-cols-1 gap-14 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-card-skeleton animate-pulse rounded-lg bg-surface-2" />
+        {/* The menu's own shape, lines in two columns (batch 35, 53): boxes in
+            three columns jumped to lines when the page arrived. */}
+        {/* ui-allow: loading placeholders, as above */}
+        <div className="mt-18 grid animate-pulse grid-cols-1 sm:grid-cols-2 sm:gap-x-40">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-8 border-b border-line py-18">
+              <div className="flex items-center gap-8">
+                <span className="h-10 w-thumb-w rounded-xs bg-surface-2" />
+                <span className="flex-1 border-b border-dotted border-line" />
+                <span className="h-10 w-thumb-sm rounded-xs bg-surface-2" />
+              </div>
+              <span className="h-8 w-thumb-w rounded-xs bg-surface-2" />
+            </div>
           ))}
         </div>
       </div>

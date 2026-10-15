@@ -57,6 +57,7 @@ export function NavRailItem({ icon, label, active, onClick, badge, className, ex
         'md:h-rail-item-h md:w-rail-item-w md:flex-none md:gap-6',
         // The rail sits on ink (batch 13): ivory labels, and the current
         // screen lifted with a gold edge.
+        // ui-allow: the current screen’s edge on the navigation rail (functional active indicator)
         'border-b-strong md:border-b-0 md:border-e-strong',
         active
           ? 'border-gold-soft bg-ink-2 text-on-ink'
@@ -67,6 +68,7 @@ export function NavRailItem({ icon, label, active, onClick, badge, className, ex
       <span className="relative flex items-center justify-center">
         {icon}
         {badge ? (
+          // ui-allow: a count badge on a nav icon: it carries the number, not a state decoration
           <span className="absolute -top-8 -end-10 min-w-icon-sm rounded-full border border-danger bg-danger-tint px-4 text-center text-ar-xs font-bold text-danger">
             {badge}
           </span>

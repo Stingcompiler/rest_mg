@@ -183,13 +183,12 @@ function ItemCard({ item, onEdit }: { item: MenuItem; onEdit: () => void }) {
   return (
     <div className="flex flex-col gap-10 rounded-lg border border-line bg-surface p-12">
       <div className="flex gap-12">
-        <div className="flex size-thumb-sm flex-none items-center justify-center overflow-hidden rounded-md bg-surface-2">
-          {item.image_url ? (
+        {/* A photo only when there is one: a missing-photo icon on every dish was noise (batch 56). */}
+        {item.image_url ? (
+          <div className="flex size-thumb-sm flex-none items-center justify-center overflow-hidden rounded-md bg-surface-2">
             <img src={item.image_url} alt={item.name_ar} className="h-full w-full object-cover" />
-          ) : (
-            <ImageOff size={22} className="text-text-disabled" />
-          )}
-        </div>
+          </div>
+        ) : null}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-6">
             <span className="truncate text-ar-base font-medium">{item.name_ar}</span>
@@ -222,7 +221,7 @@ function ItemCard({ item, onEdit }: { item: MenuItem; onEdit: () => void }) {
       </div>
 
       {confirming ? (
-        <div className="flex items-center justify-between gap-8 rounded-md bg-surface-2 p-8 text-ar-sm">
+        <div className="flex items-center justify-between gap-8 border-t border-line pt-10 text-ar-sm">
           <span>{i18n.t('catalog.confirmRetire')}</span>
           <div className="flex gap-6">
             <Button variant="danger" onClick={() => { retire.mutate(item.id); setConfirming(false); }}>

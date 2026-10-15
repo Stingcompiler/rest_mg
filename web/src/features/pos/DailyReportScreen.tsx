@@ -177,7 +177,7 @@ export function DailyReportScreen() {
                 <KpiCard lead label={i18n.t('pos.report.collected')} value={i18n.money(data.collected)} unit={i18n.t('landing.currency')} tone="success" zero={data.collected === 0n} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
                 <KpiCard label={i18n.t('pos.report.orderCount')} value={i18n.int(data.orderCount)} zero={data.orderCount === 0} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
                 <KpiCard label={i18n.t('pos.report.averageTicket')} value={i18n.money(averageTicket)} unit={i18n.t('landing.currency')} zero={averageTicket === 0n} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
-                <KpiCard label={i18n.t('pos.report.credit')} value={i18n.money(data.credit)} unit={i18n.t('landing.currency')} tone="credit" zero={data.credit === 0n} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
+                <KpiCard wide label={i18n.t('pos.report.credit')} value={i18n.money(data.credit)} unit={i18n.t('landing.currency')} tone="credit" zero={data.credit === 0n} zeroLabel={i18n.t('manager.dashboard.nothingYet')} />
               </KpiStrip>
 
               <div className="flex min-h-0 flex-1 flex-col gap-14 lg:flex-row">

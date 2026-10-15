@@ -44,16 +44,18 @@ export function ReportsScreen() {
       ) : rows.length === 0 ? (
         <EmptyState title={i18n.t('manager.reports.empty')} />
       ) : (
-        <div className="flex flex-col gap-8">
-          <span className="text-ar-md text-text-muted">{i18n.t('manager.reports.recentOrders')}</span>
+        <div className="flex flex-col">
+          <span className="pb-8 text-ar-md text-text-muted">{i18n.t('manager.reports.recentOrders')}</span>
           {rows.map((order) => (
-            <div key={order.id} className="flex items-center gap-16 rounded-lg border border-line bg-surface p-14">
+            // A line of a ledger; on a phone the date takes a line of its own
+            // instead of breaking «2026-10-15» across two (batch 56).
+            <div key={order.id} className="flex flex-wrap items-baseline gap-x-12 gap-y-2 border-b border-line py-12">
               <Numeric className="text-num-md font-semibold">{order.number}</Numeric>
               <span className="text-ar-base text-text-muted">
                 {i18n.t(TYPE_LABEL[order.type as keyof typeof TYPE_LABEL] ?? 'pos.orderType.dineIn')}
               </span>
               <span className="flex-1 text-ar-base text-text-muted">{order.cashier_name}</span>
-              <Numeric className="text-num-sm text-text-muted" >
+              <Numeric className="whitespace-nowrap text-num-sm text-text-muted order-last basis-full sm:order-none sm:basis-auto">
                 {order.closed_at ? formatDate(new Date(order.closed_at)) : ''}
               </Numeric>
               <Numeric className="text-num-md font-semibold">{i18n.money(BigInt(order.total_minor))}</Numeric>

@@ -73,7 +73,8 @@ export function AlertBell({ muted, onMutedChange }: AlertBellProps) {
     >
       <span className="flex items-center gap-6">
         <Icon size={18} />
-        {state === 'blocked' ? label : null}
+        {/* Its icon alone on a phone: the words wrapped to two lines and squeezed the header (batch 54). */}
+        {state === 'blocked' ? <span className="hidden sm:inline">{label}</span> : null}
       </span>
     </Button>
   );

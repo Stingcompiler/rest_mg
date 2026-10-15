@@ -53,7 +53,7 @@ describe("the till's dish tiles", () => {
 describe('a notice', () => {
   it('can stand at the top, away from the pay button', () => {
     const top = classes(renderToStaticMarkup(createElement(Toast, { message: 'x', onDismiss: () => {}, placement: 'top' })));
-    expect(top).toMatch(/\btop-16\b/);
+    expect(top).toMatch(/\btop-header\b/); // below the header since batch 54, not over its title
     expect(top).not.toMatch(/\bbottom-/);
   });
 

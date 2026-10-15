@@ -226,7 +226,8 @@ export function Toast({ message, actionLabel, onAction, onDismiss, durationMs = 
       aria-live="polite"
       className={cn(
         'fixed inset-x-0 z-50 mx-auto flex w-fit max-w-[calc(100vw-2rem)] items-center gap-14 rounded-lg border border-line bg-text px-16 py-10 text-ar-base text-bg shadow-overlay',
-        placement === 'top' ? 'top-16' : 'bottom-mobile-cart-clear md:bottom-24',
+        // Below the header: at 16px it covered the screen's title (batch 54).
+        placement === 'top' ? 'top-header mt-8' : 'bottom-mobile-cart-clear md:bottom-24',
       )}
     >
       <span>{message}</span>

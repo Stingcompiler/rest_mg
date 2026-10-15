@@ -153,7 +153,7 @@ function Dashboard({
               ? undefined
               : i18n.t('manager.money.creditMovement', {
                   sales: money(data.credit_sales_minor),
-                  repaid: money(data.settlements_minor),
+                  repaid: isZero(data.settlements_minor) ? '—' : money(data.settlements_minor),
                 })
           }
           tone="credit"

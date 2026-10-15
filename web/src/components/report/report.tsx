@@ -57,7 +57,9 @@ const DELTA_ICON = { up: TrendingUp, down: TrendingDown, flat: Minus } as const;
  */
 export function KpiCard({ label, value, sub, tone = 'text', delta, unit, lead = false, zero = false, zeroLabel }: KpiCardProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-6 bg-surface p-18">
+    // The takings take the whole first row on a phone: «1,753,000» in Plex Mono
+    // did not fit half the width and was cut off (batch 54).
+    <div className={cn('flex min-w-0 flex-col gap-6 bg-surface p-14 sm:p-18', lead && 'col-span-2 lg:col-span-1')}>
       <span className="text-ar-sm text-text-muted">{label}</span>
       {zero ? (
         <span className="flex items-baseline gap-8">
@@ -67,8 +69,8 @@ export function KpiCard({ label, value, sub, tone = 'text', delta, unit, lead = 
           {zeroLabel ? <span className="text-ar-sm text-text-muted">{zeroLabel}</span> : null}
         </span>
       ) : (
-        <span className="flex items-baseline gap-6">
-          <Numeric className={cn('font-semibold', lead ? 'text-num-4xl' : 'text-num-2xl', KPI_TONES[tone])}>{value}</Numeric>
+        <span className="flex flex-wrap items-baseline gap-x-6">
+          <Numeric className={cn('font-semibold', lead ? 'text-num-3xl sm:text-num-4xl' : 'text-num-2xl', KPI_TONES[tone])}>{value}</Numeric>
           {unit ? <span className="text-ar-xs text-text-muted">{unit}</span> : null}
         </span>
       )}

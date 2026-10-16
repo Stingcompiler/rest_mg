@@ -226,6 +226,10 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
   const settle = useSettleCustomer();
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('cash');
+  // A transfer or a wallet payment is matched against the bank's statement
+  // later, so its reference is asked for, as on a bill (batch 60).
+  const [reference, setReference] = useState('');
+  const needsReference = method === 'bank' || method === 'wallet';
   // One key per repayment being recorded: a retry of the same amount and
   // method reuses it, so a repayment whose answer was lost is recorded once
   // (batch 43); a recorded one, or a changed amount, starts a new attempt.
@@ -244,14 +248,23 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
       setError(i18n.t('error.payment_invalid'));
       return;
     }
-    const what = `${customer.id}|${digits}|${method}`;
+    if (needsReference && !reference.trim()) {
+      setError(i18n.t('error.payment_reference_required'));
+      return;
+    }
+    const what = `${customer.id}|${digits}|${method}|${needsReference ? reference.trim() : ''}`;
     if (attempt.current?.what !== what) attempt.current = { what, key: crypto.randomUUID() };
     settle.mutate(
-      { id: customer.id, body: { amount_minor: digits, method }, attempt: attempt.current.key },
+      {
+        id: customer.id,
+        body: { amount_minor: digits, method, ...(needsReference ? { reference: reference.trim() } : {}) },
+        attempt: attempt.current.key,
+      },
       {
         onSuccess: () => {
           attempt.current = null;
           setAmount('');
+          setReference('');
           setDone(true);
         },
         onError: (caught) => setError(i18n.t(describeError(caught))),
@@ -340,6 +353,17 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
                   <option value="wallet">{i18n.t('pos.payment.wallet')}</option>
                 </select>
               </label>
+              {needsReference ? (
+                <label className="flex min-w-0 basis-full flex-col gap-6 text-ar-sm text-text-muted">
+                  {i18n.t('pos.payment.referenceTitle')}
+                  <TextField
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    placeholder={i18n.t('pos.payment.referencePlaceholder')}
+                    dir="ltr"
+                  />
+                </label>
+              ) : null}
               <Button variant="primary" onClick={record} disabled={settle.isPending}>
                 {i18n.t('customers.settle')}
               </Button>

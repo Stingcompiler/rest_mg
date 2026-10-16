@@ -54,6 +54,17 @@ class SettlementSerializer(serializers.Serializer):
             raise serializers.ValidationError("A settlement must be a positive amount.")
         return value
 
+    def validate(self, attrs):
+        # A transfer or a wallet payment is matched against the bank's statement
+        # later, so it carries a reference, as a bill paid the same way does
+        # (review of 10 October, F08). Cash needs none.
+        method = attrs.get("method", CustomerSettlement.Method.CASH)
+        if method in {CustomerSettlement.Method.BANK, CustomerSettlement.Method.WALLET} and not attrs.get(
+            "reference", ""
+        ).strip():
+            raise serializers.ValidationError({"reference": f"A {method} repayment must carry a reference."})
+        return attrs
+
 
 def _owed(customer) -> int:
     """What this customer was sold on credit, in total."""

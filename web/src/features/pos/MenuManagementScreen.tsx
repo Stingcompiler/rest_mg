@@ -65,7 +65,7 @@ export function MenuManagementScreen() {
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           {/* A side list on the tablet; a horizontal strip on the phone. */}
-          <nav className="flex flex-none gap-8 overflow-x-auto border-b border-line bg-bg-sunken p-14 md:w-denomination-panel md:flex-col md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-e">
+          <nav className="flex flex-none gap-8 overflow-x-auto border-b border-line bg-bg-sunken p-14 md:w-menu-sidebar md:flex-col md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-e">
             {pos.categories.map((entry) => (
               <button
                 key={entry.id}
@@ -129,7 +129,7 @@ export function MenuManagementScreen() {
                       // The name on its own line on a phone, so the switch stays
                       // inside the card; one line from 640px (found verifying batch 31).
                       <div key={item.id} className="flex flex-wrap items-center gap-x-16 gap-y-10 rounded-lg border border-line bg-surface p-14">
-                        <span className={item.isAvailable() ? 'min-w-0 flex-1 basis-full text-ar-md font-medium text-text sm:basis-0' : 'min-w-0 flex-1 basis-full text-ar-md font-medium text-text-disabled sm:basis-0'}>
+                        <span className={item.isAvailable() ? 'min-w-0 flex-1 basis-full text-ar-md font-medium text-text lg:basis-0' : 'min-w-0 flex-1 basis-full text-ar-md font-medium text-text-disabled lg:basis-0'}>
                           {snapshot.nameAr}
                         </span>
                         <input

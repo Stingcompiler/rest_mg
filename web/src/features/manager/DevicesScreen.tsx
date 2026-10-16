@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, LoadingList, Numeric, TextField } from '@/components';
+import { Button, ConfirmDialog, EmptyState, ErrorState, LoadingList, Numeric, TextField } from '@/components';
 import { describeError } from '@/lib/describeError';
 import { formatDate, useI18n } from '@/i18n';
 import { ManagerShell } from './ManagerShell';
@@ -23,6 +23,9 @@ export function DevicesScreen() {
   const revoke = useRevokeDevice();
   const [label, setLabel] = useState('');
   const [freshToken, setFreshToken] = useState<string | null>(null);
+  // Revoking cuts that tablet off at once, so it asks first (batch 59).
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const revokingDevice = (devices.data ?? []).find((device) => device.id === revoking);
 
   const onEnrol = () => {
     const branchId = me.data?.branch_id;
@@ -41,8 +44,9 @@ export function DevicesScreen() {
   return (
     <ManagerShell title={i18n.t('manager.devices.title')} description={i18n.t('manager.devices.pageDescription')}>
       <div className="flex max-w-2xl flex-col gap-16">
-        <div className="flex items-end gap-12 rounded-lg border border-line bg-surface p-16">
-          <label className="flex flex-1 flex-col gap-6">
+        {/* Wraps: in one row the enrol button ran off a phone's edge (batch 59). */}
+        <div className="flex flex-wrap items-end gap-12 border-b border-line pb-16">
+          <label className="flex min-w-0 flex-1 basis-field-min flex-col gap-6">
             <span className="text-ar-sm text-text-muted">{i18n.t('manager.devices.label')}</span>
             <TextField value={label} onChange={(event) => setLabel(event.target.value)} />
           </label>
@@ -69,12 +73,12 @@ export function DevicesScreen() {
           icon={<AlertTriangle size={30} />}
         />
         ) : (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col">
             {(devices.data ?? []).map((device) => {
               const active = device.revoked_at === null;
               return (
-                <div key={device.id} className="flex items-center gap-16 rounded-lg border border-line bg-surface p-14">
-                  <span className="flex-1 text-ar-base font-medium">{device.label}</span>
+                <div key={device.id} className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-14">
+                  <span className="min-w-0 flex-1 basis-32 break-words text-ar-base font-medium">{device.label}</span>
                   <span className={active ? 'text-ar-sm text-success' : 'text-ar-sm text-text-disabled'}>
                     {active ? i18n.t('manager.devices.active') : i18n.t('manager.devices.revoked')}
                   </span>
@@ -82,7 +86,7 @@ export function DevicesScreen() {
                     <Numeric className="text-num-sm text-text-muted">{formatDate(new Date(device.last_seen_at))}</Numeric>
                   ) : null}
                   {active ? (
-                    <Button variant="danger" onClick={() => revoke.mutate(device.id)} disabled={revoke.isPending}>
+                    <Button variant="quietDanger" onClick={() => setRevoking(device.id)} disabled={revoke.isPending}>
                       {i18n.t('manager.devices.revoke')}
                     </Button>
                   ) : null}
@@ -91,6 +95,16 @@ export function DevicesScreen() {
             })}
           </div>
         )}
+        <ConfirmDialog
+          open={revoking !== null}
+          title={i18n.t('manager.devices.revokeTitle', { name: revokingDevice?.label ?? '' })}
+          body={i18n.t('manager.devices.revokeBody')}
+          confirmLabel={i18n.t('manager.devices.revoke')}
+          cancelLabel={i18n.t('common.back')}
+          pending={revoke.isPending}
+          onCancel={() => setRevoking(null)}
+          onConfirm={() => revoking && revoke.mutate(revoking, { onSuccess: () => setRevoking(null) })}
+        />
       </div>
     </ManagerShell>
   );

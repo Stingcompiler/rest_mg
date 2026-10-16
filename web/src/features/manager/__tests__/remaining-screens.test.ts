@@ -37,7 +37,7 @@ describe('the devices screen', () => {
   it('asks before revoking a device, which cuts that tablet off at once', () => {
     expect(devices).toMatch(/<Button variant="quietDanger" onClick=\{\(\) => setRevoking\(device\.id\)\}/);
     expect(devices).toMatch(/title=\{i18n\.t\('manager\.devices\.revokeTitle', \{ name: revokingDevice\?\.label \?\? '' \}\)\}/);
-    expect(devices).toMatch(/onConfirm=\{\(\) => revoke\.mutate\(revoking, \{ onSuccess: \(\) => setRevoking\(null\) \}\)\}/);
+    expect(devices).toMatch(/onConfirm=\{\(\) => revoking && revoke\.mutate\(revoking, \{ onSuccess: \(\) => setRevoking\(null\) \}\)\}/);
     expect(devices).not.toMatch(/onClick=\{\(\) => revoke\.mutate\(device\.id\)\}/);
   });
 

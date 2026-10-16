@@ -173,7 +173,7 @@ function HoursEditor({
       {rows.map((row, index) => {
         const days = row.days ?? [];
         return (
-          <div key={index} className="flex flex-col gap-10 rounded-md border border-line p-12">
+          <div key={index} className="flex flex-col gap-10 border-t border-line pt-12 first:border-t-0 first:pt-0">
             {Array.isArray(row.days) ? null : (
               <span className="text-ar-sm text-warning">{i18n.t('manager.hours.legacy', { label: row.day_ar ?? '' })}</span>
             )}

@@ -102,10 +102,10 @@ describe('a menu row on a phone (found verifying batch 31)', () => {
       createElement(MenuManagementRow, { name: 'كبدة إسكندراني', price: '15,000', stateLabel: 'متاح', available: true, toggleLabel: 'x', onToggle: () => {} } as never),
     );
     expect(classes(html)).toMatch(/\bflex-wrap\b/);
-    expect(html).toMatch(/class="[^"]*\bbasis-full\b[^"]*\bsm:basis-0\b/);
+    expect(html).toMatch(/class="[^"]*\bbasis-full\b[^"]*\blg:basis-0\b/); // one line only from 1024px: at 768 the name was squeezed to a syllable (batch 59)
     // The till's own menu screen draws its rows itself, editable price and all.
     expect(menu).toMatch(/className="flex flex-wrap items-center gap-x-16 gap-y-10 rounded-lg border border-line bg-surface p-14"/);
-    expect(menu).toMatch(/'min-w-0 flex-1 basis-full text-ar-md font-medium text-text sm:basis-0'/);
+    expect(menu).toMatch(/'min-w-0 flex-1 basis-full text-ar-md font-medium text-text lg:basis-0'/);
   });
 });
 

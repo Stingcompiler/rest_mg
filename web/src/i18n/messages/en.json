@@ -794,5 +794,7 @@
   "customers.retireTitle": "Stop {name}?",
   "customers.retireBody": "They will leave the customer list; their bills, balance and statement stay as they are and nothing is deleted.",
   "manager.staff.deactivateTitle": "Stop {name}?",
-  "manager.staff.deactivateBody": "They will not be able to sign in. Every order and shift stays recorded under their name and nothing is deleted. You can reactivate them later."
+  "manager.staff.deactivateBody": "They will not be able to sign in. Every order and shift stays recorded under their name and nothing is deleted. You can reactivate them later.",
+  "manager.devices.revokeTitle": "Revoke “{name}”?",
+  "manager.devices.revokeBody": "This device stops syncing at once and its cashier cannot send orders to the server from it. What it recorded before stays as it is."
 }

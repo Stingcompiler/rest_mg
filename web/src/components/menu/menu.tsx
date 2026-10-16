@@ -169,7 +169,7 @@ export function MenuManagementRow({
     // price, state and switch go under it. In one line the switch, which now
     // keeps its size, ran past the card's edge (found verifying batch 31).
     <div className="flex flex-wrap items-center gap-x-16 gap-y-10 rounded-lg border border-line bg-surface p-14">
-      <span className={cn('min-w-0 flex-1 basis-full text-ar-md font-medium sm:basis-0', available ? 'text-text' : 'text-text-disabled')}>
+      <span className={cn('min-w-0 flex-1 basis-full text-ar-md font-medium lg:basis-0', available ? 'text-text' : 'text-text-disabled')}>
         {name}
       </span>
       <div className="flex min-h-control-lg w-price-field items-center justify-end rounded-md border border-line bg-surface-2 px-14">

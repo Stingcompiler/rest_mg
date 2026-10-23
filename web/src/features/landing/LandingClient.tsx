@@ -970,6 +970,15 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
         © <span className="numeric" dir="ltr">{year}</span> {data.name_ar} · {label('landing.footerRights')}
         {/* The product the page runs on, after the restaurant's own line. */}
         <span className="mt-4 block text-gold-soft">{label('landing.poweredBy')}</span>
+        {/* Who built it, with a way to them; opens elsewhere, so a new tab and no opener. */}
+        <a
+          href="https://stingdev.pro"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-control-stepper items-center text-on-ink-muted underline underline-offset-4 hover:text-on-ink"
+        >
+          {label('landing.poweredBySting')}
+        </a>
       </div>
     </footer>
   );

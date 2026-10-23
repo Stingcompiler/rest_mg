@@ -828,5 +828,6 @@
   "settings.density": "التباعد",
   "settings.density.compact": "مضغوط",
   "settings.density.default": "افتراضي",
-  "settings.density.comfortable": "مريح"
+  "settings.density.comfortable": "مريح",
+  "landing.poweredBySting": "مدعوم من ستينج سيستم"
 }

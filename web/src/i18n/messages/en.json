@@ -828,5 +828,6 @@
   "settings.density": "Spacing",
   "settings.density.compact": "Compact",
   "settings.density.default": "Default",
-  "settings.density.comfortable": "Roomy"
+  "settings.density.comfortable": "Roomy",
+  "landing.poweredBySting": "Powered by Sting Systems"
 }

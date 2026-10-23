@@ -39,6 +39,7 @@ import { setFlash } from '@/lib/flash';
 import { usePos } from './PosProvider';
 import { MAX_REFERENCE_LENGTH, cleanReference, isUsableReference } from './paymentReference';
 import { quickCashOptions } from './quickCash';
+import { useShortcuts, type ShortcutMap } from './useShortcuts';
 
 const METHOD_LABEL_KEY = {
   cash: 'pos.payment.cash',
@@ -51,6 +52,11 @@ export function PaymentScreen() {
   const pos = usePos();
   const i18n = useI18n();
   const router = useRouter();
+  // Enter takes this screen's one main action, Escape goes back (batch 64).
+  // What Enter does depends on state defined below the early returns, so the
+  // screen hands it over in a ref; the hook must be called before them.
+  const mainAction = useRef<ShortcutMap['Enter']>(undefined);
+  useShortcuts({ Enter: () => mainAction.current?.(), Escape: () => router.push('/pos') });
   const [entered, setEntered] = useState('');
   // What just happened, shown to the cashier. A payment that is refused by a
   // domain rule used to fail silently into the console; a payment that worked
@@ -99,6 +105,8 @@ export function PaymentScreen() {
     [i18n],
   );
 
+  // No key does anything on the change-due screen or with no bill.
+  mainAction.current = undefined;
   if (changeOwed) {
     return (
       <ChangeDueScreen
@@ -264,6 +272,12 @@ export function PaymentScreen() {
     } finally {
       setClosing(false);
     }
+  };
+
+  // What is still owed is taken as cash; once nothing is owed, the bill closes.
+  mainAction.current = () => {
+    if (due > 0n) pay('cash');
+    else if (!closing) void closeBill();
   };
 
   return (

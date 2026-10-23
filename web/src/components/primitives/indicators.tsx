@@ -181,3 +181,18 @@ export function BrandMark({
     </span>
   );
 }
+
+/**
+ * The key that does what a button does (batch 64). Only drawn where there is a
+ * keyboard and a pointer to go with it; a touch till is not cluttered.
+ */
+export function KeyHint({ keys }: { keys: string }) {
+  return (
+    <kbd
+      aria-hidden
+      className="hidden fine:inline-flex ms-8 rounded-xs border border-line px-6 text-num-xs font-normal text-text-muted"
+    >
+      {keys}
+    </kbd>
+  );
+}

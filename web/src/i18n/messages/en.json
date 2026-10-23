@@ -812,5 +812,17 @@
   "manager.staff.displayNameRequired": "Enter the person's name",
   "manager.profile.nameRequired": "Enter the restaurant's name",
   "pos.sync.sending": "Sending…",
-  "auth.currentPasswordRequired": "Enter your current password"
+  "auth.currentPasswordRequired": "Enter your current password",
+  "pos.sync.keepLocal": "Keep on this device",
+  "pos.sync.keepConsequence": "It will not be sent again by itself. It stays here with its reason until you try again or discard it; the manager's screens will not show it meanwhile.",
+  "pos.sync.discard": "Discard",
+  "pos.sync.discardTitle": "Discard this record?",
+  "pos.sync.discardConfirm": "Yes, discard it",
+  "pos.sync.discardConsequence.order": "It leaves the queue and will never reach the server, so the manager's figures will not include it. The bill stays in this till's own report. If money was taken for it, settle that with the manager.",
+  "pos.sync.discardConsequence.shift": "The shift will not be closed on the server, so its figures will be missing there. It stays in this till's own report.",
+  "pos.sync.discardConsequence.change": "This change stays on this device only and will never reach the server.",
+  "pos.sync.askManager": "Only a manager or the owner can discard a record. Keep it, and tell them.",
+  "pos.sync.held": "Kept on this device",
+  "pos.sync.summaryHeld": " · {count} kept",
+  "pos.sync.keptNote": "Kept here. It is not sent by itself; try again when the cause is fixed, or discard it."
 }

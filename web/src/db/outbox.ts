@@ -178,11 +178,55 @@ export async function retryNow(db: IDBDatabase, ids?: string[]): Promise<number>
   let rescheduled = 0;
   for (const entry of all) {
     if (wanted && !wanted.has(entry.id)) continue;
+    // «Sync everything» does not release a record someone decided to keep;
+    // only its own «try again» does.
+    if (!wanted && isHeld(entry)) continue;
     store.put({ ...entry, nextAttemptAt: 0, lastError: null });
     rescheduled += 1;
   }
   await request(store.count());
   return rescheduled;
+}
+
+/**
+ * A refused record kept on this device (batch 63).
+ *
+ * The server's refusal is a decision for a person, not something retrying
+ * fixes. «Keep» moves the record's next attempt out of reach (the far end of
+ * time), so nothing sends it by itself; it stays listed with its reason until
+ * someone retries it or discards it. A newer save of the same record replaces
+ * the row, which clears the hold.
+ */
+export const HELD_AT = 8_000_000_000_000_000;
+
+export function isHeld(entry: OutboxRecord): boolean {
+  return entry.nextAttemptAt >= HELD_AT;
+}
+
+/** Keep a record the server refused. False for one that is only waiting. */
+export async function holdEntry(db: IDBDatabase, id: string): Promise<boolean> {
+  const tx = db.transaction(STORES.outbox, 'readwrite');
+  const store = tx.objectStore(STORES.outbox);
+  const entry = (await request(store.get(id))) as OutboxRecord | undefined;
+  const held = entry !== undefined && entry.lastError !== null;
+  if (held) store.put({ ...entry, nextAttemptAt: HELD_AT });
+  await txDone(tx);
+  return held;
+}
+
+/**
+ * Take a refused record out of the queue. The record itself stays in this
+ * till's own stores (its bill is still in the till's report); it will not reach
+ * the server. False for one that is only waiting: that clears itself.
+ */
+export async function discardRefused(db: IDBDatabase, id: string): Promise<boolean> {
+  const tx = db.transaction(STORES.outbox, 'readwrite');
+  const store = tx.objectStore(STORES.outbox);
+  const entry = (await request(store.get(id))) as OutboxRecord | undefined;
+  const dropped = entry !== undefined && entry.lastError !== null;
+  if (dropped) store.delete(id);
+  await txDone(tx);
+  return dropped;
 }
 
 export async function pendingCount(db: IDBDatabase): Promise<number> {

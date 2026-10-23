@@ -184,7 +184,7 @@ function StaffRow({ person }: { person: StaffAccount }) {
   if (editing) return <EditStaffRow person={person} onDone={() => setEditing(false)} />;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-14">
+    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-row-lg">
       <span className="min-w-0 flex-1 basis-32 text-ar-base font-medium">
         {person.display_name || person.username}
       </span>

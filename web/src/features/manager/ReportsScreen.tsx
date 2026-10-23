@@ -49,7 +49,7 @@ export function ReportsScreen() {
           {rows.map((order) => (
             // A line of a ledger; on a phone the date takes a line of its own
             // instead of breaking «2026-10-15» across two (batch 56).
-            <div key={order.id} className="flex flex-wrap items-baseline gap-x-12 gap-y-2 border-b border-line py-12">
+            <div key={order.id} className="flex flex-wrap items-baseline gap-x-12 gap-y-2 border-b border-line py-row">
               <Numeric className="text-num-md font-semibold">{order.number}</Numeric>
               <span className="text-ar-base text-text-muted">
                 {i18n.t(TYPE_LABEL[order.type as keyof typeof TYPE_LABEL] ?? 'pos.orderType.dineIn')}

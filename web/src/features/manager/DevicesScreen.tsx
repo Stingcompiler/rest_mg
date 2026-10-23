@@ -77,7 +77,7 @@ export function DevicesScreen() {
             {(devices.data ?? []).map((device) => {
               const active = device.revoked_at === null;
               return (
-                <div key={device.id} className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-14">
+                <div key={device.id} className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-row-lg">
                   <span className="min-w-0 flex-1 basis-32 break-words text-ar-base font-medium">{device.label}</span>
                   <span className={active ? 'text-ar-sm text-success' : 'text-ar-sm text-text-disabled'}>
                     {active ? i18n.t('manager.devices.active') : i18n.t('manager.devices.revoked')}

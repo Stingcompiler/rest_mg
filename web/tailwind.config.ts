@@ -168,6 +168,13 @@ const config: Config = {
         40: 'var(--space-40)',
         56: 'var(--space-56)',
 
+        // Spacing that follows the density setting (batch 65).
+        'row': 'var(--density-row)',
+        'row-lg': 'var(--density-row-lg)',
+        'card': 'var(--density-card)',
+        'card-wide': 'var(--density-card-wide)',
+        'stack': 'var(--density-stack)',
+
         'control-sm': 'var(--control-sm)',
         'control-stepper': 'var(--control-stepper)',
         'control-md': 'var(--control-md)',

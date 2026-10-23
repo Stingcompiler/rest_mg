@@ -126,7 +126,7 @@ function Dashboard({
   const isZero = (minor: string | number) => BigInt(minor) === 0n;
 
   return (
-    <div className="flex flex-col gap-32">
+    <div className="flex flex-col gap-stack">
       {/* One ledger band, the takings first and largest (batch 40): every
           figure was a floating card with a gold top line, the template look,
           and a quiet day read as seven dots («٠»). */}

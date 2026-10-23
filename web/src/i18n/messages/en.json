@@ -824,5 +824,9 @@
   "pos.sync.askManager": "Only a manager or the owner can discard a record. Keep it, and tell them.",
   "pos.sync.held": "Kept on this device",
   "pos.sync.summaryHeld": " · {count} kept",
-  "pos.sync.keptNote": "Kept here. It is not sent by itself; try again when the cause is fixed, or discard it."
+  "pos.sync.keptNote": "Kept here. It is not sent by itself; try again when the cause is fixed, or discard it.",
+  "settings.density": "Spacing",
+  "settings.density.compact": "Compact",
+  "settings.density.default": "Default",
+  "settings.density.comfortable": "Roomy"
 }

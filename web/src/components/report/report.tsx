@@ -61,7 +61,7 @@ export function KpiCard({ label, value, sub, tone = 'text', delta, unit, lead = 
   return (
     // The takings take the whole first row on a phone: «1,753,000» in Plex Mono
     // did not fit half the width and was cut off (batch 54).
-    <div className={cn('flex min-w-0 flex-col gap-6 bg-surface p-14 sm:p-18', (lead || wide) && 'col-span-2 lg:col-span-1')}>
+    <div className={cn('flex min-w-0 flex-col gap-6 bg-surface p-card sm:p-card-wide', (lead || wide) && 'col-span-2 lg:col-span-1')}>
       <span className="text-ar-sm text-text-muted">{label}</span>
       {zero ? (
         <span className="flex items-baseline gap-8">
@@ -105,7 +105,7 @@ export function KpiStrip({ columns, children }: { columns: 2 | 3 | 4; children: 
  */
 export function LedgerRow({ label, value, unit, note, tone = 'text', zero = false }: { label: string; value: string; unit?: string; note?: string; tone?: KpiTone; zero?: boolean }) {
   return (
-    <div className="flex flex-col gap-2 border-b border-line py-12 last:border-b-0">
+    <div className="flex flex-col gap-2 border-b border-line py-row last:border-b-0">
       <div className="flex items-baseline gap-8">
         <span className="text-ar-base text-text">{label}</span>
         <span aria-hidden="true" className="flex-1 border-b border-dotted border-line-strong" />

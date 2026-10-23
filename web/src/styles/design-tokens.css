@@ -99,6 +99,24 @@
 }
 
 /* -----------------------------------------------------------------------------
+ * 1b. Density (batch 65, Design Reference §5)
+ *
+ * One number scales the spacing of lists, cards and sections. 1 is what the app
+ * has always looked like. Never a control's size (the 44px touch floor), a
+ * badge, a field or a chart: those keep their own tokens.
+ * -------------------------------------------------------------------------- */
+:root {
+  --density: 1;
+  --density-row: calc(12px * var(--density));       /* a list line, vertical padding */
+  --density-row-lg: calc(14px * var(--density));    /* a roomier list line */
+  --density-card: calc(14px * var(--density));      /* a card or a ledger cell */
+  --density-card-wide: calc(18px * var(--density)); /* the same, from the tablet up */
+  --density-stack: calc(32px * var(--density));     /* between the sections of a screen */
+}
+[data-density='compact'] { --density: 0.7; }
+[data-density='comfortable'] { --density: 1.3; }
+
+/* -----------------------------------------------------------------------------
  * 2. Colour — dark
  * -------------------------------------------------------------------------- */
 

@@ -190,7 +190,7 @@ function CustomerRow({ person, onStatement }: { person: Customer; onStatement: (
 
   return (
     // A line of a ledger, the whole name readable: it was a box and cut a long name to «…» (batch 56).
-    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-14">
+    <div className="flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-row-lg">
       <div className="flex min-w-0 flex-1 basis-field-min flex-col">
         <span className="break-words text-ar-base font-medium">{person.name}</span>
         {person.phone ? (

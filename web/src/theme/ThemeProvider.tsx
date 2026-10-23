@@ -2,8 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { readTheme, writeTheme, type ThemePreference } from '@/i18n/preferences';
+import { readDensity, readTheme, writeDensity, writeTheme, type DensityPreference, type ThemePreference } from '@/i18n/preferences';
 
+import { applyDensity } from './density';
 import { applyTheme, resolveTheme, type ResolvedTheme } from './theme';
 
 interface ThemeContextValue {
@@ -12,6 +13,9 @@ interface ThemeContextValue {
   /** What that resolves to right now. */
   resolved: ResolvedTheme;
   setTheme(preference: ThemePreference): void;
+  /** How closely lists and cards are spaced: one choice for the whole app. */
+  density: DensityPreference;
+  setDensity(density: DensityPreference): void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -27,6 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // The pre-paint script has already stamped data-theme; this state hydrates
   // from the same source so React agrees with what the user already sees.
   const [preference, setPreference] = useState<ThemePreference>(() => readTheme());
+  const [density, setDensityState] = useState<DensityPreference>(() => readDensity());
   const [systemDark, setSystemDark] = useState<boolean>(() => systemPrefersDark());
 
   // Follow the OS while the preference is "system".
@@ -43,14 +48,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyTheme(resolved);
   }, [resolved]);
 
+  useEffect(() => {
+    applyDensity(density);
+  }, [density]);
+
+  const setDensity = useCallback((next: DensityPreference) => {
+    setDensityState(next);
+    writeDensity(next);
+  }, []);
+
   const setTheme = useCallback((next: ThemePreference) => {
     setPreference(next);
     writeTheme(next);
   }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ preference, resolved, setTheme }),
-    [preference, resolved, setTheme],
+    () => ({ preference, resolved, setTheme, density, setDensity }),
+    [preference, resolved, setTheme, density, setDensity],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

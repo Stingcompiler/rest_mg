@@ -44,7 +44,7 @@ describe('a figure on a phone', () => {
   });
 
   it('keeps the padding modest in a half-width cell', () => {
-    expect(renderToStaticMarkup(createElement(KpiCard, { label: 'x', value: '1' }))).toMatch(/\bp-14\b[^"]*\bsm:p-18\b/);
+    expect(renderToStaticMarkup(createElement(KpiCard, { label: 'x', value: '1' }))).toMatch(/\bp-card\b[^"]*\bsm:p-card-wide\b/);
   });
 });
 

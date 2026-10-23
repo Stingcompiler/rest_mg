@@ -30,7 +30,7 @@ describe('the devices screen', () => {
   });
 
   it('sets each device as a line, not a box', () => {
-    expect(devices).toMatch(/flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-14/);
+    expect(devices).toMatch(/flex flex-wrap items-center gap-x-16 gap-y-8 border-b border-line py-row-lg/);
     expect(devices).not.toMatch(/gap-16 rounded-lg border border-line bg-surface p-14/);
   });
 

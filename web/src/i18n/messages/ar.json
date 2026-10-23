@@ -824,5 +824,9 @@
   "pos.sync.askManager": "التجاهل للمدير أو المالك فقط. احتفظ به وأخبرهم.",
   "pos.sync.held": "محفوظ على الجهاز",
   "pos.sync.summaryHeld": "، {count} محفوظ",
-  "pos.sync.keptNote": "محفوظ هنا ولا يُرسَل من تلقاء نفسه. أعد المحاولة بعد معالجة السبب، أو تجاهله."
+  "pos.sync.keptNote": "محفوظ هنا ولا يُرسَل من تلقاء نفسه. أعد المحاولة بعد معالجة السبب، أو تجاهله.",
+  "settings.density": "التباعد",
+  "settings.density.compact": "مضغوط",
+  "settings.density.default": "افتراضي",
+  "settings.density.comfortable": "مريح"
 }

@@ -33,7 +33,7 @@ describe('the customers screen', () => {
 
   it('sets each customer as a line, the whole name readable', () => {
     const row = /function CustomerRow[\s\S]*?\n\}\n/.exec(customers)?.[0] ?? '';
-    expect(row).toMatch(/border-b border-line py-14/);
+    expect(row).toMatch(/border-b border-line py-row-lg/);
     expect(row).not.toMatch(/truncate/);
     expect(row).toMatch(/break-words/);
   });
@@ -50,7 +50,7 @@ describe('the staff screen', () => {
   });
 
   it('sets each person as a line and the form under a rule, neither in a box', () => {
-    expect(/function StaffRow[\s\S]*?\n\}\n/.exec(staff)?.[0] ?? '').toMatch(/border-b border-line py-14/);
+    expect(/function StaffRow[\s\S]*?\n\}\n/.exec(staff)?.[0] ?? '').toMatch(/border-b border-line py-row-lg/);
     expect(/function AddStaffForm[\s\S]*?\n\}\n/.exec(staff)?.[0] ?? '').toMatch(/<form onSubmit=\{submit\} noValidate className="flex flex-col gap-12 border-t border-line pt-16">/);
     expect(staff).not.toMatch(/function StaffRow[\s\S]*?rounded-lg border border-line bg-surface p-14[\s\S]*?\n\}\n/);
   });
@@ -66,7 +66,7 @@ describe('the staff screen', () => {
 
 describe('the sales list', () => {
   it('is lines, and keeps a date whole on one line', () => {
-    expect(sales).toMatch(/border-b border-line py-12/);
+    expect(sales).toMatch(/border-b border-line py-row\b/);
     expect(sales).not.toMatch(BOX);
     expect(sales).toMatch(/whitespace-nowrap text-num-sm text-text-muted order-last basis-full sm:order-none sm:basis-auto/);
   });

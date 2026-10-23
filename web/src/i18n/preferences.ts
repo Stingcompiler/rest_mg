@@ -79,3 +79,25 @@ export function readTheme(): ThemePreference {
 export function writeTheme(theme: ThemePreference): void {
   write(STORAGE_KEYS.theme, theme);
 }
+
+/**
+ * How closely lists, cards and sections are spaced (batch 65, Design Reference
+ * §5). One setting for the whole app, never a page; `default` is what the app
+ * always looked like.
+ */
+export const DENSITIES = ['compact', 'default', 'comfortable'] as const;
+export type DensityPreference = (typeof DENSITIES)[number];
+export const DEFAULT_DENSITY: DensityPreference = 'default';
+
+export function isDensity(value: unknown): value is DensityPreference {
+  return typeof value === 'string' && (DENSITIES as readonly string[]).includes(value);
+}
+
+export function readDensity(): DensityPreference {
+  const stored = read(STORAGE_KEYS.density);
+  return isDensity(stored) ? stored : DEFAULT_DENSITY;
+}
+
+export function writeDensity(density: DensityPreference): void {
+  write(STORAGE_KEYS.density, density);
+}

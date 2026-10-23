@@ -46,4 +46,5 @@ export const STORAGE_KEYS = {
   theme: 'sp-theme',
   locale: 'sp-locale',
   numerals: 'sp-numerals',
+  density: 'sp-density',
 } as const;

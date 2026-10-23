@@ -19,7 +19,7 @@ import { describeError } from '@/lib/describeError';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useI18n, type Locale, type Numerals } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import type { ThemePreference } from '@/i18n/preferences';
+import { DENSITIES, type ThemePreference } from '@/i18n/preferences';
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -125,6 +125,14 @@ export function SettingsMenu() {
                 onClick={() => i18n.setLocale(option.value)}
               >
                 {option.label}
+              </Choice>
+            ))}
+          </Row>
+
+          <Row label={i18n.t('settings.density')}>
+            {DENSITIES.map((value) => (
+              <Choice key={value} active={theme.density === value} onClick={() => theme.setDensity(value)}>
+                {i18n.t(`settings.density.${value}` as const)}
               </Choice>
             ))}
           </Row>

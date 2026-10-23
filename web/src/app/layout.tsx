@@ -93,6 +93,9 @@ const BOOTSTRAP = `
     var resolved = (theme === 'light' || theme === 'dark') ? theme : (prefersDark ? 'dark' : 'light');
     el.setAttribute('data-theme', resolved);
 
+    var density = localStorage.getItem('sp-density');
+    if (density === 'compact' || density === 'comfortable') el.setAttribute('data-density', density);
+
     var locale = localStorage.getItem('sp-locale');
     if (locale !== 'ar' && locale !== 'en') locale = 'ar';
     el.setAttribute('lang', locale);

@@ -46,7 +46,7 @@ describe('the sync queue screen', () => {
         'pos.sync.discardConfirm',
         'pos.sync.discardConsequence.order',
         'pos.sync.discardConsequence.shift',
-        'pos.sync.discardConsequence.other',
+        'pos.sync.discardConsequence.change',
         'pos.sync.askManager',
         'pos.sync.held',
         'pos.sync.summaryHeld',

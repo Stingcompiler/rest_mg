@@ -15,9 +15,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CloudOff, CloudUpload, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
-import { AppHeader, Button, EmptyState, Numeric, Pager, StatusChip } from '@/components';
+import { AppHeader, Button, ConfirmDialog, EmptyState, Numeric, Pager, StatusChip } from '@/components';
 import {
   allOutboxEntries,
+  discardRefusedOutboxEntry,
+  holdOutboxEntry,
+  isOutboxHeld,
   openDatabase,
   retryOutboxNow,
   toMinor,
@@ -27,6 +30,7 @@ import {
   type PriceChangeRecord,
   type ShiftRecord,
 } from '@/db';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { formatTime, useI18n } from '@/i18n';
 import { clampOffset, pageLocal } from '@/lib/paging';
 import { usePos } from './PosProvider';
@@ -80,6 +84,10 @@ export function SyncQueueScreen() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
+  // Discarding a bill that may hold takings is a manager's decision (batch 63).
+  const auth = useAuth();
+  const canDiscard = auth.user !== null && ['owner', 'manager'].includes(auth.user.role);
+  const [discarding, setDiscarding] = useState<OutboxRecord | null>(null);
 
   const load = useCallback(async () => {
     const db = await openDatabase();
@@ -121,8 +129,22 @@ export function SyncQueueScreen() {
     }
   };
 
+  const keep = async (entry: OutboxRecord) => {
+    const db = await openDatabase();
+    await holdOutboxEntry(db, entry.id);
+    await load();
+  };
+
+  const discard = async (entry: OutboxRecord) => {
+    const db = await openDatabase();
+    await discardRefusedOutboxEntry(db, entry.id);
+    setDiscarding(null);
+    await load();
+  };
+
   const waiting = (entries ?? []).filter((entry) => entry.lastError === null);
-  const refused = (entries ?? []).filter((entry) => entry.lastError !== null);
+  const held = (entries ?? []).filter((entry) => entry.lastError !== null && isOutboxHeld(entry));
+  const refused = (entries ?? []).filter((entry) => entry.lastError !== null && !isOutboxHeld(entry));
 
   return (
     <div className="flex h-dvh bg-bg text-text" dir={i18n.dir}>
@@ -149,12 +171,13 @@ export function SyncQueueScreen() {
           <div className="mx-auto flex max-w-3xl flex-col gap-14">
             <div className="flex flex-wrap items-center justify-between gap-12 rounded-lg border border-line bg-surface p-16">
               <div className="flex flex-col gap-4">
-                {waiting.length > 0 || refused.length > 0 ? (
+                {waiting.length > 0 || refused.length > 0 || held.length > 0 ? (
                   <span className="text-ar-base">
                     {i18n.t('pos.sync.summary', {
                       waiting: i18n.int(waiting.length),
                       refused: i18n.int(refused.length),
                     })}
+                    {held.length > 0 ? i18n.t('pos.sync.summaryHeld', { count: i18n.int(held.length) }) : ''}
                   </span>
                 ) : null}
                 {!pos.online ? (
@@ -198,6 +221,8 @@ export function SyncQueueScreen() {
                     (id) => pos.itemById.get(id)?.toSnapshot().nameAr ?? i18n.t('pos.sync.unknownItem'),
                   );
                   const isRefused = entry.lastError !== null;
+                  const isKept = isRefused && isOutboxHeld(entry);
+                  const kind = entry.type === 'order' ? 'order' : entry.type === 'shift' ? 'shift' : 'change';
                   return (
                     <div
                       key={entry.id}
@@ -222,8 +247,8 @@ export function SyncQueueScreen() {
                         {/* Waiting is the normal state of a till that was offline, not a
                             warning: neutral. Being sent right now is the action colour. */}
                         <StatusChip
-                          label={i18n.t(isRefused ? 'pos.sync.refused' : busy ? 'pos.sync.sending' : 'pos.sync.waiting')}
-                          tone={isRefused ? 'danger' : busy ? 'accent' : 'neutral'}
+                          label={i18n.t(isKept ? 'pos.sync.held' : isRefused ? 'pos.sync.refused' : busy ? 'pos.sync.sending' : 'pos.sync.waiting')}
+                          tone={isKept ? 'neutral' : isRefused ? 'danger' : busy ? 'accent' : 'neutral'}
                           dot
                         />
                         <div className="ms-auto flex items-center gap-8">
@@ -256,6 +281,37 @@ export function SyncQueueScreen() {
                           </span>
                         </div>
                       ) : null}
+
+                      {/* Two decisions, each with what it costs (Design Reference
+                          §8, batch 63). Trying again is the button above. */}
+                      {isRefused ? (
+                        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
+                          <div className="flex flex-col gap-6">
+                            {isKept ? (
+                              <span className="text-ar-sm text-text-muted">{i18n.t('pos.sync.keptNote')}</span>
+                            ) : (
+                              <>
+                                <Button variant="secondary" onClick={() => void keep(entry)}>
+                                  {i18n.t('pos.sync.keepLocal')}
+                                </Button>
+                                <span className="text-ar-xs text-text-muted">{i18n.t('pos.sync.keepConsequence')}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-6">
+                            {canDiscard ? (
+                              <>
+                                <Button variant="quietDanger" onClick={() => setDiscarding(entry)}>
+                                  {i18n.t('pos.sync.discard')}
+                                </Button>
+                                <span className="text-ar-xs text-text-muted">{i18n.t(`pos.sync.discardConsequence.${kind}` as const)}</span>
+                              </>
+                            ) : (
+                              <span className="text-ar-xs text-text-muted">{i18n.t('pos.sync.askManager')}</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -268,6 +324,22 @@ export function SyncQueueScreen() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={discarding !== null}
+        title={i18n.t('pos.sync.discardTitle')}
+        body={
+          discarding
+            ? i18n.t(
+                `pos.sync.discardConsequence.${discarding.type === 'order' ? 'order' : discarding.type === 'shift' ? 'shift' : 'change'}` as const,
+              )
+            : undefined
+        }
+        confirmLabel={i18n.t('pos.sync.discardConfirm')}
+        cancelLabel={i18n.t('common.cancel')}
+        onConfirm={() => discarding && void discard(discarding)}
+        onCancel={() => setDiscarding(null)}
+      />
     </div>
   );
 }

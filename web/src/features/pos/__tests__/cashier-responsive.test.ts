@@ -90,7 +90,7 @@ describe('zeros that read as dots', () => {
   });
 
   it('say nothing of a queue that is empty', () => {
-    expect(read('features/pos/SyncQueueScreen.tsx')).toMatch(/waiting\.length > 0 \|\| refused\.length > 0 \?/);
+    expect(read('features/pos/SyncQueueScreen.tsx')).toMatch(/waiting\.length > 0 \|\| refused\.length > 0 \|\| held\.length > 0 \?/);
   });
 });
 

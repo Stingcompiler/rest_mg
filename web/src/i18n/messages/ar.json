@@ -812,5 +812,17 @@
   "manager.staff.displayNameRequired": "اكتب اسم الشخص",
   "manager.profile.nameRequired": "اكتب اسم المطعم",
   "pos.sync.sending": "جارٍ الإرسال…",
-  "auth.currentPasswordRequired": "اكتب كلمة المرور الحالية"
+  "auth.currentPasswordRequired": "اكتب كلمة المرور الحالية",
+  "pos.sync.keepLocal": "احتفظ به على الجهاز",
+  "pos.sync.keepConsequence": "لن يُرسَل من تلقاء نفسه. يبقى هنا مع سببه حتى تعيد المحاولة أو تتجاهله، ولن تراه شاشات المدير في هذه الأثناء.",
+  "pos.sync.discard": "تجاهله",
+  "pos.sync.discardTitle": "تجاهل هذا السجل؟",
+  "pos.sync.discardConfirm": "نعم، تجاهله",
+  "pos.sync.discardConsequence.order": "يخرج من الطابور ولن يصل إلى الخادم أبدًا، فلا تدخله أرقام المدير. تبقى الفاتورة في تقرير هذا الجهاز. وإن كان قد أُخذ مال عنها فسوِّ ذلك مع المدير.",
+  "pos.sync.discardConsequence.shift": "لن تُغلق الوردية على الخادم فتغيب أرقامها هناك. تبقى في تقرير هذا الجهاز.",
+  "pos.sync.discardConsequence.change": "يبقى هذا التغيير على هذا الجهاز فقط ولن يصل إلى الخادم.",
+  "pos.sync.askManager": "التجاهل للمدير أو المالك فقط. احتفظ به وأخبرهم.",
+  "pos.sync.held": "محفوظ على الجهاز",
+  "pos.sync.summaryHeld": "، {count} محفوظ",
+  "pos.sync.keptNote": "محفوظ هنا ولا يُرسَل من تلقاء نفسه. أعد المحاولة بعد معالجة السبب، أو تجاهله."
 }

@@ -35,5 +35,8 @@ export {
   rejectedEntries,
   allEntries as allOutboxEntries,
   retryNow as retryOutboxNow,
+  holdEntry as holdOutboxEntry,
+  discardRefused as discardRefusedOutboxEntry,
+  isHeld as isOutboxHeld,
   outboxId,
 } from './outbox';

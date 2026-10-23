@@ -95,4 +95,13 @@ describe('the name everywhere (2026-10-05)', () => {
       expect(body, builder).toMatch(/text: ctx\.labels\.poweredBy/);
     }
   });
+
+  it('credits Sting Systems in the footer, with a link to them', () => {
+    const footer = /<footer[\s\S]*?<\/footer>/.exec(landing)?.[0] ?? '';
+    expect(footer).toMatch(/label\('landing\.poweredBySting'\)/);
+    expect(footer).toMatch(/href="https:\/\/stingdev\.pro"/);
+    // Leaves the restaurant's page for another site: in a new tab, without handing over the opener.
+    expect(footer).toMatch(/target="_blank"[^>]*rel="noopener noreferrer"|rel="noopener noreferrer"[^>]*target="_blank"/);
+    expect(ar['landing.poweredBySting' as keyof typeof ar]).toBe('مدعوم من ستينج سيستم');
+  });
 });

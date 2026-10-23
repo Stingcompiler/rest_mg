@@ -44,7 +44,8 @@ describe('the settings menu', () => {
   it('asks for the current password, the new one twice, and fills them like a password manager expects', () => {
     expect(menu).toMatch(/autoComplete="current-password"/);
     expect(menu.match(/autoComplete="new-password"/g)?.length).toBe(2);
-    expect(menu).toMatch(/next !== repeat/);
+    // The repeat is checked against the new one on its own field (batch 62).
+    expect(menu).toMatch(/sameAs\(\(\) => next/);
   });
 });
 

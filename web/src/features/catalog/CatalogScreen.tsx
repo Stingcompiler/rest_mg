@@ -17,7 +17,7 @@
 import { useRef, useState } from 'react';
 import { ArrowRight, ImageOff, Plus, Star, Pencil, Trash2, X } from 'lucide-react';
 
-import { BrandMark, Button, EmptyState, ErrorState, IconButton, LoadingList, SettingsMenu, TextField, Toggle } from '@/components';
+import { BrandMark, Button, EmptyState, ErrorState, IconButton, LoadingList, SettingsMenu, TextField, Toggle, positiveAmount, required, useFieldErrors } from '@/components';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { toMinor, fromMinor } from '@/db';
 import { useI18n } from '@/i18n';
@@ -299,6 +299,12 @@ function ItemEditor({
   const [preview, setPreview] = useState<string | null>(item?.image_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const busy = create.isPending || update.isPending || upload.isPending;
+  // Name and price are what a dish cannot be sold without; the English name and
+  // the description may come later, so they say so (batch 62).
+  const fields = useFieldErrors<{ name: string; price: string }>({
+    name: required(i18n.t('catalog.nameRequired')),
+    price: positiveAmount(i18n.t('catalog.priceInvalid')),
+  });
 
   const pickFile = (f: File | null) => {
     // Told now rather than after the item is saved and the upload refused.
@@ -314,8 +320,9 @@ function ItemEditor({
 
   const save = async () => {
     setError(null);
+    if (!fields.submit({ name: nameAr, price })) return;
     const digits = price.replace(/[^\d]/g, '');
-    if (!nameAr.trim() || !digits || !categoryId) {
+    if (!categoryId) {
       setError(i18n.t('catalog.requiredFields'));
       return;
     }
@@ -356,9 +363,18 @@ function ItemEditor({
           </label>
         </div>
 
-        <TextField label={i18n.t('catalog.name')} value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
-        <TextField label={i18n.t('catalog.nameEn')} value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
-        <TextField label={i18n.t('catalog.description')} value={descAr} onChange={(e) => setDescAr(e.target.value)} />
+        <TextField
+          label={i18n.t('catalog.name')}
+          value={nameAr}
+          error={fields.errors.name}
+          onChange={(e) => {
+            setNameAr(e.target.value);
+            fields.change('name', e.target.value);
+          }}
+          onBlur={(e) => fields.blur('name', e.target.value)}
+        />
+        <TextField label={i18n.t('catalog.nameEn')} requirement="optional" value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
+        <TextField label={i18n.t('catalog.description')} requirement="optional" value={descAr} onChange={(e) => setDescAr(e.target.value)} />
         <div className="grid grid-cols-2 gap-12">
           <Field label={i18n.t('catalog.category')}>
             <select
@@ -371,7 +387,19 @@ function ItemEditor({
               ))}
             </select>
           </Field>
-          <TextField label={i18n.t('catalog.price')} inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} dir="ltr" className="text-end" />
+          <TextField
+            label={i18n.t('catalog.price')}
+            inputMode="numeric"
+            value={price}
+            error={fields.errors.price}
+            onChange={(e) => {
+              setPrice(e.target.value);
+              fields.change('price', e.target.value);
+            }}
+            onBlur={(e) => fields.blur('price', e.target.value)}
+            dir="ltr"
+            className="text-end"
+          />
         </div>
         <div className="flex gap-20">
           <label className="flex items-center gap-8 text-ar-base">
@@ -407,13 +435,11 @@ function CategoryEditor({ category, onClose }: { category: Category | null; onCl
   const [nameEn, setNameEn] = useState(category?.name_en ?? '');
   const [error, setError] = useState<string | null>(null);
   const busy = create.isPending || update.isPending || deactivate.isPending;
+  const fields = useFieldErrors<{ name: string }>({ name: required(i18n.t('catalog.categoryNameRequired')) });
 
   const save = async () => {
     setError(null);
-    if (!nameAr.trim()) {
-      setError(i18n.t('catalog.requiredFields'));
-      return;
-    }
+    if (!fields.submit({ name: nameAr })) return;
     const body = { name_ar: nameAr.trim(), name_en: nameEn.trim() };
     try {
       if (category) await update.mutateAsync({ id: category.id, body });
@@ -427,8 +453,17 @@ function CategoryEditor({ category, onClose }: { category: Category | null; onCl
   return (
     <Modal title={category ? i18n.t('catalog.editCategory') : i18n.t('catalog.addCategory')} onClose={onClose}>
       <div className="flex flex-col gap-12">
-        <TextField label={i18n.t('catalog.categoryName')} value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
-        <TextField label={i18n.t('catalog.categoryNameEn')} value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
+        <TextField
+          label={i18n.t('catalog.categoryName')}
+          value={nameAr}
+          error={fields.errors.name}
+          onChange={(e) => {
+            setNameAr(e.target.value);
+            fields.change('name', e.target.value);
+          }}
+          onBlur={(e) => fields.blur('name', e.target.value)}
+        />
+        <TextField label={i18n.t('catalog.categoryNameEn')} requirement="optional" value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" />
         {error ? (
           <span role="alert" className="text-ar-sm text-danger">
             {error}

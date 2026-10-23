@@ -796,5 +796,21 @@
   "manager.staff.deactivateTitle": "إيقاف {name}؟",
   "manager.staff.deactivateBody": "لن يستطيع الدخول إلى النظام، وتبقى كل طلباته ورديّاته مسجّلة باسمه ولا تُحذف. ويمكنك إعادة تفعيله لاحقًا.",
   "manager.devices.revokeTitle": "إلغاء تفعيل «{name}»؟",
-  "manager.devices.revokeBody": "يتوقف هذا الجهاز عن المزامنة فورًا ولن يستطيع الكاشير عليه إرسال طلباته إلى الخادم. وما سجّله قبل الآن يبقى كما هو."
+  "manager.devices.revokeBody": "يتوقف هذا الجهاز عن المزامنة فورًا ولن يستطيع الكاشير عليه إرسال طلباته إلى الخادم. وما سجّله قبل الآن يبقى كما هو.",
+  "form.optional": "اختياري",
+  "form.required": "إلزامي",
+  "form.unsaved": "تغييرات غير محفوظة",
+  "form.discard": "تجاهل",
+  "form.passwordShort": "استخدم ٨ أحرف على الأقل",
+  "report.updatedAt": "آخر تحديث {time}",
+  "report.updateFailed": "تعذّر التحديث — هذه الأرقام كما كانت الساعة {time}",
+  "customers.nameRequired": "اكتب اسم العميل",
+  "catalog.nameRequired": "اكتب اسم الصنف",
+  "catalog.priceInvalid": "اكتب السعر بالأرقام، أكبر من صفر",
+  "catalog.categoryNameRequired": "اكتب اسم الفئة",
+  "manager.staff.usernameRequired": "اكتب اسم المستخدم",
+  "manager.staff.displayNameRequired": "اكتب اسم الشخص",
+  "manager.profile.nameRequired": "اكتب اسم المطعم",
+  "pos.sync.sending": "جارٍ الإرسال…",
+  "auth.currentPasswordRequired": "اكتب كلمة المرور الحالية"
 }

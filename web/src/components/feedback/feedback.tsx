@@ -74,6 +74,34 @@ export function ErrorState({ title, detail, retryLabel, onRetry, icon }: ErrorSt
   );
 }
 
+export interface StaleNoteProps {
+  /** "آخر تحديث 19:20": when the figures on this screen were read. */
+  text: string;
+  /** The refresh failed: the figures are the last good ones, and the note says so. */
+  failed?: boolean;
+  retryLabel?: string;
+  onRetry?(): void;
+}
+
+/**
+ * When a figure from the server was read (batch 62, Design Reference §8).
+ * Quiet while all is well; when a refresh fails, the last figures stay on the
+ * screen and this says so, instead of an error taking their place.
+ */
+export function StaleNote({ text, failed, retryLabel, onRetry }: StaleNoteProps) {
+  if (!failed) return <span className="text-ar-xs text-text-muted">{text}</span>;
+  return (
+    <div role="alert" className="flex flex-wrap items-center gap-8 rounded-md border border-line-strong bg-surface-2 px-12 py-6 text-ar-sm text-text">
+      <span>{text}</span>
+      {retryLabel && onRetry ? (
+        <button type="button" onClick={onRetry} className="min-h-control-stepper px-8 font-semibold text-accent outline-none">
+          {retryLabel}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export interface ConfirmDialogProps {
   open: boolean;
   title: string;

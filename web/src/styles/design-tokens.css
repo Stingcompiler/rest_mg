@@ -82,10 +82,10 @@
   --color-credit-text: #4A2B70;
   --color-credit-tint: #F2ECF8;
 
-  /* Charts: emerald, a lighter emerald, gold, credit */
+  /* Charts: emerald, a lighter emerald, blue, credit. Not gold: amber in a chart reads as a warning (Design Reference D-0003, batch 62). */
   --color-chart-1: #0E4A3B;
   --color-chart-2: #3E8C71;
-  --color-chart-3: #A9853F;
+  --color-chart-3: #2B5F9E;
   --color-chart-4: #6B3FA0;
 
   /* Effects */
@@ -154,7 +154,7 @@
 
     --color-chart-1: #58BE9C;
     --color-chart-2: #3E9A7C;
-    --color-chart-3: #D8B877;
+    --color-chart-3: #7FA8E0;
     --color-chart-4: #B392E8;
 
     --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -215,7 +215,7 @@
 
   --color-chart-1: #58BE9C;
   --color-chart-2: #3E9A7C;
-  --color-chart-3: #D8B877;
+  --color-chart-3: #7FA8E0;
   --color-chart-4: #B392E8;
 
   /* Effects */
@@ -379,7 +379,7 @@
   --border-width-strong: 2px; /* focused / selected control, critical callout */
 
   /* Control heights */
-  --control-sm: 40px;  /* segmented items, header chips */
+  --control-sm: 44px;  /* segmented items, header chips: the touch floor (batch 62) */
   --control-stepper: 44px;
   --control-md: 46px;  /* search field, category tabs, quick actions */
   --control-lg: 48px;  /* default button */

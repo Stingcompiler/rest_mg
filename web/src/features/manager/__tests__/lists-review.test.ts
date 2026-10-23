@@ -51,7 +51,7 @@ describe('the staff screen', () => {
 
   it('sets each person as a line and the form under a rule, neither in a box', () => {
     expect(/function StaffRow[\s\S]*?\n\}\n/.exec(staff)?.[0] ?? '').toMatch(/border-b border-line py-14/);
-    expect(/function AddStaffForm[\s\S]*?\n\}\n/.exec(staff)?.[0] ?? '').toMatch(/<form onSubmit=\{submit\} className="flex flex-col gap-12 border-t border-line pt-16">/);
+    expect(/function AddStaffForm[\s\S]*?\n\}\n/.exec(staff)?.[0] ?? '').toMatch(/<form onSubmit=\{submit\} noValidate className="flex flex-col gap-12 border-t border-line pt-16">/);
     expect(staff).not.toMatch(/function StaffRow[\s\S]*?rounded-lg border border-line bg-surface p-14[\s\S]*?\n\}\n/);
   });
 

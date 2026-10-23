@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Receipt, UserPlus, Wallet, X } from 'lucide-react';
 
-import { Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, TextField } from '@/components';
+import { Button, ConfirmDialog, EmptyState, ErrorState, IconButton, LoadingList, Pager, TextField, required, useFieldErrors } from '@/components';
 import { useModalDialog } from '@/lib/useModalDialog';
 import { formatDate, formatTime, useI18n } from '@/i18n';
 import { pageWindow } from '@/lib/paging';
@@ -123,20 +123,21 @@ function AddCustomerForm() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // The name is the one thing a customer cannot be without; the phone is for
+  // a call or a statement and may come later (batch 62).
+  const fields = useFieldErrors<{ name: string }>({ name: required(i18n.t('customers.nameRequired')) });
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    if (!name.trim()) {
-      setError(i18n.t('customers.required'));
-      return;
-    }
+    if (!fields.submit({ name })) return;
     create.mutate(
       { name: name.trim(), phone: phone.trim() },
       {
         onSuccess: () => {
           setName('');
           setPhone('');
+          fields.clear();
         },
         onError: (caught) => setError(i18n.t(describeError(caught))),
       },
@@ -144,16 +145,32 @@ function AddCustomerForm() {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-end gap-12 border-b border-line pb-16">
-      <label className="flex min-w-0 flex-1 flex-col gap-6 text-ar-sm text-text-muted">
-        {i18n.t('customers.name')}
-        <TextField value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="flex min-w-0 flex-1 flex-col gap-6 text-ar-sm text-text-muted">
-        {i18n.t('customers.phone')}
-        <TextField value={phone} onChange={(e) => setPhone(e.target.value)} dir="ltr" inputMode="tel" />
-      </label>
-      <Button type="submit" variant="primary" disabled={create.isPending}>
+    <form onSubmit={submit} noValidate className="flex flex-wrap items-start gap-12 border-b border-line pb-16">
+      <div className="min-w-0 flex-1">
+        <TextField
+          label={i18n.t('customers.name')}
+          value={name}
+          error={fields.errors.name}
+          onChange={(e) => {
+            setName(e.target.value);
+            fields.change('name', e.target.value);
+          }}
+          onBlur={(e) => fields.blur('name', e.target.value)}
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <TextField
+          label={i18n.t('customers.phone')}
+          requirement="optional"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          dir="ltr"
+          inputMode="tel"
+        />
+      </div>
+      {/* The label's height (and its error line) differ by field; the button
+          is pushed below the label row so it sits level with the inputs. */}
+      <Button type="submit" variant="primary" disabled={create.isPending} className="mt-28">
         <span className="flex items-center gap-6">
           <UserPlus size={18} />
           {i18n.t('customers.create')}

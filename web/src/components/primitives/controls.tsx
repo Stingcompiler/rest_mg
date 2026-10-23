@@ -10,8 +10,9 @@
  * few at 40, and this is where that is corrected. No literal colour or size
  * appears here: only token classes.
  */
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 
+import { useOptionalI18n } from '@/i18n';
 import { cn } from '@/lib/cn';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'quietDanger' | 'credit' | 'accentOutline';
@@ -110,20 +111,40 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
 export interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  /**
+   * Which fields are optional is said in words, once per form (batch 62,
+   * Design Reference §15.2): when most fields are required, mark the optional
+   * ones; when most are optional, mark the required ones. Never a star alone.
+   */
+  requirement?: 'required' | 'optional';
 }
 
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { label, error, className, id, ...rest },
+  { label, error, requirement, className, id, ...rest },
   ref,
 ) {
+  const i18n = useOptionalI18n();
   const hasError = Boolean(error);
+  const generated = useId();
+  const errorId = `${id ?? generated}-error`;
+  const word = requirement
+    ? (i18n?.t(requirement === 'optional' ? 'form.optional' : 'form.required') ??
+      (requirement === 'optional' ? 'اختياري' : 'إلزامي'))
+    : null;
   return (
     <label className="flex flex-col gap-6">
-      {label ? <span className="text-ar-sm text-text-muted">{label}</span> : null}
+      {label ? (
+        <span className="text-ar-sm text-text-muted">
+          {label}
+          {word ? <span className="ms-6 text-text-muted">({word})</span> : null}
+        </span>
+      ) : null}
       <input
         ref={ref}
         id={id}
         aria-invalid={hasError}
+        aria-required={requirement === 'required' ? true : undefined}
+        aria-describedby={hasError ? errorId : undefined}
         className={cn(
           'min-h-control-xl rounded-md px-16 text-ar-md text-text outline-none placeholder:text-text-muted',
           hasError
@@ -134,7 +155,11 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
         )}
         {...rest}
       />
-      {hasError ? <span className="text-ar-sm text-danger">{error}</span> : null}
+      {hasError ? (
+        <span id={errorId} role="alert" className="text-ar-sm text-danger">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 });

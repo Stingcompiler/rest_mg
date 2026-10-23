@@ -8,11 +8,11 @@
  */
 import { useState } from 'react';
 
-import { ErrorState, KpiCard, KpiStrip, LedgerRow, LoadingList, SegmentedControl, StackedShareBar } from '@/components';
+import { ErrorState, KpiCard, KpiStrip, LedgerRow, LoadingList, SegmentedControl, StackedShareBar, StaleNote } from '@/components';
 import { describeError } from '@/lib/describeError';
 import { AlertTriangle } from 'lucide-react';
 
-import { useI18n } from '@/i18n';
+import { formatTime, useI18n } from '@/i18n';
 import { ManagerShell } from './ManagerShell';
 import { ActivityLog } from './ActivityLog';
 import { useRevenue } from './hooks';
@@ -56,9 +56,23 @@ export function DashboardScreen() {
         />
         <span className="text-ar-xs text-text-muted">{i18n.t('manager.period.syncedNote')}</span>
       </div>
+      {/* When the figures were read; if a refresh fails the last good ones stay
+          and this says so, rather than an error replacing them (batch 62). */}
+      {revenue.data ? (
+        <div className="mb-16">
+          <StaleNote
+            failed={revenue.isError}
+            text={i18n.t(revenue.isError ? 'report.updateFailed' : 'report.updatedAt', {
+              time: formatTime(new Date(revenue.dataUpdatedAt)),
+            })}
+            retryLabel={i18n.t('common.retry')}
+            onRetry={() => void revenue.refetch()}
+          />
+        </div>
+      ) : null}
       {revenue.isLoading ? (
         <LoadingList rows={4} rowClassName="h-control-2xl" />
-      ) : revenue.isError || !revenue.data ? (
+      ) : !revenue.data ? (
         <ErrorState
           title={i18n.t('common.loadFailed')}
           detail={i18n.t(describeError(revenue.error))}

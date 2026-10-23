@@ -56,6 +56,34 @@ Marked in code with `ui-allow:` and a reason (`npm run lint:ui` skips them).
 - **Scrim gradient** over the cover photograph, so the name reads over any picture.
 - **A rule over a section's title** on the manager's overview (`border-t-strong`): a divider, not a strip on a box.
 
+## Design Reference v2.2
+
+The owner adopted the *Design Reference v2.2* (23 Oct 2026) as the system for behaviour and structure; our identity stays (see [`DECISIONS.md`](DECISIONS.md) for every exception, in the reference's format). Our token names are not renamed; this is how they map, so a rule in the reference can be read against our code:
+
+| Ours | Reference | Note |
+|---|---|---|
+| `--color-bg` | `canvas` | warm ivory, not cool grey (D-0002) |
+| `--color-surface` | `surface` | |
+| `--color-surface-2` / `-3` | `surface-subtle` | |
+| `--color-border` / `--color-border-strong` | `border` / `border-strong` | strong is 3:1 (D-0005) |
+| `--color-text` / `-muted` / `-disabled` | `text` (+ `text-secondary`) / `text-muted` / `text-disabled` | we have one secondary text colour |
+| `--color-accent` (+ `-hover`, `-tint`) | `brand` (+ `brand-hover`, `brand-subtle`) | emerald, not indigo; the one primary action |
+| `--focus-ring` | `focus` | a 3px ring of the action colour, in both themes |
+| `--color-success` / `-warning` / `-danger` (+ `-tint`) | `success-*` / `warning-*` / `danger-*` | |
+| `--color-credit` | — | ours: money owed (آجل). Never revenue |
+| neutral chip, dashed border | `pending-*` | waiting to send is neutral, not a warning (D-0008) |
+| `accent` chip tone | `info-*` | an action under way («جارٍ الإرسال») |
+| `--color-chart-1…4` | `chart-1…5` | chart-3 is blue, not gold (D-0006) |
+| `--shadow-card` / `-raised` / `-overlay` | `shadow-1` / `-2` / `-3` | the card shadow is not used by default (D-0003) |
+| `--control-*` | `size-control`, `size-control-touch` | every control ≥ 44 (D-0007) |
+
+The behaviour the reference asks of every screen, and where we keep it:
+
+- **Connection states (§8):** the till's header chip and `SyncQueueScreen` — waiting (dashed, neutral), sending (action colour), refused (danger line, reason shown), `StaleNote` for figures read from the server.
+- **Forms (§15):** label above the field, `requirement="optional"|"required"` in words, `useFieldErrors` (check on blur, errors on the field, focus the first one on submit), `UnsavedBar` on an edit *page*.
+- **Charts (§16):** a missing value is never a zero; one colour per series, the same on every page.
+- **Delivery checklist (§14):** the items a test can hold are in `design-reference-rules.test.ts`; the rest is the review at the end of a batch.
+
 ## Commands
 
 - **Template-pattern lint:** `npm run lint:ui` (in `web/`; also in CI).

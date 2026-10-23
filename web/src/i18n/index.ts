@@ -21,7 +21,7 @@ export {
 
 export { hasMessage, plural, translate, type MessageKey, type TranslateParams } from './catalog';
 export { formatInteger, formatMoney, formatTime, formatDate } from './format';
-export { I18nProvider, useI18n } from './I18nProvider';
+export { I18nProvider, useI18n, useOptionalI18n } from './I18nProvider';
 
 import { translate, type MessageKey, type TranslateParams } from './catalog';
 import { DEFAULT_LOCALE, type Locale } from './config';

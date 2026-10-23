@@ -8,7 +8,7 @@
  * pre-formatted and rendered through `Numeric`.
  */
 import { cn } from '@/lib/cn';
-import { Numeric } from '../primitives/indicators';
+import { KeyHint, Numeric } from '../primitives/indicators';
 import { digitsOnly } from '@/lib/digits';
 
 export interface CartTab {
@@ -148,6 +148,8 @@ export interface CartActionProps {
   disabled?: boolean;
   /** Why it is unavailable, for the tooltip and for screen readers. */
   hint?: string;
+  /** The key that does the same, shown where there is a keyboard (batch 64). */
+  shortcut?: string;
 }
 
 /**
@@ -159,7 +161,7 @@ export interface CartActionProps {
  * wired to nothing looked exactly like a working one: pressing it did nothing,
  * with no way to know whether the order or the button was at fault.
  */
-export function CartAction({ label, onClick, disabled, hint }: CartActionProps) {
+export function CartAction({ label, onClick, disabled, hint, shortcut }: CartActionProps) {
   return (
     <button
       type="button"
@@ -175,6 +177,7 @@ export function CartAction({ label, onClick, disabled, hint }: CartActionProps) 
       )}
     >
       {label}
+      {shortcut ? <KeyHint keys={shortcut} /> : null}
     </button>
   );
 }

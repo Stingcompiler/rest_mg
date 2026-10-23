@@ -19,6 +19,11 @@ const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      // A mouse or trackpad is the primary pointer: where a key hint is worth showing.
+      // In `extend`, so sm / md / lg stay.
+      screens: {
+        fine: { raw: '(hover: hover) and (pointer: fine)' },
+      },
       colors: {
         bg: {
           DEFAULT: 'var(--color-bg)',

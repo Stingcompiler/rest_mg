@@ -31,6 +31,7 @@ import {
   EmptyState,
   ErrorState,
   IconButton,
+  KeyHint,
   LoadingList,
   MenuItemCard,
   Numeric,
@@ -51,6 +52,7 @@ import { takeFlash } from '@/lib/flash';
 import { OpeningFloatDialog } from './OpeningFloatDialog';
 import { usePos } from './PosProvider';
 import { PosRail } from './PosRail';
+import { focusSearch, useShortcuts } from './useShortcuts';
 
 export function OrderEntryScreen() {
   const pos = usePos();
@@ -103,6 +105,27 @@ export function OrderEntryScreen() {
     setCartOpen(false);
     setToast(i18n.t(sent.amendment ? 'pos.cart.sentChangesToast' : 'pos.cart.sentToast'));
   };
+  // The keys of a till with a keyboard (batch 64): each does only what its
+  // button does, and only when that button is available.
+  useShortcuts({
+    F2: focusSearch,
+    F3: () => {
+      if (hasLines && kitchenChanges > 0) send();
+    },
+    F6: () => {
+      if (hasLines) setDiscountOpen(true);
+    },
+    F7: () => {
+      if (hasLines) setNoteOpen(true);
+    },
+    F8: () => {
+      if (hasLines) pos.parkActive();
+    },
+    F9: () => router.push('/pos/orders'),
+    Enter: () => {
+      if (hasLines) router.push('/pos/payment');
+    },
+  });
   const orderTypes: { value: OrderType; label: string }[] = [
     { value: 'dine_in', label: i18n.t('pos.orderType.dineIn') },
     { value: 'takeaway', label: i18n.t('pos.orderType.takeaway') },
@@ -179,10 +202,10 @@ export function OrderEntryScreen() {
             {/* Discount was wired to nothing, though the entity has supported
                 it all along. The other two have no entity behind them at all,
                 so they say so rather than swallowing the press. */}
-            <CartAction label={i18n.t('pos.actions.discount')} onClick={() => setDiscountOpen(true)} />
-            <CartAction label={i18n.t('pos.actions.note')} onClick={() => setNoteOpen(true)} />
+            <CartAction label={i18n.t('pos.actions.discount')} shortcut="F6" onClick={() => setDiscountOpen(true)} />
+            <CartAction label={i18n.t('pos.actions.note')} shortcut="F7" onClick={() => setNoteOpen(true)} />
             <CartAction label={i18n.t('pos.actions.split')} disabled hint={i18n.t('pos.actions.soon')} />
-            <CartAction label={i18n.t('pos.actions.hold')} onClick={pos.parkActive} />
+            <CartAction label={i18n.t('pos.actions.hold')} shortcut="F8" onClick={pos.parkActive} />
           </CartActionBar>
           <TotalsBlock
             rows={[
@@ -215,6 +238,7 @@ export function OrderEntryScreen() {
               className="inline-flex min-h-control-2xl items-center justify-center rounded-lg border border-line-strong text-ar-lg font-medium text-text outline-none transition-colors hover:bg-surface-2 active:bg-surface-3 disabled:cursor-not-allowed disabled:border-line disabled:text-text-disabled disabled:hover:bg-transparent"
             >
               {sendLabel}
+              <KeyHint keys="F3" />
             </button>
             <button
               type="button"
@@ -222,7 +246,10 @@ export function OrderEntryScreen() {
               onClick={() => router.push('/pos/payment')}
               className="inline-flex min-h-control-2xl flex-col items-center justify-center rounded-lg bg-accent text-text-on-accent outline-none transition-colors hover:bg-accent-hover active:bg-accent-pressed disabled:bg-surface-3 disabled:text-text-disabled"
             >
-              <span className="text-ar-lg font-semibold">{i18n.t('pos.cart.pay')}</span>
+              <span className="text-ar-lg font-semibold">
+                {i18n.t('pos.cart.pay')}
+                <KeyHint keys="Enter" />
+              </span>
               <Numeric className="text-num-base">{i18n.money(order.total())}</Numeric>
             </button>
           </div>
@@ -237,7 +264,7 @@ export function OrderEntryScreen() {
 
       <div className="flex min-w-0 flex-1 flex-col pb-mobile-nav md:pb-0">
         <AppHeader
-          title={<SearchField icon={<Search size={20} />} placeholder={i18n.t('pos.search.placeholder')} value={query} onChange={(event) => setQuery(event.target.value)} />}
+          title={<SearchField data-shortcut="search" icon={<Search size={20} />} placeholder={i18n.t('pos.search.placeholder')} value={query} onChange={(event) => setQuery(event.target.value)} />}
           trailing={
             <>
               <StatusChip

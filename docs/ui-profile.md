@@ -81,6 +81,7 @@ The behaviour the reference asks of every screen, and where we keep it:
 
 - **Connection states (§8):** the till's header chip and `SyncQueueScreen` — waiting (dashed, neutral), sending (action colour), refused (danger line, reason shown), `StaleNote` for figures read from the server.
 - **Forms (§15):** label above the field, `requirement="optional"|"required"` in words, `useFieldErrors` (check on blur, errors on the field, focus the first one on submit), `UnsavedBar` on an edit *page*.
+- **Keyboard at the till (§9, batch 64):** F2 search, F3 send to the kitchen, F6 discount, F7 note, F8 hold, F9 open orders, Enter pay (on the payment screen: take the balance as cash, then close the bill), Esc back. `shortcuts.ts` decides which presses count (never the browser's F1/F4/F5/F10–F12, nothing with a modifier, nothing while a dialog is open or a field is being typed in); a key does only what its button does. `KeyHint` shows the key on its button only where there is a mouse (`fine:` screen), so a touch till is not cluttered.
 - **Charts (§16):** a missing value is never a zero; one colour per series, the same on every page.
 - **Delivery checklist (§14):** the items a test can hold are in `design-reference-rules.test.ts`; the rest is the review at the end of a batch.
 

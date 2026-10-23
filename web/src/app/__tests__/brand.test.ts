@@ -97,6 +97,7 @@ describe('the name everywhere (2026-10-05)', () => {
   });
 
   it('credits Sting Systems in the footer, with a link to them', () => {
+    const landing = read('features/landing/LandingClient.tsx');
     const footer = /<footer[\s\S]*?<\/footer>/.exec(landing)?.[0] ?? '';
     expect(footer).toMatch(/label\('landing\.poweredBySting'\)/);
     expect(footer).toMatch(/href="https:\/\/stingdev\.pro"/);

@@ -24,7 +24,8 @@ describe('the hours editor', () => {
 
   it('saves the hours with the rest of the profile, and not while a row is wrong', () => {
     expect(profile).toMatch(/hours: toSavedHours\(form\.hours\)/);
-    expect(profile).toMatch(/disabled=\{update\.isPending \|\| hoursError !== null\}/);
+    // The unsaved bar's save waits while a row is wrong (batch 62).
+    expect(profile).toMatch(/saveDisabled=\{hoursError !== null\}/);
   });
 });
 

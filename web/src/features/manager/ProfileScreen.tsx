@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ImagePlus, Plus, Trash2 } from 'lucide-react';
 
-import { Button, EmptyState, ErrorState, ImageSlot, LoadingList, TextField, Toggle } from '@/components';
+import { Button, EmptyState, ErrorState, ImageSlot, LoadingList, TextField, Toggle, UnsavedBar, required, useFieldErrors, useLeaveGuard } from '@/components';
 import { describeError } from '@/lib/describeError';
 import { useI18n } from '@/i18n';
 import { cn } from '@/lib/cn';
@@ -55,8 +55,14 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
     setForm((current) => ({ ...current, [key]: value }));
   // A row the page could not read stops the save, and says why (batch 23).
   const hoursError = hoursProblem(form.hours);
+  // The name is the one thing the page cannot do without (batch 62).
+  const fields = useFieldErrors<{ name: string }>({ name: required(i18n.t('manager.profile.nameRequired')) });
+  // What the server has against what is on screen: the bar shows while they differ.
+  const dirty = JSON.stringify(form) !== JSON.stringify(profile);
+  useLeaveGuard(dirty);
 
   const save = () => {
+    if (!fields.submit({ name: form.name_ar })) return;
     update.mutate({
       id: profile.id,
       patch: {
@@ -80,24 +86,46 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
 
   return (
     <div className="flex max-w-2xl flex-col gap-16">
+      {dirty ? (
+        <UnsavedBar
+          message={i18n.t('form.unsaved')}
+          saveLabel={i18n.t('manager.profile.save')}
+          discardLabel={i18n.t('form.discard')}
+          onSave={save}
+          onDiscard={() => {
+            setForm(profile);
+            fields.clear();
+          }}
+          saving={update.isPending}
+          saveDisabled={hoursError !== null}
+        />
+      ) : null}
+      {(update.isSuccess && !dirty) || update.isError ? (
+        <div className="flex items-center gap-14">
+          {update.isSuccess && !dirty ? <span className="text-ar-sm text-success">{i18n.t('manager.profile.saved')}</span> : null}
+          {update.isError ? (
+            <span role="status" className="text-ar-sm text-danger">{i18n.t('manager.profile.saveFailed')}</span>
+          ) : null}
+        </div>
+      ) : null}
       <BrandingSection profile={profile} />
 
-      <Labelled label={i18n.t('manager.profile.name')}>
-        <TextField value={form.name_ar} onChange={(event) => field('name_ar', event.target.value)} />
-      </Labelled>
-      <Labelled label={i18n.t('manager.profile.description')}>
-        <TextField value={form.description_ar} onChange={(event) => field('description_ar', event.target.value)} />
-      </Labelled>
-      <Labelled label={i18n.t('manager.profile.address')}>
-        <TextField value={form.address_ar} onChange={(event) => field('address_ar', event.target.value)} />
-      </Labelled>
+      <TextField
+        label={i18n.t('manager.profile.name')}
+        requirement="required"
+        value={form.name_ar}
+        error={fields.errors.name}
+        onChange={(event) => {
+          field('name_ar', event.target.value);
+          fields.change('name', event.target.value);
+        }}
+        onBlur={(event) => fields.blur('name', event.target.value)}
+      />
+      <TextField label={i18n.t('manager.profile.description')} value={form.description_ar} onChange={(event) => field('description_ar', event.target.value)} />
+      <TextField label={i18n.t('manager.profile.address')} value={form.address_ar} onChange={(event) => field('address_ar', event.target.value)} />
       <div className="grid grid-cols-1 gap-16 sm:grid-cols-2">
-        <Labelled label={i18n.t('manager.profile.phone')}>
-          <TextField value={form.phone} onChange={(event) => field('phone', event.target.value)} />
-        </Labelled>
-        <Labelled label={i18n.t('manager.profile.whatsapp')}>
-          <TextField value={form.whatsapp} onChange={(event) => field('whatsapp', event.target.value)} />
-        </Labelled>
+        <TextField label={i18n.t('manager.profile.phone')} value={form.phone} onChange={(event) => field('phone', event.target.value)} />
+        <TextField label={i18n.t('manager.profile.whatsapp')} value={form.whatsapp} onChange={(event) => field('whatsapp', event.target.value)} />
       </div>
 
       <HoursEditor rows={form.hours} onChange={(rows) => field('hours', rows)} error={hoursError} />
@@ -132,15 +160,6 @@ function ProfileForm({ profile }: { profile: RestaurantProfile }) {
         />
       </div>
 
-      <div className="flex items-center gap-14">
-        <Button variant="primary" onClick={save} disabled={update.isPending || hoursError !== null}>
-          {i18n.t('manager.profile.save')}
-        </Button>
-        {update.isSuccess ? <span className="text-ar-sm text-success">{i18n.t('manager.profile.saved')}</span> : null}
-        {update.isError ? (
-          <span role="status" className="text-ar-sm text-danger">{i18n.t('manager.profile.saveFailed')}</span>
-        ) : null}
-      </div>
     </div>
   );
 }

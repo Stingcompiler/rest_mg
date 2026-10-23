@@ -92,3 +92,11 @@ export function useI18n(): I18nContextValue {
   if (!context) throw new Error('useI18n must be used within an I18nProvider.');
   return context;
 }
+
+/**
+ * The same, but `null` outside a provider: for a shared primitive that has a
+ * default wording and should still render in a test or a gallery.
+ */
+export function useOptionalI18n(): I18nContextValue | null {
+  return useContext(I18nContext);
+}

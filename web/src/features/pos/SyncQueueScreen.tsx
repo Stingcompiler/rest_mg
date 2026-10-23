@@ -202,9 +202,12 @@ export function SyncQueueScreen() {
                     <div
                       key={entry.id}
                       className={
+                        // A record that only exists on this device looks different in
+                        // its shape, not only its colour: a dashed line (Design
+                        // Reference §8, batch 62). A refused one keeps the danger line.
                         isRefused
                           ? 'flex flex-col gap-8 rounded-lg border border-danger bg-surface p-14'
-                          : 'flex flex-col gap-8 rounded-lg border border-line bg-surface p-14'
+                          : 'flex flex-col gap-8 rounded-lg border border-dashed border-line-strong bg-surface p-14'
                       }
                     >
                       <div className="flex flex-wrap items-center gap-x-14 gap-y-6">
@@ -216,9 +219,11 @@ export function SyncQueueScreen() {
                         <span className="text-ar-sm text-text-muted">
                           {formatTime(new Date(entry.createdAt))}
                         </span>
+                        {/* Waiting is the normal state of a till that was offline, not a
+                            warning: neutral. Being sent right now is the action colour. */}
                         <StatusChip
-                          label={i18n.t(isRefused ? 'pos.sync.refused' : 'pos.sync.waiting')}
-                          tone={isRefused ? 'danger' : 'warning'}
+                          label={i18n.t(isRefused ? 'pos.sync.refused' : busy ? 'pos.sync.sending' : 'pos.sync.waiting')}
+                          tone={isRefused ? 'danger' : busy ? 'accent' : 'neutral'}
                           dot
                         />
                         <div className="ms-auto flex items-center gap-8">

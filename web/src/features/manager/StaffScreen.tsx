@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
-import { Button, ConfirmDialog, EmptyState, ErrorState, LoadingList, TextField } from '@/components';
+import { Button, ConfirmDialog, EmptyState, ErrorState, LoadingList, TextField, minLength, required, useFieldErrors } from '@/components';
 import { useI18n } from '@/i18n';
 import { ManagerShell } from './ManagerShell';
 import { ActivityLog } from './ActivityLog';
@@ -93,10 +93,17 @@ function AddStaffForm() {
   const [role, setRole] = useState<string>('cashier');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Every field here is needed, so none is marked; each answers on itself (batch 62).
+  const fields = useFieldErrors<{ username: string; displayName: string; password: string }>({
+    username: required(i18n.t('manager.staff.usernameRequired')),
+    displayName: required(i18n.t('manager.staff.displayNameRequired')),
+    password: minLength(8, i18n.t('form.passwordShort')),
+  });
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    if (!fields.submit({ username, displayName, password })) return;
     create.mutate(
       { username: username.trim(), display_name: displayName.trim(), role, password },
       {
@@ -104,6 +111,7 @@ function AddStaffForm() {
           setUsername('');
           setDisplayName('');
           setPassword('');
+          fields.clear();
         },
         onError: (caught) => setError(i18n.t(describeError(caught))),
       },
@@ -111,37 +119,53 @@ function AddStaffForm() {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-12 border-t border-line pt-16">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-12 border-t border-line pt-16">
       <span className="text-ar-md font-medium">{i18n.t('manager.staff.add')}</span>
       <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
-        <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
-          {i18n.t('manager.staff.username')}
-          <TextField value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" />
-        </label>
-        <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
-          {i18n.t('manager.staff.displayName')}
-          <TextField value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-        </label>
+        <TextField
+          label={i18n.t('manager.staff.username')}
+          value={username}
+          error={fields.errors.username}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            fields.change('username', e.target.value);
+          }}
+          onBlur={(e) => fields.blur('username', e.target.value)}
+          autoComplete="off"
+        />
+        <TextField
+          label={i18n.t('manager.staff.displayName')}
+          value={displayName}
+          error={fields.errors.displayName}
+          onChange={(e) => {
+            setDisplayName(e.target.value);
+            fields.change('displayName', e.target.value);
+          }}
+          onBlur={(e) => fields.blur('displayName', e.target.value)}
+        />
         <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
           {i18n.t('manager.staff.role')}
           <RoleSelect value={role} onChange={setRole} />
         </label>
-        <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
-          {i18n.t('manager.staff.password')}
-          <TextField
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-          />
-        </label>
+        <TextField
+          label={i18n.t('manager.staff.password')}
+          type="password"
+          value={password}
+          error={fields.errors.password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            fields.change('password', e.target.value);
+          }}
+          onBlur={(e) => fields.blur('password', e.target.value)}
+          autoComplete="new-password"
+        />
       </div>
       {error ? <span className="text-ar-sm text-danger">{error}</span> : null}
       {create.isSuccess && !error ? (
         <span className="text-ar-sm text-success">{i18n.t('manager.staff.created')}</span>
       ) : null}
       <div>
-        <Button type="submit" variant="primary" disabled={create.isPending || !username.trim() || !password}>
+        <Button type="submit" variant="primary" disabled={create.isPending}>
           {i18n.t('manager.staff.create')}
         </Button>
       </div>
@@ -214,9 +238,15 @@ function EditStaffRow({ person, onDone }: { person: StaffAccount; onDone: () => 
   const [role, setRole] = useState<string>(person.role);
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // A blank password keeps the current one, so only a typed one is checked.
+  const fields = useFieldErrors<{ username: string; password: string }>({
+    username: required(i18n.t('manager.staff.usernameRequired')),
+    password: (value) => (value && value.length < 8 ? i18n.t('form.passwordShort') : undefined),
+  });
 
   const save = () => {
     setError(null);
+    if (!fields.submit({ username, password })) return;
     // Send only what actually changed — the server logs the diff, and an empty
     // patch would still write a no-op the log would rather not carry.
     const patch: Record<string, string> = {};
@@ -241,14 +271,18 @@ function EditStaffRow({ person, onDone }: { person: StaffAccount; onDone: () => 
     <div className="flex flex-col gap-12 rounded-lg border border-accent bg-surface p-14">
       <span className="text-ar-sm font-medium">{i18n.t('manager.staff.editing', { name: person.display_name || person.username })}</span>
       <div className="grid grid-cols-1 gap-12 sm:grid-cols-2">
-        <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
-          {i18n.t('manager.staff.displayName')}
-          <TextField value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-        </label>
-        <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
-          {i18n.t('manager.staff.username')}
-          <TextField value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" />
-        </label>
+        <TextField label={i18n.t('manager.staff.displayName')} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+        <TextField
+          label={i18n.t('manager.staff.username')}
+          value={username}
+          error={fields.errors.username}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            fields.change('username', e.target.value);
+          }}
+          onBlur={(e) => fields.blur('username', e.target.value)}
+          autoComplete="off"
+        />
         <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
           {i18n.t('manager.staff.role')}
           <RoleSelect value={role} onChange={setRole} />
@@ -256,16 +290,20 @@ function EditStaffRow({ person, onDone }: { person: StaffAccount; onDone: () => 
         {isSelf ? (
           <p className="self-end text-ar-sm text-text-muted">{i18n.t('manager.staff.ownPasswordInSettings')}</p>
         ) : (
-          <label className="flex flex-col gap-6 text-ar-sm text-text-muted">
-            {i18n.t('manager.staff.password')}
-            <TextField
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              placeholder={i18n.t('manager.staff.passwordHint')}
-            />
-          </label>
+          <TextField
+            label={i18n.t('manager.staff.password')}
+            requirement="optional"
+            type="password"
+            value={password}
+            error={fields.errors.password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              fields.change('password', e.target.value);
+            }}
+            onBlur={(e) => fields.blur('password', e.target.value)}
+            autoComplete="new-password"
+            placeholder={i18n.t('manager.staff.passwordHint')}
+          />
         )}
       </div>
       {error ? <span className="text-ar-sm text-danger">{error}</span> : null}

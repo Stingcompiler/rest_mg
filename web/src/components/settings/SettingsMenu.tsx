@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Settings as SettingsIcon } from 'lucide-react';
 
 import { Button, IconButton, TextField } from '../primitives/controls';
+import { useFieldErrors } from '../forms/useFieldErrors';
+import { minLength, required, sameAs } from '../forms/validation';
 import { authApi } from '@/lib/http';
 import { describeError } from '@/lib/describeError';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -219,14 +221,17 @@ function ChangePassword() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Each answers on its own field when it is left (batch 62).
+  const fields = useFieldErrors<{ current: string; next: string; repeat: string }>({
+    current: required(i18n.t('auth.currentPasswordRequired')),
+    next: minLength(8, i18n.t('form.passwordShort')),
+    repeat: sameAs(() => next, i18n.t('auth.passwordsDiffer')),
+  });
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    if (next !== repeat) {
-      setError(i18n.t('auth.passwordsDiffer'));
-      return;
-    }
+    if (!fields.submit({ current, next, repeat })) return;
     setPending(true);
     try {
       await authApi.changePassword(current, next);
@@ -246,39 +251,49 @@ function ChangePassword() {
     <Row label={i18n.t('settings.password')}>
       <div className="flex flex-1 flex-col gap-8">
         {open ? (
-          <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-8">
+          <form onSubmit={(event) => void submit(event)} noValidate className="flex flex-col gap-8">
             <TextField
               type="password"
               label={i18n.t('auth.currentPassword')}
               value={current}
-              onChange={(event) => setCurrent(event.target.value)}
+              error={fields.errors.current}
+              onChange={(event) => {
+                setCurrent(event.target.value);
+                fields.change('current', event.target.value);
+              }}
+              onBlur={(event) => fields.blur('current', event.target.value)}
               autoComplete="current-password"
-              required
             />
             <TextField
               type="password"
               label={i18n.t('auth.newPassword')}
               value={next}
-              onChange={(event) => setNext(event.target.value)}
+              error={fields.errors.next}
+              onChange={(event) => {
+                setNext(event.target.value);
+                fields.change('next', event.target.value);
+              }}
+              onBlur={(event) => fields.blur('next', event.target.value)}
               autoComplete="new-password"
-              minLength={8}
-              required
             />
             <TextField
               type="password"
               label={i18n.t('auth.repeatPassword')}
               value={repeat}
-              onChange={(event) => setRepeat(event.target.value)}
+              error={fields.errors.repeat}
+              onChange={(event) => {
+                setRepeat(event.target.value);
+                fields.change('repeat', event.target.value);
+              }}
+              onBlur={(event) => fields.blur('repeat', event.target.value)}
               autoComplete="new-password"
-              minLength={8}
-              required
             />
             {error ? (
               <span role="alert" className="text-ar-sm text-danger">
                 {error}
               </span>
             ) : null}
-            <Button type="submit" variant="primary" disabled={pending || !current || !next || !repeat}>
+            <Button type="submit" variant="primary" disabled={pending}>
               {i18n.t('auth.changePassword')}
             </Button>
           </form>

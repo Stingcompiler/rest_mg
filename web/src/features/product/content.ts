@@ -13,12 +13,15 @@
 import type { Locale } from '@/i18n';
 
 /**
- * The page's one action. Until a WhatsApp number or a form is chosen it leads
- * to Sting Systems' own site, the same address the footer credits. Change it
- * here, in one place.
+ * The page's one action: a direct message on WhatsApp to the owner, with a
+ * call or a visit to the introduction site beside it. The number is the
+ * owner's own; in international form it is Sudan's code (249) and the local
+ * number without its leading zero.
  */
 export const PRODUCT_CONTACT = {
-  href: 'https://stingdev.pro',
+  phoneLocal: '0902929451',
+  whatsappNumber: '249902929451',
+  site: 'https://stingdev.pro',
 } as const;
 
 export interface ProductFeature {
@@ -35,6 +38,11 @@ export interface ProductFeature {
 export interface ProductContent {
   nav: { features: string; how: string; faq: string; login: string };
   cta: string;
+  /** The same action in one word, for the header on a narrow screen. */
+  ctaShort: string;
+  /** Sent with the WhatsApp message, so the owner knows which page it came from. */
+  whatsappMessage: string;
+  contactAlt: { call: string; site: string };
   switchLabel: string;
   hero: { headline: string; subhead: string; image: string; alt: string; width: number; height: number; exampleLabel: string };
   /** Things the product is, stated as facts: the only «evidence» the page has so far. */
@@ -56,7 +64,10 @@ const SHOT = { width: 1280 } as const;
 export const PRODUCT_CONTENT: Record<Locale, ProductContent> = {
   ar: {
     nav: { features: 'المزايا', how: 'كيف يعمل', faq: 'أسئلة', login: 'دخول' },
-    cta: 'تحدّث إلينا',
+    cta: 'راسلنا على واتساب',
+    ctaShort: 'واتساب',
+    whatsappMessage: 'مرحبًا، أريد معرفة المزيد عن اوردراك لمطعمي.',
+    contactAlt: { call: 'أو اتصل بنا', site: 'أو زر موقعنا التعريفي' },
     switchLabel: 'English',
     hero: {
       headline: 'نظام طلبات وكاشير ومطبخ لمطعمك، يعمل حتى بلا إنترنت',
@@ -153,7 +164,10 @@ export const PRODUCT_CONTENT: Record<Locale, ProductContent> = {
   },
   en: {
     nav: { features: 'Features', how: 'How it works', faq: 'Questions', login: 'Sign in' },
-    cta: 'Talk to us',
+    cta: 'WhatsApp us',
+    ctaShort: 'WhatsApp',
+    whatsappMessage: 'Hello, I would like to know more about Orderak for my restaurant.',
+    contactAlt: { call: 'or call us', site: 'or visit our site' },
     switchLabel: 'عربي',
     hero: {
       headline: 'Orders, till and kitchen for your restaurant, even offline',

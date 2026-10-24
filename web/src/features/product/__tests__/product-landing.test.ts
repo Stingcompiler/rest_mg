@@ -65,6 +65,7 @@ describe.each(LOCALES)('the page’s words (%s)', (locale) => {
     expect(c.cta.split(/\s+/).length).toBeLessThanOrEqual(3);
     // The action names the channel, so no one wonders what the button does.
     expect(c.cta).toMatch(/واتساب|WhatsApp/);
+    expect(c.ctaShort).toMatch(/واتساب|WhatsApp/);
   });
 
   it('claims nothing it cannot back: no pressure words, no figures, no placeholders', () => {

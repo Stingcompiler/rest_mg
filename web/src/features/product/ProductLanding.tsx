@@ -24,18 +24,43 @@ const CONTAINER = 'mx-auto w-full max-w-6xl px-16 sm:px-24';
 const SECTION = 'py-40 sm:py-56';
 
 function Cta({ label, size = 'lg' }: { label: string; size?: 'md' | 'lg' }) {
+  const i18n = useI18n();
+  const href = `https://wa.me/${PRODUCT_CONTACT.whatsappNumber}?text=${encodeURIComponent(PRODUCT_CONTENT[i18n.locale].whatsappMessage)}`;
   return (
     <a
-      href={PRODUCT_CONTACT.href}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        'inline-flex items-center justify-center rounded-md bg-accent font-semibold text-text-on-accent outline-none transition-colors hover:bg-accent-hover active:bg-accent-pressed',
+        'inline-flex items-center justify-center whitespace-nowrap rounded-md bg-accent font-semibold text-text-on-accent outline-none transition-colors hover:bg-accent-hover active:bg-accent-pressed',
         size === 'lg' ? 'min-h-control-xl px-24 text-ar-lg' : 'min-h-control-md px-16 text-ar-base',
       )}
     >
       {label}
     </a>
+  );
+}
+
+/** The other two ways in, quieter than the button: a call, and the introduction site. */
+function ContactAlt({ onInk = false }: { onInk?: boolean }) {
+  const i18n = useI18n();
+  const c = PRODUCT_CONTENT[i18n.locale];
+  const link = cn(
+    'inline-flex min-h-control-stepper items-center underline underline-offset-4',
+    onInk ? 'text-on-ink hover:text-gold-soft' : 'text-accent hover:text-accent-hover',
+  );
+  return (
+    <p className={cn('flex flex-wrap items-center gap-x-16 text-ar-base', onInk ? 'text-on-ink-muted' : 'text-text-muted')}>
+      <span className="flex flex-wrap items-center gap-x-8">
+        {c.contactAlt.call}
+        <a href={`tel:+${PRODUCT_CONTACT.whatsappNumber}`} className={link}>
+          <span className="numeric" dir="ltr">{PRODUCT_CONTACT.phoneLocal}</span>
+        </a>
+      </span>
+      <a href={PRODUCT_CONTACT.site} target="_blank" rel="noopener noreferrer" className={link}>
+        {c.contactAlt.site}
+      </a>
+    </p>
   );
 }
 
@@ -90,7 +115,7 @@ export function ProductLanding() {
             >
               {c.switchLabel}
             </button>
-            <Cta label={c.cta} size="md" />
+            <Cta label={c.ctaShort} size="md" />
           </div>
         </div>
       </header>
@@ -111,6 +136,7 @@ export function ProductLanding() {
                 </a>
               ) : null}
             </div>
+            <ContactAlt />
           </div>
           <img
             src={c.hero.image}
@@ -179,6 +205,7 @@ export function ProductLanding() {
           <SectionTitle>{c.pricing.title}</SectionTitle>
           <p className="max-w-xl text-ar-md text-text-muted">{c.pricing.body}</p>
           <Cta label={c.cta} />
+          <ContactAlt />
         </section>
 
         <section id="faq" className="border-t border-line bg-surface">
@@ -203,6 +230,7 @@ export function ProductLanding() {
             <h2 className="font-display text-ar-2xl font-semibold sm:text-ar-3xl">{c.closing.title}</h2>
             <p className="max-w-xl text-ar-md text-on-ink-muted">{c.closing.body}</p>
             <Cta label={c.cta} />
+            <ContactAlt onInk />
           </div>
         </section>
       </main>

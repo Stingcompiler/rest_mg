@@ -86,6 +86,8 @@ The behaviour the reference asks of every screen, and where we keep it:
 - **Charts (§16):** a missing value is never a zero; one colour per series, the same on every page.
 - **Delivery checklist (§14):** the items a test can hold are in `design-reference-rules.test.ts`; the rest is the review at the end of a batch.
 
+- **Orderak's own page, `/orderak/` (batch 67):** the product shown to restaurant owners (type software, goal contact; `docs/PRODUCT-LANDING.ar.md`). It is a separate page from the restaurant's `/`, in our identity, held to LANDING.md's measured rules and to «no claim without evidence».
+
 ## Commands
 
 - **Template-pattern lint:** `npm run lint:ui` (in `web/`; also in CI).

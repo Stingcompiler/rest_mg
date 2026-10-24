@@ -88,3 +88,10 @@ class RobotsAndSitemapTests(TestCase):
         body = response.content.decode()
         self.assertIn("<loc>http://orderak.example/</loc>", body)
         self.assertIn("<loc>http://orderak.example/r/wisam/</loc>", body)
+
+    def test_the_sitemap_lists_orderaks_own_page_and_robots_does_not_hide_it(self):
+        """Orderak as a product, for restaurants (batch 67), is public and findable."""
+        sitemap = self.client.get("/sitemap.xml", HTTP_HOST="orderak.example").content.decode()
+        self.assertIn("<loc>http://orderak.example/orderak/</loc>", sitemap)
+        robots = self.client.get("/robots.txt", HTTP_HOST="orderak.example").content.decode()
+        self.assertNotIn("Disallow: /orderak", robots)

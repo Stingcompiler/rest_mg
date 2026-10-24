@@ -33,7 +33,7 @@ export interface ProductFeature {
 }
 
 export interface ProductContent {
-  nav: { features: string; how: string; faq: string };
+  nav: { features: string; how: string; faq: string; login: string };
   cta: string;
   switchLabel: string;
   hero: { headline: string; subhead: string; image: string; alt: string; width: number; height: number; exampleLabel: string };
@@ -55,7 +55,7 @@ const SHOT = { width: 1280 } as const;
 
 export const PRODUCT_CONTENT: Record<Locale, ProductContent> = {
   ar: {
-    nav: { features: 'المزايا', how: 'كيف يعمل', faq: 'أسئلة' },
+    nav: { features: 'المزايا', how: 'كيف يعمل', faq: 'أسئلة', login: 'دخول' },
     cta: 'تحدّث إلينا',
     switchLabel: 'English',
     hero: {
@@ -152,7 +152,7 @@ export const PRODUCT_CONTENT: Record<Locale, ProductContent> = {
     footer: { poweredBy: 'مدعوم من ستينج سيستم', rights: 'جميع الحقوق محفوظة' },
   },
   en: {
-    nav: { features: 'Features', how: 'How it works', faq: 'Questions' },
+    nav: { features: 'Features', how: 'How it works', faq: 'Questions', login: 'Sign in' },
     cta: 'Talk to us',
     switchLabel: 'عربي',
     hero: {

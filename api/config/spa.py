@@ -10,8 +10,10 @@ directory-style routes to their ``index.html`` — with two special cases:
   - ``pos-sw.js`` carries the header that lets the service worker claim ``/pos/``;
   - a screen's router payload (``…/index.txt``) loaded as a page redirects to
     the screen (batch 41);
-  - the public page carries the published restaurant in its HTML, and the
-    server answers ``robots.txt`` and ``sitemap.xml`` (batch 47).
+  - a restaurant's public page (``/r/<slug>/``) carries the published
+    restaurant in its HTML, and the server answers ``robots.txt`` and
+    ``sitemap.xml`` (batch 47); the root is Orderak's own page (batch 68), and
+    ``/orderak/`` redirects to it.
 
 For production the assets are better served by WhiteNoise or a CDN in front of
 this; for a single-restaurant self-hosted box, one process is the point.
@@ -24,7 +26,7 @@ from html import escape
 from pathlib import Path
 
 from django.conf import settings
-from django.http import FileResponse, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
+from django.http import FileResponse, HttpResponse, HttpResponseNotFound, HttpResponsePermanentRedirect, HttpResponseRedirect
 
 # Windows' registry can hand back odd types; pin the ones that matter.
 mimetypes.add_type("text/javascript", ".js")
@@ -90,8 +92,8 @@ def _robots(request) -> HttpResponse:
 def _sitemap(request) -> HttpResponse:
     from apps.profiles.models import RestaurantProfile
 
-    # The root is a restaurant's page; /orderak/ is Orderak itself, for restaurants (batch 67).
-    urls = [request.build_absolute_uri("/"), request.build_absolute_uri("/orderak/")]
+    # The root is Orderak's own page, for buyers (batch 68); each restaurant has its own below.
+    urls = [request.build_absolute_uri("/")]
     for slug in RestaurantProfile.objects.filter(landing_page_enabled=True).order_by("created_at").values_list("slug", flat=True):
         urls.append(request.build_absolute_uri(f"/r/{slug}/"))
     body = "".join(f"<url><loc>{escape(url)}</loc></url>" for url in urls)
@@ -174,6 +176,11 @@ def spa(request, path: str = ""):
         body = notfound.read_bytes() if notfound.is_file() else b"Not found"
         return HttpResponseNotFound(body)
 
+    # Orderak's page was first built at /orderak/ (batch 67) and is the home page
+    # (batch 68). A link made in between still arrives.
+    if rel == "orderak":
+        return HttpResponsePermanentRedirect("/")
+
     if rel == "robots.txt":
         return _robots(request)
     if rel == "sitemap.xml":
@@ -181,15 +188,13 @@ def spa(request, path: str = ""):
 
     target = _resolve(rel)
 
-    # The public page: the root, or a restaurant's own /r/<slug>/.
+    # A restaurant's own public page, /r/<slug>/. The root is Orderak's page, not a restaurant's.
     public_slug = None
     parts = rel.split("/")
-    if rel in ("", "index.html"):
-        public_slug = ""
-    elif len(parts) >= 2 and parts[0] == "r" and parts[1] not in ("", "_"):
+    if len(parts) >= 2 and parts[0] == "r" and parts[1] not in ("", "_"):
         public_slug = parts[1]
     if target is not None and public_slug is not None and target.suffix == ".html":
-        profile = _published(public_slug or None)
+        profile = _published(public_slug)
         if profile is not None:
             html = _with_restaurant(request, target.read_text(encoding="utf-8"), profile)
             return HttpResponse(html, content_type="text/html; charset=utf-8")

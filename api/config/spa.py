@@ -90,7 +90,8 @@ def _robots(request) -> HttpResponse:
 def _sitemap(request) -> HttpResponse:
     from apps.profiles.models import RestaurantProfile
 
-    urls = [request.build_absolute_uri("/")]
+    # The root is a restaurant's page; /orderak/ is Orderak itself, for restaurants (batch 67).
+    urls = [request.build_absolute_uri("/"), request.build_absolute_uri("/orderak/")]
     for slug in RestaurantProfile.objects.filter(landing_page_enabled=True).order_by("created_at").values_list("slug", flat=True):
         urls.append(request.build_absolute_uri(f"/r/{slug}/"))
     body = "".join(f"<url><loc>{escape(url)}</loc></url>" for url in urls)

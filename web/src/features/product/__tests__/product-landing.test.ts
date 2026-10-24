@@ -146,7 +146,7 @@ describe('the page', () => {
 
 describe('the pictures', () => {
   const page = read('features/product/ProductLanding.tsx');
-  const files = ['till', 'kitchen', 'deliveries', 'dashboard', 'customers'];
+  const files = ['till', 'sync', 'kitchen', 'deliveries', 'dashboard', 'customers'];
 
   it('are the product, kept small: the first under 250KB, the rest under 180KB', () => {
     for (const name of files) {

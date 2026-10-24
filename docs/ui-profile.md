@@ -28,6 +28,25 @@ Next.js 15 static export · React 19 · Tailwind 3 on a **token-only scale** (`w
 
 **Shared components to build on:** `Button`, `IconButton`, `TextField`, `Toggle`, `SegmentedControl`, `AppHeader`, `NavRail`, `KpiStrip` / `KpiCard` / `LedgerRow` (the manager's figures), `MenuItemCard`, `OrderCard`, `StatusChip`, `CountBadge`, `Skeleton` / `LoadingList`, `EmptyState` / `ErrorState`, `QtyStepper`, `DenominationRow`.
 
+## Fonts (batch 70, D-0013)
+
+The decision is **option B, an established-brand exception** (Design Reference v2.3 §2, D-0007), recorded in [`DECISIONS.md`](DECISIONS.md) as D-0013. Nothing else may be loaded.
+
+| Face | Weights | For |
+|---|---|---|
+| IBM Plex Sans Arabic | 400 / 500 / 600 | Arabic text, and the Latin glyphs of an Arabic page |
+| IBM Plex Sans | 400 / 500 / 600 | English text (an English page only) |
+| IBM Plex Mono | 400 / 500 / 600 | every numeral |
+| Readex Pro | 600 | the logo, and titles of 24px (1.5rem) and up |
+
+- Self-hosted by `next/font` (built once, served from our origin), `font-display: swap`, `system-ui` behind them; next/font's own «… Fallback» faces are switched off, so `document.fonts` holds only the faces above.
+- **Three variables:** `--font-ui` (set per `[lang]`: Plex Sans leads only when the *page* is English), `--font-mono`, `--font-display`. Tailwind: `font-ui`, `font-mono`, `font-display`.
+- **Weights stop at 600.** No `font-bold`: 700 is not downloaded, and a heavier weight would be faked.
+- **Numerals:** `.numeric` (alias `.num`, `[data-num]`) is Mono, `tabular-nums`, `direction: ltr`, `unicode-bidi: isolate`. It goes on amounts, times, dates, identifiers, phones, codes, counters and step numbers. Western digits are the default in English; the numerals setting follows the language (D-0004).
+- **Limits:** no Arabic under 14px, nothing under 12px, and the 12px step is set at a line height of 1.6. A component never writes a size or a family: it uses the scale's classes.
+- **Budget:** an Arabic page's fonts are about 185–200KB (the restaurant's public page 186KB); the English home page is about 240KB because the Arabic logo's family is preloaded as well.
+- **Held by tests:** `font-system.test.ts`, `numerals-rule.test.ts`, `type-limits.test.ts` and `fonts.test.ts`.
+
 ## Product identity
 
 Warm, calm, printed. A restaurant's ledger and menu card, not a SaaS dashboard: ivory paper, ink, emerald for action, gold for detail, hairline rules, dotted leaders. Strong colour is kept for what needs the eye (the takings, an order to confirm, a debt).

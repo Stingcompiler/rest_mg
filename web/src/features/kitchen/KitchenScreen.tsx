@@ -232,7 +232,7 @@ export function KitchenScreen() {
                   className={`flex flex-col gap-12 rounded-lg bg-surface p-16 ${tone === 'danger' ? LATE_OUTLINE : 'border border-line'}`}
                 >
                   <div className="flex items-center justify-between">
-                    <Numeric className="text-num-xl font-bold">{ticket.number}</Numeric>
+                    <Numeric className="text-num-xl font-semibold">{ticket.number}</Numeric>
                     <StatusChip
                       label={i18n.t(STATUS_KEY[ticket.kitchen_status])}
                       tone={ticket.kitchen_status === 'ready' ? 'success' : 'neutral'}

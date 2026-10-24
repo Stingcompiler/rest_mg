@@ -339,7 +339,7 @@ export function PaymentScreen() {
               </span>
             </div>
             <div className="flex flex-none items-center gap-10">
-              <Numeric className={enteredMinor > 0n ? 'text-num-3xl font-bold text-accent' : 'text-num-3xl font-bold text-text-muted'}>
+              <Numeric className={enteredMinor > 0n ? 'text-num-3xl font-semibold text-accent' : 'text-num-3xl font-semibold text-text-muted'}>
                 {i18n.money(chargeAmount)}
               </Numeric>
               {enteredMinor > 0n ? (
@@ -423,14 +423,14 @@ export function PaymentScreen() {
             {due > 0n || order.changeDue() === 0n ? (
               <div className="flex items-baseline justify-between">
                 <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.remaining')}</span>
-                <Numeric className={due > 0n ? 'text-num-5xl font-bold text-warning' : 'text-num-5xl font-bold text-success'}>
+                <Numeric className={due > 0n ? 'text-num-5xl font-semibold text-warning' : 'text-num-5xl font-semibold text-success'}>
                   {i18n.money(due)}
                 </Numeric>
               </div>
             ) : (
               <div className="flex items-baseline justify-between">
                 <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.change')}</span>
-                <Numeric className="text-num-5xl font-bold text-success">{i18n.money(order.changeDue())}</Numeric>
+                <Numeric className="text-num-5xl font-semibold text-success">{i18n.money(order.changeDue())}</Numeric>
               </div>
             )}
           </CalloutPanel>
@@ -513,8 +513,8 @@ function CustomerPicker({
       >
         <div className="flex flex-none flex-col gap-10 border-b border-line p-16">
           <div className="flex items-baseline justify-between gap-12">
-            <span className="text-ar-lg font-bold">{i18n.t('pos.payment.pickCustomer')}</span>
-            <Numeric className="text-num-lg font-bold text-credit">{amount}</Numeric>
+            <span className="text-ar-lg font-semibold">{i18n.t('pos.payment.pickCustomer')}</span>
+            <Numeric className="text-num-lg font-semibold text-credit">{amount}</Numeric>
           </div>
           <TextField
             value={query}
@@ -599,10 +599,10 @@ function ReferenceDialog({
         className="relative flex w-full max-w-md flex-col gap-12 rounded-t-xl border border-line bg-surface p-16 sm:rounded-xl"
       >
         <div className="flex items-baseline justify-between gap-12">
-          <span className="text-ar-lg font-bold">
+          <span className="text-ar-lg font-semibold">
             {i18n.t('pos.payment.referenceTitle')} · {i18n.t(METHOD_LABEL_KEY[method])}
           </span>
-          <Numeric className="text-num-lg font-bold">{amount}</Numeric>
+          <Numeric className="text-num-lg font-semibold">{amount}</Numeric>
         </div>
         <TextField
           autoFocus
@@ -641,7 +641,7 @@ function ChangeDueScreen({ number, change, onDone }: { number: string; change: b
         <span className="text-ar-2xl font-semibold">{i18n.t('pos.payment.giveChange')}</span>
       </div>
       <div role="status" aria-live="assertive">
-        <Numeric className="text-num-6xl font-bold text-success">{i18n.money(change)}</Numeric>
+        <Numeric className="text-num-6xl font-semibold text-success">{i18n.money(change)}</Numeric>
       </div>
       <Button variant="primary" size="xl" className="min-w-thumb-w" autoFocus onClick={onDone}>
         {i18n.t('pos.payment.nextOrder')}

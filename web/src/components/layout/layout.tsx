@@ -69,7 +69,7 @@ export function NavRailItem({ icon, label, active, onClick, badge, className, ex
         {icon}
         {badge ? (
           // ui-allow: a count badge on a nav icon: it carries the number, not a state decoration
-          <span className="absolute -top-8 -end-10 min-w-icon-sm rounded-full border border-danger bg-danger-tint px-4 text-center text-ar-xs font-bold text-danger">
+          <span className="absolute -top-8 -end-10 min-w-icon-sm rounded-full border border-danger bg-danger-tint px-4 text-center text-ar-xs font-semibold text-danger">
             {badge}
           </span>
         ) : null}

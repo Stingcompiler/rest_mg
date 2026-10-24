@@ -252,7 +252,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
         className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border border-line bg-surface sm:rounded-xl"
       >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
-          <span className="font-display text-ar-lg font-semibold">{title}</span>
+          <span className="text-ar-lg font-semibold">{title}</span>
           <IconButton variant="quiet" label={i18n.t('catalog.cancel')} onClick={onClose}>
             <X size={22} />
           </IconButton>

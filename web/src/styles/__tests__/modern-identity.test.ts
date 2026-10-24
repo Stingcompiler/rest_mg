@@ -64,8 +64,8 @@ describe('the display face', () => {
 
 describe('the stacks (batch 27)', () => {
   it('put the Arabic face right behind the mono, for Arabic-Indic numerals', () => {
-    expect(tokens).toMatch(/--font-numeric:\s*var\(--font-plex-mono\),\s*var\(--font-plex-arabic\)/);
-    expect(tokens).toMatch(/--font-arabic:\s*var\(--font-plex-arabic\)/);
+    expect(tokens).toMatch(/--font-mono:\s*var\(--font-plex-mono\),\s*var\(--font-plex-arabic\)/);
+    expect(tokens).toMatch(/--font-ui:\s*var\(--font-plex-arabic\)/);
     expect(tokens).not.toMatch(/--font-cairo/);
   });
 });

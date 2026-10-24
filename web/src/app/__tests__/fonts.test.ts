@@ -44,8 +44,11 @@ describe('font preloading', () => {
   });
 
   it('loads every numeral weight the screens ask for', () => {
-    // Totals are set bold. Without a 700 face the browser smears the 600 one.
-    expect(options('IBM_Plex_Mono')).toMatch(/'700'/);
+    // Since batch 70 (D-0013) the totals are set at 600, the heaviest weight
+    // Mono carries here: nothing is asked of it that it has to fake, and 700 is
+    // not downloaded.
+    expect(options('IBM_Plex_Mono')).toMatch(/'600'/);
+    expect(options('IBM_Plex_Mono')).not.toMatch(/'700'/);
   });
 });
 

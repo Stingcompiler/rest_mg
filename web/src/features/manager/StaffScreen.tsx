@@ -188,7 +188,7 @@ function StaffRow({ person }: { person: StaffAccount }) {
       <span className="min-w-0 flex-1 basis-32 text-ar-base font-medium">
         {person.display_name || person.username}
       </span>
-      <span className="text-ar-sm text-text-muted">{person.username}</span>
+      <span className="numeric text-ar-sm text-text-muted">{person.username}</span>
       <span className="text-ar-sm text-accent">{i18n.t(ROLE_KEY[person.role])}</span>
       <span className={person.is_active ? 'text-ar-sm text-success' : 'text-ar-sm text-text-disabled'}>
         {person.is_active ? i18n.t('manager.staff.active') : i18n.t('manager.staff.inactive')}

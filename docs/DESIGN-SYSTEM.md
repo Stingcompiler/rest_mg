@@ -162,6 +162,8 @@ for `#2E8B72`.
 
 ---
 
+> **Superseded in part by batch 70 (D-0013).** The type system is now: IBM Plex Sans Arabic / IBM Plex Sans (400/500/600), IBM Plex Mono for every numeral (400/500/600), Readex Pro 600 for the logo and titles of 24px and up; three variables, `--font-ui`, `--font-mono`, `--font-display`. See `ui-profile.md` («Fonts»). What follows is the history of how the scale was drawn.
+
 ## 2. Typography
 
 Three families, loaded from Google Fonts:

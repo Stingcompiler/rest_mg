@@ -10,26 +10,26 @@
     color: var(--color-text);
   }
 
-  /* Arabic is the default locale; Latin text opts in per element. */
-  body {
-    font-family: var(--font-arabic);
+  /* The text face follows the language: --font-ui is set per [lang] in the
+     tokens, so a nested lang switches the face with no extra rule here. */
+  html,
+  body,
+  [lang] {
+    font-family: var(--font-ui);
   }
 
-  [lang='en'] body,
-  [lang='en'] {
-    font-family: var(--font-latin);
-  }
-
-  /* And back: an Arabic block on an English page (the public page always is
-     one) must not inherit the Latin face from <body>. */
-  [lang='en'] [lang='ar'] {
-    font-family: var(--font-arabic);
-  }
-
-  /* Numerals are monospaced and tabular wherever money is shown. */
-  .numeric {
-    font-family: var(--font-numeric);
-    font-variant-numeric: var(--numeric-tabular);
+  /* Every numeral (amounts, times, dates, ids, phones, codes, counters, step
+     numbers): Mono, tabular, left to right, and isolated from the Arabic round
+     it so its digits never flip (batch 70, Design Reference §2). `.numeric` is
+     the name the code has always used; `.num` and [data-num] are the
+     reference's. */
+  .numeric,
+  .num,
+  [data-num] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
   :focus-visible {

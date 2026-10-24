@@ -62,7 +62,10 @@ describe('Arabic text in an English interface', () => {
     // has no Arabic glyphs, so without the Arabic face in the Latin stack
     // those names fell through to whatever the device had (found verifying
     // batch 10). The face is IBM Plex Sans Arabic since batch 27.
-    const latin = /--font-latin:([^;]*);/.exec(tokens)?.[1] ?? '';
+    // Since batch 70 the language sets --font-ui itself: Plex Sans leads in an
+    // English block, with the Arabic face behind it.
+    const latin = rule(/:root\[lang='en'\]/).match(/--font-ui:([^;]*);/)?.[1] ?? '';
+    expect(latin).toMatch(/var\(--font-plex-sans\)/);
     expect(latin).toMatch(/var\(--font-plex-arabic\)/);
   });
 
@@ -70,7 +73,10 @@ describe('Arabic text in an English interface', () => {
     // The public page is Arabic, and it inherited Plex Sans from <body> on a
     // device last switched to English.
     const globals = readFileSync(resolve(SRC, 'app/globals.css'), 'utf-8');
-    expect(globals).toMatch(/\[lang='ar'\][^{]*\{[^}]*font-family:\s*var\(--font-arabic\)/);
+    // The face is a variable set per language (batch 70): an Arabic block names
+    // the Arabic face again, and every [lang] element draws with it.
+    expect(rule(/:root,\s*\[lang='ar'\]/)).toMatch(/--font-ui:\s*var\(--font-plex-arabic\)/);
+    expect(globals).toMatch(/\[lang\]\s*\{[^}]*font-family:\s*var\(--font-ui\)/);
   });
 });
 

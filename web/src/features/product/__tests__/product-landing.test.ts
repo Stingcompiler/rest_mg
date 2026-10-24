@@ -7,7 +7,8 @@
  * prices appear, because there is no evidence for them yet; what appears is
  * what the product was seen to do, in screenshots of the product itself.
  *
- * The restaurant's own page at «/» is a different page and stays as it is.
+ * It is the home page (batch 68): the buyer arrives here. A restaurant's own
+ * page is at /r/<slug>/ and the page links to it as an example.
  */
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -138,9 +139,19 @@ describe('the page', () => {
     expect(page).toMatch(/href="https:\/\/stingdev\.pro"/);
   });
 
-  it('points to the restaurant page as an example, and leaves it where it is', () => {
-    expect(page).toMatch(/href="\/"/);
-    expect(read('app/page.tsx')).toMatch(/<LandingClient \/>/);
+  it('points to a real restaurant page as an example, found from the server, not written in', () => {
+    expect(page).toMatch(/\/api\/v1\/public\//);
+    expect(page).toMatch(/\/r\/\$\{/);
+    expect(page).not.toMatch(/href="\/"/);
+  });
+
+  it('keeps the restaurants’ own pages where they are', () => {
+    expect(read('app/r/[slug]/page.tsx')).toMatch(/<LandingClient \/>/);
+  });
+
+  it('gives staff a way in, since the home page is no longer their sign-in', () => {
+    expect(page).toMatch(/href="\/login\/"/);
+    for (const locale of LOCALES) expect(PRODUCT_CONTENT[locale].nav.login.length).toBeGreaterThan(0);
   });
 });
 
@@ -178,12 +189,20 @@ describe('the pictures', () => {
 });
 
 describe('the route', () => {
-  it('is a page of its own with a title and a description, public and indexable', () => {
-    const route = read('app/orderak/page.tsx');
+  it('is the home page, with a title and a description, public and indexable', () => {
+    const route = read('app/page.tsx');
     expect(route).toMatch(/export const metadata/);
     expect(route).toMatch(/title:/);
     expect(route).toMatch(/description:/);
     expect(route).not.toMatch(/noindex|robots:\s*\{\s*index:\s*false/);
     expect(route).toMatch(/<ProductLanding \/>/);
+    expect(route).not.toMatch(/LandingClient/);
+  });
+
+  it('has no second copy at /orderak/: the server sends that address to the home page', () => {
+    expect(existsSync(resolve(SRC, 'app/orderak'))).toBe(false);
+    const spa = readFileSync(resolve(WEB, '../api/config/spa.py'), 'utf-8');
+    expect(spa).toMatch(/orderak/);
+    expect(spa).toMatch(/HttpResponsePermanentRedirect/);
   });
 });

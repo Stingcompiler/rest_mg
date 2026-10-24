@@ -34,21 +34,23 @@ class ShareMetaTests(TestCase):
         body = b"".join(response.streaming_content) if response.streaming else response.content
         return body.decode()
 
-    def test_the_home_page_names_the_restaurant(self):
+    def test_the_home_page_is_orderak_not_one_restaurant(self):
+        """The root is Orderak's own page for buyers (batch 68); a restaurant is at /r/<slug>/."""
         html = self.page()
+        self.assertNotIn('content="restaurant"', html)
+        self.assertNotIn("وسام", html)
+        self.assertNotIn('"@type": "Restaurant"', html)
+
+    def test_a_restaurant_page_names_the_restaurant(self):
+        html = self.page("/r/wisam/")
         self.assertIn("<title>مطعم &quot;وسام&quot; &lt;الشام&gt;</title>", html)
         self.assertIn('<meta name="description" content="مشاوي ومأكولات شامية"', html)
         self.assertIn('<meta property="og:title" content="مطعم &quot;وسام&quot; &lt;الشام&gt;"', html)
         self.assertIn('<meta property="og:type" content="restaurant"', html)
-        self.assertIn('<link rel="canonical" href="http://orderak.example/"', html)
-
-    def test_a_restaurant_page_by_its_address_too(self):
-        html = self.page("/r/wisam/")
         self.assertIn('<link rel="canonical" href="http://orderak.example/r/wisam/"', html)
-        self.assertIn("og:title", html)
 
     def test_structured_data_names_the_restaurant_safely(self):
-        html = self.page()
+        html = self.page("/r/wisam/")
         self.assertIn('<script type="application/ld+json">', html)
         self.assertIn('"@type": "Restaurant"', html)
         self.assertIn('"telephone": "0912345678"', html)
@@ -58,7 +60,14 @@ class ShareMetaTests(TestCase):
     def test_an_unpublished_restaurant_is_not_described(self):
         self.profile.landing_page_enabled = False
         self.profile.save()
-        self.assertNotIn("og:title", self.page())
+        self.assertNotIn("og:title", self.page("/r/wisam/"))
+
+    def test_the_old_product_address_leads_to_the_home_page(self):
+        response = self.client.get("/orderak/", HTTP_HOST="orderak.example")
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response["Location"], "/")
+        # Its pictures are still served from there.
+        self.assertNotEqual(self.client.get("/orderak/till.webp", HTTP_HOST="orderak.example").status_code, 301)
 
     def test_staff_screens_stay_as_they_are(self):
         self.assertNotIn("og:title", self.page("/login/"))
@@ -89,9 +98,8 @@ class RobotsAndSitemapTests(TestCase):
         self.assertIn("<loc>http://orderak.example/</loc>", body)
         self.assertIn("<loc>http://orderak.example/r/wisam/</loc>", body)
 
-    def test_the_sitemap_lists_orderaks_own_page_and_robots_does_not_hide_it(self):
-        """Orderak as a product, for restaurants (batch 67), is public and findable."""
+    def test_the_sitemap_lists_the_home_page_once_and_not_the_old_product_address(self):
+        """Orderak's own page is the home page (batch 68); /orderak/ only redirects to it."""
         sitemap = self.client.get("/sitemap.xml", HTTP_HOST="orderak.example").content.decode()
-        self.assertIn("<loc>http://orderak.example/orderak/</loc>", sitemap)
-        robots = self.client.get("/robots.txt", HTTP_HOST="orderak.example").content.decode()
-        self.assertNotIn("Disallow: /orderak", robots)
+        self.assertEqual(sitemap.count("<loc>http://orderak.example/</loc>"), 1)
+        self.assertNotIn("/orderak/", sitemap)

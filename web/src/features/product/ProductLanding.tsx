@@ -9,9 +9,11 @@
  * the one action again. The look is the product's own: ivory, ink, emerald and
  * a little gold. Nothing moves; there is nothing to turn off.
  *
- * The restaurant's page at «/» is another page and is not touched.
+ * It is the home page (batch 68). A restaurant's own page is at /r/<slug>/;
+ * the hero links to a real one as an example.
  */
 import { ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { BrandMark } from '@/components';
 import { useI18n } from '@/i18n';
@@ -50,6 +52,22 @@ export function ProductLanding() {
   const c = PRODUCT_CONTENT[i18n.locale];
   const year = new Date().getFullYear();
 
+  // A real restaurant page to show as an example, found from the server rather
+  // than written in: the link is there only while one is published.
+  const [exampleSlug, setExampleSlug] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/v1/public/')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { slug?: string } | null) => {
+        if (alive && data?.slug) setExampleSlug(data.slug);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <div dir={i18n.dir} lang={i18n.locale} className="min-h-dvh bg-bg text-text">
       {/* Stuck to the top, the button with it: on a phone it is always in reach. */}
@@ -62,6 +80,9 @@ export function ProductLanding() {
             <a href="#faq" className="hover:text-text">{c.nav.faq}</a>
           </nav>
           <div className="flex items-center gap-8">
+            <a href="/login/" className="inline-flex min-h-control-stepper items-center px-8 text-ar-sm text-text-muted outline-none hover:text-text">
+              {c.nav.login}
+            </a>
             <button
               type="button"
               onClick={() => i18n.setLocale(i18n.locale === 'ar' ? 'en' : 'ar')}
@@ -84,9 +105,11 @@ export function ProductLanding() {
             <p className="max-w-xl text-ar-md text-text-muted sm:text-ar-lg">{c.hero.subhead}</p>
             <div className="flex flex-wrap items-center gap-16">
               <Cta label={c.cta} />
-              <a href="/" className="inline-flex min-h-control-stepper items-center text-ar-base text-accent underline underline-offset-4">
-                {c.hero.exampleLabel}
-              </a>
+              {exampleSlug ? (
+                <a href={`/r/${exampleSlug}/`} className="inline-flex min-h-control-stepper items-center text-ar-base text-accent underline underline-offset-4">
+                  {c.hero.exampleLabel}
+                </a>
+              ) : null}
             </div>
           </div>
           <img

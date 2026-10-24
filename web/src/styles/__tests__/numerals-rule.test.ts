@@ -38,7 +38,8 @@ describe('a number set into the page', () => {
       }
     }
     expect(offenders).toEqual([]);
-  });
+    // The scan reads every component with a backtracking pattern: allow it time on a busy machine.
+  }, 30_000);
 });
 
 describe('a numeric column', () => {

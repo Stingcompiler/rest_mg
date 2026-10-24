@@ -175,7 +175,7 @@ function CartBar({ onOpen }: { onOpen: () => void }) {
         {label('landing.cart.view')}
       </span>
       <span>
-        <span className="numeric text-num-lg font-bold">{money(cart.subtotalMinor)}</span>{' '}
+        <span className="numeric text-num-lg font-semibold">{money(cart.subtotalMinor)}</span>{' '}
         <span className="text-ar-sm text-on-ink-muted">{label('landing.currency')}</span>
       </span>
     </button>
@@ -204,7 +204,7 @@ function OrderSheet({ onClose }: { onClose: () => void }) {
         className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-xl border border-line bg-surface text-text sm:rounded-xl"
       >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
-          <span id="order-sheet-title" className="text-ar-lg font-bold">
+          <span id="order-sheet-title" className="text-ar-lg font-semibold">
             {/* The step's name; the body says what happened (batch 30: the
                 confirmation said «تم استلام طلبك بنجاح» twice). */}
             {step === 'done'
@@ -288,7 +288,7 @@ function CartStep({ onCheckout }: { onCheckout: () => void }) {
       </div>
       <div className="flex flex-none flex-col gap-12 border-t border-line bg-surface-2 p-16">
         <ClosedNotice />
-        <div className="flex items-center justify-between text-ar-lg font-bold">
+        <div className="flex items-center justify-between text-ar-lg font-semibold">
           <span>{label('landing.cart.total')}</span>
           {/* Gold, like every price on the page, and with its currency (batch 30). */}
           <span>
@@ -630,7 +630,7 @@ export function QtyPill({
         <Minus size={18} />
       </IconButton>
       <span className="numeric min-w-icon-lg text-center text-num-base font-semibold text-accent" aria-live="polite">
-        <span key={qty} className="inline-block animate-pop">
+        <span key={qty} className="numeric inline-block animate-pop">
           {int(qty)}
         </span>
       </span>

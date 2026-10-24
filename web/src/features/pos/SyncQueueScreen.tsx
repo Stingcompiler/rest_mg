@@ -241,7 +241,7 @@ export function SyncQueueScreen() {
                           <Numeric className="text-num-base font-semibold">{label}</Numeric>
                         </span>
                         {amount ? <Numeric className="text-num-base">{amount}</Numeric> : null}
-                        <span className="text-ar-sm text-text-muted">
+                        <span className="numeric text-ar-sm text-text-muted">
                           {formatTime(new Date(entry.createdAt))}
                         </span>
                         {/* Waiting is the normal state of a till that was offline, not a

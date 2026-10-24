@@ -67,7 +67,7 @@ export function CustomersScreen() {
         <div className="flex flex-wrap items-end justify-between gap-12 border-b border-line pb-16">
           <div className="flex flex-col gap-2">
             <span className="text-ar-sm text-text-muted">{i18n.t('customers.totalOutstanding')}</span>
-            <span className="numeric text-num-2xl font-bold text-credit">{i18n.money(outstanding)}</span>
+            <span className="numeric text-num-2xl font-semibold text-credit">{i18n.money(outstanding)}</span>
           </div>
           <div className="flex flex-wrap items-center gap-10">
             <TextField
@@ -199,7 +199,7 @@ function CustomerRow({ person, onStatement }: { person: Customer; onStatement: (
       </div>
       <div className="flex flex-col items-end">
         <span className="text-ar-xs text-text-muted">{i18n.t('customers.balance')}</span>
-        <span className={balance > 0n ? 'numeric text-num-lg font-bold text-credit' : 'numeric text-num-lg text-text-muted'}>
+        <span className={balance > 0n ? 'numeric text-num-lg font-semibold text-credit' : 'numeric text-num-lg text-text-muted'}>
           {i18n.money(balance)}
         </span>
       </div>
@@ -301,7 +301,7 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
       >
         <div className="flex flex-none items-center justify-between border-b border-line px-16 py-12">
           <div className="flex flex-col">
-            <span className="text-ar-lg font-bold">{current.name}</span>
+            <span className="text-ar-lg font-semibold">{current.name}</span>
             <span className="text-ar-sm text-text-muted">{i18n.t('customers.statement')}</span>
           </div>
           <IconButton variant="quiet" label={i18n.t('customers.close')} onClick={onClose}>
@@ -335,7 +335,7 @@ function StatementSheet({ customer, onClose }: { customer: Customer; onClose: ()
                         ? `${i18n.t('customers.order')} ${line.order_number}`
                         : line.reference}
                     </span>
-                    <span className="text-ar-xs text-text-muted" dir="ltr">
+                    <span className="numeric text-ar-xs text-text-muted">
                       {formatDate(at)} {formatTime(at)}
                     </span>
                     <span className={isCharge ? 'numeric text-num-base text-credit' : 'numeric text-num-base text-success'}>
@@ -398,7 +398,7 @@ function Figure({ label, value, strong }: { label: string; value: string; strong
   return (
     <div className="flex flex-col">
       <span className="text-ar-xs text-text-muted">{label}</span>
-      <span className={strong ? 'numeric text-num-lg font-bold text-credit' : 'numeric text-num-base'}>{value}</span>
+      <span className={strong ? 'numeric text-num-lg font-semibold text-credit' : 'numeric text-num-base'}>{value}</span>
     </div>
   );
 }

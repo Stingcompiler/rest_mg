@@ -268,7 +268,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
   return (
     <article className="flex flex-col gap-12 rounded-lg border border-line bg-surface p-16">
       <div className="flex items-center justify-between gap-8">
-        <span className="numeric text-num-lg font-bold" dir="ltr">#{order.number}</span>
+        <span className="numeric text-num-lg font-semibold" dir="ltr">#{order.number}</span>
         <div className="flex items-center gap-6">
           {/* What the kitchen reports, shown but never editable here. */}
           {/* Not before confirmation: the kitchen has not got the order, and
@@ -332,7 +332,7 @@ function OrderCard({ order }: { order: DeliveryOrder }) {
         <span className="text-ar-sm text-text-muted">
           <span className="numeric" dir="ltr">{formatTime(new Date(order.created_at))}</span>
         </span>
-        <span className="numeric text-num-base font-bold text-accent">{money(order.total_minor)}</span>
+        <span className="numeric text-num-base font-semibold text-accent">{money(order.total_minor)}</span>
       </div>
 
       {canCollect(order) ? (

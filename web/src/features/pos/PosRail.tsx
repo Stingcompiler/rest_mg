@@ -280,7 +280,7 @@ function MoreRow({
     >
       <span className="text-text-muted">{icon}</span>
       <span className="flex-1">{label}</span>
-      {badge ? <span className="text-num-sm font-bold text-danger">{badge}</span> : null}
+      {badge ? <span className="text-num-sm font-semibold text-danger">{badge}</span> : null}
     </button>
   );
 }

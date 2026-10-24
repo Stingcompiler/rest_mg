@@ -192,7 +192,7 @@ export function ProductLanding() {
               {c.steps.map((step, index) => (
                 <li key={step.title} className="flex flex-col gap-8 border-t border-line pt-16">
                   <span className="numeric font-display text-ar-3xl font-semibold text-gold">{i18n.int(index + 1)}</span>
-                  <h3 className="font-display text-ar-lg font-semibold text-text">{step.title}</h3>
+                  <h3 className="text-ar-lg font-semibold text-text">{step.title}</h3>
                   <p className="text-ar-md text-text-muted">{step.body}</p>
                 </li>
               ))}

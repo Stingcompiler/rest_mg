@@ -20,9 +20,14 @@ import './globals.css';
 // the English interface, so the three read as one.
 const plexArabic = IBM_Plex_Sans_Arabic({
   subsets: ['arabic'],
-  weight: ['400', '500', '600', '700'],
+  // 400, 500 and 600 (batch 70, D-0013): 700 was a fourth file of ~45KB that the
+  // interface only asked for in a few headings, now set at 600.
+  weight: ['400', '500', '600'],
   variable: '--font-plex-arabic',
   display: 'swap',
+  // next/font's stand-in faces ("… Fallback") are families of their own in
+  // document.fonts; the fallback is the system face, named in the stack.
+  adjustFontFallback: false,
 });
 
 // The display face for titles: the restaurant's name, section and page titles.
@@ -34,12 +39,13 @@ const readexPro = Readex_Pro({
   weight: ['600'],
   variable: '--font-readex-pro',
   display: 'swap',
+  adjustFontFallback: false,
   preload: false,
 });
 
 const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
   variable: '--font-plex-sans',
   display: 'swap',
   // No Arial stand-in: Arial has Arabic glyphs, and would draw the Arabic
@@ -52,9 +58,9 @@ const plexSans = IBM_Plex_Sans({
 
 const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  // 700 for the totals, which are set bold: without it the browser fakes the
-  // weight from the 600 face, and Western numerals come out smeared.
-  weight: ['400', '500', '600', '700'],
+  // 400, 500, 600 (batch 70, D-0013). The totals, once bold, are set at 600:
+  // nothing is set at a weight the family does not carry, so nothing is faked.
+  weight: ['400', '500', '600'],
   variable: '--font-plex-mono',
   display: 'swap',
   // No Arial stand-in: next/font's fallback face is Arial enlarged 135% to the

@@ -367,7 +367,7 @@ function TopBar({ data, ordering, onOrder }: { data: Landing; ordering: boolean;
       )}
     >
       <div className="mx-auto flex h-header max-w-6xl items-center justify-between gap-12 px-16 sm:px-24">
-        <span className="flex min-w-0 items-center gap-8 font-display text-ar-lg font-semibold sm:text-ar-xl">
+        <span data-logo className="flex min-w-0 items-center gap-8 font-display text-ar-lg font-semibold sm:text-ar-xl">
           {/* The uploaded logo, or the generic mark when there is none. The
               name stays either way — a logo is decoration, the name is the
               thing a visitor needs to read. */}
@@ -441,7 +441,7 @@ function DishMarquee({ menu }: { menu: LandingCategory[] }) {
         {[0, 1].map((copy) => (
           <div key={copy} className="flex flex-none items-center">
             {names.map((name, index) => (
-              <span key={index} className="flex items-center gap-24 px-12 font-display text-ar-lg font-semibold sm:text-ar-xl">
+              <span key={index} className="flex items-center gap-24 px-12 font-display text-ar-xl font-semibold">
                 {name}
                 <span className="size-6 rotate-45 bg-gold-soft" />
               </span>
@@ -900,7 +900,7 @@ function FeaturedCard({ item }: { item: LandingItem }) {
       <DishPhoto item={item} className="h-[10rem] rounded-lg" />
       <div className="flex flex-1 flex-col gap-6 border-t border-gold-soft pt-12">
         <div className="flex items-center justify-between gap-8">
-          <h3 className="truncate font-display text-ar-lg font-semibold transition group-hover:text-accent">
+          <h3 className="truncate text-ar-lg font-semibold transition group-hover:text-accent">
             <button
               type="button"
               onClick={() => setOpen(true)}
@@ -941,7 +941,7 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
         </div>
 
         <div className="flex flex-col gap-8">
-          <span className="font-display text-ar-md font-semibold">{label('landing.footerLinks')}</span>
+          <span className="text-ar-md font-semibold">{label('landing.footerLinks')}</span>
           <button type="button" onClick={() => onNavigate('menu')} className="inline-flex min-h-control-stepper items-center text-start text-ar-sm text-on-ink-muted hover:text-on-ink">
             {label('landing.ourMenu')}
           </button>
@@ -951,7 +951,7 @@ function Footer({ data, onNavigate }: { data: Landing; onNavigate: (id: string) 
         </div>
 
         <div className="flex flex-col gap-8">
-          <span className="font-display text-ar-md font-semibold">{label('landing.footerContact')}</span>
+          <span className="text-ar-md font-semibold">{label('landing.footerContact')}</span>
           {phoneHref(data.phone) ? (
             <a href={phoneHref(data.phone)!} className="flex min-h-control-stepper items-center gap-8 text-ar-sm text-on-ink-muted hover:text-on-ink">
               <Phone size={15} />
@@ -1060,7 +1060,7 @@ function OrderStatus({ slug }: { slug: string }) {
     <div role="status" aria-live="polite" className="border-b border-gold-soft bg-ink text-on-ink">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-12 px-16 py-10 sm:px-24">
         <span className="flex flex-wrap items-baseline gap-x-10 gap-y-2">
-          <span className="font-display text-ar-md font-semibold">{label('landing.status.title', { number: order.number })}</span>
+          <span className="text-ar-md font-semibold">{label('landing.status.title', { number: order.number })}</span>
           {key ? <span className="text-ar-sm text-on-ink-muted">{label(key)}</span> : null}
         </span>
         <IconButton

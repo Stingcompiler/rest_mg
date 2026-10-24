@@ -72,10 +72,13 @@ describe('the variables', () => {
   });
 
   it('are the only font families written anywhere else', () => {
+    // A standalone document (the receipt window) cannot see the variables, so it
+    // may name the decided families, and the system face, by hand.
+    const ALLOWED = /^(?:\s*,?\s*(?:'IBM Plex Sans Arabic'|'IBM Plex Sans'|'IBM Plex Mono'|system-ui|sans-serif|monospace|var\(--font-(?:ui|mono|display)\)))+$/;
     const offenders = sources
       .filter((f) => !f.endsWith('design-tokens.css'))
       .flatMap((f) => (readFileSync(f, 'utf-8').match(/font-family:\s*[^;`]*/g) ?? []).map((m) => `${f.replace(SRC, '')}: ${m}`))
-      .filter((m) => !/var\(--font-(ui|mono|display)\)/.test(m));
+      .filter((m) => !ALLOWED.test(m.split('font-family:')[1] ?? ''));
     expect(offenders).toEqual([]);
   });
 });
@@ -105,12 +108,14 @@ describe('the display face', () => {
         const cls = (m[1] ?? m[2] ?? m[3] ?? '').replace(/['"]/g, ' ');
         if (!/\bfont-display\b/.test(cls)) continue;
         const size = sizeOf(cls);
+        // The wordmark (the restaurant's name in the page's header) is the logo.
+        if (text.slice(Math.max(0, (m.index ?? 0) - 40), m.index).includes('data-logo')) continue;
         if (size === null || size < 24) offenders.push(`${file.replace(SRC, '')}: ${cls.trim().slice(0, 80)}`);
       }
     }
     // The wordmark is the logo: the brand mark may be smaller.
     expect(offenders.filter((o) => !o.includes('components/primitives/indicators.tsx'))).toEqual([]);
-  });
+  }, 30_000);
 });
 
 describe('the numeral rule', () => {

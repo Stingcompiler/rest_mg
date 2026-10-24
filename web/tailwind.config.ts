@@ -93,9 +93,8 @@ const config: Config = {
       },
 
       fontFamily: {
-        ar: 'var(--font-arabic)',
-        la: 'var(--font-latin)',
-        num: 'var(--font-numeric)',
+        ui: 'var(--font-ui)',
+        mono: 'var(--font-mono)',
         display: 'var(--font-display)',
       },
 
@@ -112,7 +111,8 @@ const config: Config = {
 
         'display-xl': ['var(--text-display-xl)', { lineHeight: 'var(--leading-normal)' }],
 
-        'la-xs': ['var(--text-la-xs)', { lineHeight: 'var(--leading-normal)' }],
+        // 12px is set at 1.6 or more (batch 70, Design Reference §2).
+        'la-xs': ['var(--text-la-xs)', { lineHeight: 'var(--leading-relaxed)' }],
         'la-sm': ['var(--text-la-sm)', { lineHeight: 'var(--leading-normal)' }],
         'la-base': ['var(--text-la-base)', { lineHeight: 'var(--leading-normal)' }],
         'la-md': ['var(--text-la-md)', { lineHeight: 'var(--leading-ui)' }],

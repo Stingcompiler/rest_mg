@@ -149,10 +149,10 @@ export function CalloutPanel({ title, amount, detail, icon, tone = 'danger', chi
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-12">
           {icon ? <span className={danger ? 'text-danger' : 'text-text'}>{icon}</span> : null}
-          <span className={cn('text-ar-lg font-bold', danger ? 'text-danger' : 'text-text')}>{title}</span>
+          <span className={cn('text-ar-lg font-semibold', danger ? 'text-danger' : 'text-text')}>{title}</span>
         </div>
         {amount ? (
-          <Numeric className={cn('text-num-6xl font-bold', danger ? 'text-danger' : 'text-text')}>
+          <Numeric className={cn('text-num-6xl font-semibold', danger ? 'text-danger' : 'text-text')}>
             {amount}
           </Numeric>
         ) : null}

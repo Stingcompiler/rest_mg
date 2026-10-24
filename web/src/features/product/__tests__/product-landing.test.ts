@@ -63,6 +63,8 @@ describe.each(LOCALES)('the page’s words (%s)', (locale) => {
     expect(c.faq.length).toBeLessThanOrEqual(8);
     expect(c.cta.length).toBeGreaterThan(0);
     expect(c.cta.split(/\s+/).length).toBeLessThanOrEqual(3);
+    // The action names the channel, so no one wonders what the button does.
+    expect(c.cta).toMatch(/واتساب|WhatsApp/);
   });
 
   it('claims nothing it cannot back: no pressure words, no figures, no placeholders', () => {
@@ -92,11 +94,32 @@ describe('both languages carry the same page', () => {
 });
 
 describe('the one action', () => {
-  it('leads somewhere real, off a secure address', () => {
-    expect(PRODUCT_CONTACT.href).toMatch(/^https:\/\//);
+  it('is a direct message on WhatsApp to the owner’s number, in international form', () => {
+    expect(PRODUCT_CONTACT.phoneLocal).toBe('0902929451');
+    // Sudan's code, and the local number without its leading zero.
+    expect(PRODUCT_CONTACT.whatsappNumber).toBe('249902929451');
+    expect(PRODUCT_CONTACT.whatsappNumber).toBe('249' + PRODUCT_CONTACT.phoneLocal.slice(1));
   });
 
-  it('is repeated at the top, after the sections and at the close, and opens in the page’s own tab only if it is on the same site', () => {
+  it('carries a message that says which page it came from, in each language', () => {
+    for (const locale of LOCALES) {
+      expect(PRODUCT_CONTENT[locale].whatsappMessage).toMatch(/اوردراك|Orderak/);
+    }
+  });
+
+  it('offers the other way too: a call, or the introduction site', () => {
+    expect(PRODUCT_CONTACT.site).toBe('https://stingdev.pro');
+    const page = read('features/product/ProductLanding.tsx');
+    expect(page).toMatch(/PRODUCT_CONTACT\.site/);
+    expect(page).toMatch(/`tel:\+\$\{PRODUCT_CONTACT\.whatsappNumber\}`/);
+    expect(page).toMatch(/wa\.me\/\$\{PRODUCT_CONTACT\.whatsappNumber\}\?text=\$\{encodeURIComponent\(/);
+    for (const locale of LOCALES) {
+      expect(PRODUCT_CONTENT[locale].contactAlt.site.length).toBeGreaterThan(0);
+      expect(PRODUCT_CONTENT[locale].contactAlt.call.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('is repeated at the top, after the sections and at the close, and opens in a new tab without handing over the page', () => {
     const page = read('features/product/ProductLanding.tsx');
     expect((page.match(/<Cta\b/g) ?? []).length).toBeGreaterThanOrEqual(3);
     expect(page).toMatch(/rel="noopener noreferrer"/);
